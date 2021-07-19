@@ -41,6 +41,18 @@ class VulkanApp {
 
         void createGraphicsPipeline();
 
+        void createFramebuffers();
+
+        void createCommandPool();
+
+        void createCommandBuffers();
+
+        void recordCommandBuffers();
+
+        void createSyncObjects();
+
+        void drawFrame();
+
         bool checkValidationLayerSupport();
 
         bool canDeviceBeUsed(VkPhysicalDevice device);
@@ -84,18 +96,37 @@ class VulkanApp {
 
         std::vector<VkImageView> swapChainImageViews;
 
+        std::vector<VkFramebuffer> swapChainFramebuffers;
+
+        std::vector<VkCommandBuffer> commandBuffers;
+
         VkFormat swapChainImageFormat;
 
         VkExtent2D swapChainExtent;
 
         VkRenderPass renderPass;
+
         VkPipelineLayout pipelineLayout;
 
         VkPipeline graphicsPipeline;
 
+        VkCommandPool commandPool;
+
+        std::vector<VkSemaphore> imageAvailableSemaphores;
+
+        std::vector<VkSemaphore> renderFinishedSemaphores;
+
+        std::vector<VkFence> inFlightFences;
+
+        std::vector<VkFence> imagesInFlight;
+
         const std::vector<const char*> validationLayers;
 
         const std::vector<const char*> deviceExtensions;
+
+        const int MAX_FRAMES_IN_FLIGHT = 2;
+
+        size_t currentFrame = 0;
 
 };
 
