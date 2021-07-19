@@ -1,0 +1,1 @@
+python compileShaderPair.py -v shaders/src/shader.vert -f shaders/src/shader.frag -vo shaders/output/vert.spv -fo shaders/output/frag.spv

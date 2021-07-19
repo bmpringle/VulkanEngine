@@ -8,6 +8,8 @@
 #include "QueueFamilyIndices.h"
 #include "SwapChainSupportDetails.h"
 
+#include <fstream>
+
 class VulkanApp {
     public:
         VulkanApp();
@@ -35,6 +37,8 @@ class VulkanApp {
 
         void createImageViews();
 
+        void createRenderPass();
+
         void createGraphicsPipeline();
 
         bool checkValidationLayerSupport();
@@ -42,6 +46,8 @@ class VulkanApp {
         bool canDeviceBeUsed(VkPhysicalDevice device);
 
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
+        static std::vector<char> readFile(const std::string& filename);
 
         QueueFamilyIndices getDeviceQueueFamilies(VkPhysicalDevice device);
 
@@ -52,6 +58,8 @@ class VulkanApp {
         VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+        VkShaderModule createShaderModule(const std::vector<char>& shaderCode);
 
         GLFWwindow* glfwWindow;
 
@@ -79,6 +87,11 @@ class VulkanApp {
         VkFormat swapChainImageFormat;
 
         VkExtent2D swapChainExtent;
+
+        VkRenderPass renderPass;
+        VkPipelineLayout pipelineLayout;
+
+        VkPipeline graphicsPipeline;
 
         const std::vector<const char*> validationLayers;
 
