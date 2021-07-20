@@ -20,6 +20,8 @@ class VulkanApp {
 
         std::vector<VkExtensionProperties> getAllSupportedExtensions();
 
+        void setFramebufferResized(bool resized);
+        
     private:
         void initGLFW();
 
@@ -50,6 +52,10 @@ class VulkanApp {
         void recordCommandBuffers();
 
         void createSyncObjects();
+
+        void cleanupSwapchain();
+
+        void recreateSwapchain();
 
         void drawFrame();
 
@@ -127,6 +133,8 @@ class VulkanApp {
         const int MAX_FRAMES_IN_FLIGHT = 2;
 
         size_t currentFrame = 0;
+
+        bool framebufferResized = false;
 
 };
 
