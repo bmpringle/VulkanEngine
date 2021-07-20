@@ -6,10 +6,35 @@
 
 #include <iostream>
 
-int main() {
-  VulkanApp app = VulkanApp();
+#include "VulkanEngine.h"
 
-  app.run();
+int main() {
+  /*VulkanApp app = VulkanApp();
+
+  app.run();*/
+
+  VulkanEngine engine = VulkanEngine();
+
+  VulkanInstance instance = VulkanInstance();
+  instance.setAppName("Test App");
+  instance.addValidationLayer("VK_LAYER_KHRONOS_validation");
+
+  engine.setInstance(instance);
+
+  VulkanDisplay display = VulkanDisplay();
+  display.setInitialWindowDimensions(1000, 800);
+  display.setWindowName("Test App Window");
+
+  engine.setDisplay(display);
+
+  VulkanDevice device = VulkanDevice();
+
+  engine.setDevice(device);
+
+  while(!engine.getDisplay().shouldWindowClose()) {
+    engine.engineLoop();
+  }
+
 
   return 0;
 }
