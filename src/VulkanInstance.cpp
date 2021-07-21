@@ -61,10 +61,6 @@ bool VulkanInstance::checkValidationLayerSupport() {
 }
 
 void VulkanInstance::create() {
-    if(hasBeenCreated) {
-        destroyInstance();
-    }
-    
     std::vector<VkExtensionProperties> extensions = getAllSupportedExtensions();
 
     if(!checkValidationLayerSupport()) {

@@ -14,10 +14,6 @@ void VulkanDevice::destroyDevice() {
 }
 
 void VulkanDevice::create(VulkanInstance instance, VulkanDisplay display) {
-    if(hasBeenCreated) {
-        destroyDevice();
-    }
-    
     createPhysicalDevice(instance, display);
     createLogicalDevice(instance);
 
@@ -182,4 +178,20 @@ void VulkanDevice::addDeviceExtension(const char* deviceExtension) {
 
 bool VulkanDevice::isCreated() {
     return hasBeenCreated;
+}
+
+SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VulkanDisplay display) {
+    return getDeviceSwapChainSupport(physicalDevice, display);
+}
+
+VkDevice VulkanDevice::getInternalLogicalDevice() {
+    return logicalDevice;
+}
+
+VkPhysicalDevice VulkanDevice::getInternalPhysicalDevice() {
+    return physicalDevice;
+}
+
+QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VulkanDisplay display) {
+    return VulkanDevice::getDeviceQueueFamilies(physicalDevice, display);
 }

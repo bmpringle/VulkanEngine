@@ -11,19 +11,14 @@ void VulkanDisplay::setWindowName(std::string newWindowName) {
 }
 
 void VulkanDisplay::destroyDisplay(VulkanInstance instance) {
-    if(hasBeenCreated) {
-        glfwDestroyWindow(window);
-    }
+    glfwDestroyWindow(window);
+
     glfwTerminate();
 
     vkDestroySurfaceKHR(instance.getInternalInstance(), surface, nullptr);
 }
 
 void VulkanDisplay::create(VulkanInstance instance) {
-    if(hasBeenCreated) {
-        destroyDisplay(instance);
-    }
-
     window = glfwCreateWindow(width, height, windowName.data(), monitor, nullptr);
 
     if(glfwCreateWindowSurface(instance.getInternalInstance(), window, nullptr, &surface) != VK_SUCCESS) {

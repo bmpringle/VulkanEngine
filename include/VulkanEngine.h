@@ -6,6 +6,7 @@
 #include "VulkanInstance.h"
 #include "VulkanDisplay.h"
 #include "VulkanDevice.h"
+#include "VulkanSwapchain.h"
 
 #include <vector>
 #include "QueueFamilyIndices.h"
@@ -31,14 +32,19 @@ class VulkanEngine {
         //set the current engine display. setting this will recreate *everything* else (except for the instance), so be careful. also calls VulkanDisplay::create(VulkanInstance instance) even if you already did.
         void setDisplay(VulkanDisplay display);
 
-        //set the current engine display. setting this will recreate *everything* else (except for the instance and display), so be careful. also calls VulkanDevice::create(VulkanInstance instance, VulkanDisplay display) even if you already did.
+        //set the current engine device. setting this will recreate *everything* else (except for the instance and display), so be careful. also calls VulkanDevice::create(VulkanInstance instance, VulkanDisplay display) even if you already did.
         void setDevice(VulkanDevice device);
+
+        //set the current engine display. setting this will recreate *everything* else (except for the instance and display and device), so be careful. also calls VulkanSwapchain::create(VulkanInstance instance, VulkanDisplay display, VulkanDevice device) even if you already did.
+        void setSwapchain(VulkanSwapchain swapchain);
 
         VulkanDisplay getDisplay();
 
         VulkanInstance getInstance();
 
         VulkanDevice getDevice();
+
+        VulkanSwapchain getSwapchain();
 
         //put in your render loop, giving control over to the engine to do things like make draw calls you submitted etc and poll window events.
         void engineLoop();
@@ -47,10 +53,12 @@ class VulkanEngine {
         VulkanInstance vkInstance;
         VulkanDisplay vkDisplay;
         VulkanDevice vkDevice;
+        VulkanSwapchain vkSwapchain;
 
         bool hasInstance = false;
         bool hasDisplay = false;
         bool hasDevice = false;
+        bool hasSwapchain = false;
 };
 
 #endif

@@ -31,10 +31,13 @@ int main() {
 
   engine.setDevice(device);
 
+  VulkanSwapchain swapchain = VulkanSwapchain();
+
+  engine.setSwapchain(swapchain);
+
   while(!engine.getDisplay().shouldWindowClose()) {
     engine.engineLoop();
   }
-
-
+  
   return 0;
 }

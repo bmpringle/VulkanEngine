@@ -5,14 +5,30 @@ VulkanEngine::VulkanEngine() {
 }
 
 VulkanEngine::~VulkanEngine() {
+    vkSwapchain.destroySwapchain(vkDevice);
     vkDevice.destroyDevice();
     vkDisplay.destroyDisplay(vkInstance);
     vkInstance.destroyInstance();
 }
 
 void VulkanEngine::setInstance(VulkanInstance instance) {
-    vkInstance = instance;
+    if(hasSwapchain) {
+        vkSwapchain.destroySwapchain(vkDevice);
+    }
 
+    if(hasDevice) {
+        vkDevice.destroyDevice();
+    }
+
+    if(hasDisplay) {
+        vkDisplay.destroyDisplay(vkInstance);
+    }
+
+    if(hasInstance) {
+        vkInstance.destroyInstance();
+    }
+
+    vkInstance = instance;
     vkInstance.create();
 
     if(hasDisplay) {
@@ -23,12 +39,28 @@ void VulkanEngine::setInstance(VulkanInstance instance) {
         vkDevice.create(vkInstance, vkDisplay);
     }
 
+    if(hasSwapchain) {
+        vkSwapchain.create(vkInstance, vkDisplay, vkDevice);
+    }
+
     hasInstance = true;
 }
 
 void VulkanEngine::setDisplay(VulkanDisplay display) {
     if(!hasInstance) {
         std::runtime_error("you can't set the VulkanDisplay without setting a VulkanInstance first");
+    }
+
+    if(hasSwapchain) {
+        vkSwapchain.destroySwapchain(vkDevice);
+    }
+
+    if(hasDevice) {
+        vkDevice.destroyDevice();
+    }
+
+    if(hasDisplay) {
+        vkDisplay.destroyDisplay(vkInstance);
     }
 
     vkDisplay = display;
@@ -39,6 +71,10 @@ void VulkanEngine::setDisplay(VulkanDisplay display) {
         vkDevice.create(vkInstance, vkDisplay);
     }
 
+    if(hasSwapchain) {
+        vkSwapchain.create(vkInstance, vkDisplay, vkDevice);
+    }
+
     hasDisplay = true;
 }
 
@@ -47,11 +83,39 @@ void VulkanEngine::setDevice(VulkanDevice device) {
         std::runtime_error("you can't set the VulkanDevice without setting a VulkanDisplay first");
     }
 
+    if(hasSwapchain) {
+        vkSwapchain.destroySwapchain(vkDevice);
+    }
+
+    if(hasDevice) {
+        vkDevice.destroyDevice();
+    }
+
     vkDevice = device;
 
     vkDevice.create(vkInstance, vkDisplay);
 
     hasDevice = true;
+
+    if(hasSwapchain) {
+        vkSwapchain.create(vkInstance, vkDisplay, vkDevice);
+    }
+}
+
+void VulkanEngine::setSwapchain(VulkanSwapchain swapchain) {
+    if(!hasDevice) {
+        std::runtime_error("you can't set the VulkanSwapchain without setting a VulkanDevice first");
+    }
+
+    if(hasSwapchain) {
+        vkSwapchain.destroySwapchain(vkDevice);
+    }
+
+    vkSwapchain = swapchain;
+
+    vkSwapchain.create(vkInstance, vkDisplay, vkDevice);
+
+    hasSwapchain = true;
 }
 
 VulkanDisplay VulkanEngine::getDisplay() {
@@ -66,10 +130,14 @@ VulkanDevice VulkanEngine::getDevice() {
     return vkDevice;
 }
 
+VulkanSwapchain VulkanEngine::getSwapchain() {
+    return vkSwapchain;
+}
+
 void VulkanEngine::engineLoop() {
-    if(hasDevice) { //in order to set device, everything else must also be set so we're good
+    if(hasSwapchain) { //in order to set device, everything else must also be set so we're good
         glfwPollEvents();
     }else {
-        std::runtime_error("VulkanEngine::engineLoop() called before VulkanDevice was set");
+        std::runtime_error("VulkanEngine::engineLoop() called before VulkanSwapchain was set");
     }
 }

@@ -21,6 +21,15 @@ class VulkanDevice {
         void addDeviceExtension(const char* deviceExtension);
 
         bool isCreated();
+
+        //public access only used AFTER creation.
+        SwapChainSupportDetails getDeviceSwapChainSupport(VulkanDisplay display);
+
+        VkDevice getInternalLogicalDevice();
+
+        VkPhysicalDevice getInternalPhysicalDevice();
+
+        QueueFamilyIndices getDeviceQueueFamilies(VulkanDisplay display);
     private:
         void createPhysicalDevice(VulkanInstance instance, VulkanDisplay display);
 
