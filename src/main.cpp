@@ -39,6 +39,10 @@ int main() {
 
   engine.setGraphicsPipeline(graphicsPipeline);
 
+  VulkanRenderSyncObjects syncObjects = VulkanRenderSyncObjects();
+
+  engine.setSyncObjects(syncObjects);
+
   while(!engine.getDisplay().shouldWindowClose()) {
     engine.engineLoop();
   }

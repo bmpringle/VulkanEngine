@@ -29,7 +29,6 @@ void VulkanSwapchain::create(VulkanInstance& vkInstance, VulkanDisplay& vkDispla
     createRenderpass(vkInstance, vkDisplay, vkDevice);
     createFramebuffers(vkDevice);
     createCommandBuffers(vkDevice);
-
     hasBeenCreated = true;
 }
 

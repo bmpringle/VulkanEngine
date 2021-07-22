@@ -119,7 +119,7 @@ void VulkanInstance::setAppName(std::string newName) {
     appName = newName;
 }
 
-VkInstance VulkanInstance::getInternalInstance() {
+VkInstance& VulkanInstance::getInternalInstance() {
     return instance;
 }
 

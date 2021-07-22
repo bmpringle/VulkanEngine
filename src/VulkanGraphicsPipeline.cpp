@@ -186,3 +186,7 @@ void VulkanGraphicsPipeline::setVertexShader(std::string shader) {
 void VulkanGraphicsPipeline::setFragmentShader(std::string shader) {
     fragmentShader = shader;
 }
+
+VkPipeline& VulkanGraphicsPipeline::getInternalGraphicsPipeline() {
+    return graphicsPipeline;
+}

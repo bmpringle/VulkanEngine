@@ -46,7 +46,7 @@ class VulkanSwapchain {
         void createFramebuffers(VulkanDevice& device);
 
         void createCommandBuffers(VulkanDevice& device);
-
+        
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, VulkanDisplay& vkDisplay);
 
         VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

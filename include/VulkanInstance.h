@@ -26,7 +26,7 @@ class VulkanInstance {
         /*should only be used internally by the engine, not reccomended to be used otherwise. however, if you REALLY want to do something that the 
         engine doesn't support, you can get the VkInstance.
         */
-        VkInstance getInternalInstance();
+        VkInstance& getInternalInstance();
 
         //check if VulkanInstance::create() has been called
         bool isCreated();

@@ -18,8 +18,16 @@ void VulkanDisplay::destroyDisplay(VulkanInstance& instance) {
     vkDestroySurfaceKHR(instance.getInternalInstance(), surface, nullptr);
 }
 
+static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+    auto display = reinterpret_cast<VulkanDisplay*>(glfwGetWindowUserPointer(window));
+    display->setFramebufferResized(true);
+}
+
 void VulkanDisplay::create(VulkanInstance& instance) {
     window = glfwCreateWindow(width, height, windowName.data(), monitor, nullptr);
+
+    glfwSetWindowUserPointer(window, this);
+    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
     if(glfwCreateWindowSurface(instance.getInternalInstance(), window, nullptr, &surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
@@ -43,6 +51,14 @@ GLFWwindow* VulkanDisplay::getInternalWindow() {
     return window;
 }
 
-VkSurfaceKHR VulkanDisplay::getInternalSurface() {
+VkSurfaceKHR& VulkanDisplay::getInternalSurface() {
     return surface;
+}
+
+void VulkanDisplay::setFramebufferResized(bool resized) {
+    framebufferResized = resized;
+}
+
+bool VulkanDisplay::getFramebufferResized() {
+    return framebufferResized;
 }

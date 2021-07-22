@@ -15,6 +15,8 @@ class VulkanGraphicsPipeline {
         void setVertexShader(std::string shader);
 
         void setFragmentShader(std::string shader);
+
+        VkPipeline& getInternalGraphicsPipeline();
     
     private:
         std::vector<char> readFile(const std::string& filename);

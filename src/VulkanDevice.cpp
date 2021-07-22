@@ -187,11 +187,11 @@ SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VulkanDisplay& d
     return getDeviceSwapChainSupport(physicalDevice, display);
 }
 
-VkDevice VulkanDevice::getInternalLogicalDevice() {
+VkDevice& VulkanDevice::getInternalLogicalDevice() {
     return logicalDevice;
 }
 
-VkPhysicalDevice VulkanDevice::getInternalPhysicalDevice() {
+VkPhysicalDevice& VulkanDevice::getInternalPhysicalDevice() {
     return physicalDevice;
 }
 
@@ -203,13 +203,21 @@ void VulkanDevice::createCommandPool() {
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
-    poolInfo.flags = 0; // Optional
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &graphicsCommandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool");
     }
 }
 
-VkCommandPool VulkanDevice::getInternalCommandPool() {
+VkCommandPool& VulkanDevice::getInternalCommandPool() {
     return graphicsCommandPool;
+}
+
+VkQueue& VulkanDevice::getInternalGraphicsQueue() {
+    return graphicsQueue;
+}
+
+VkQueue& VulkanDevice::getInternalPresentQueue() {
+    return presentQueue;
 }

@@ -25,13 +25,17 @@ class VulkanDevice {
         //public access only used AFTER creation.
         SwapChainSupportDetails getDeviceSwapChainSupport(VulkanDisplay& display);
 
-        VkDevice getInternalLogicalDevice();
+        VkDevice& getInternalLogicalDevice();
 
-        VkPhysicalDevice getInternalPhysicalDevice();
+        VkPhysicalDevice& getInternalPhysicalDevice();
 
-        VkCommandPool getInternalCommandPool();
+        VkCommandPool& getInternalCommandPool();
 
         QueueFamilyIndices getDeviceQueueFamilies(VulkanDisplay& display);
+
+        VkQueue& getInternalGraphicsQueue();
+
+        VkQueue& getInternalPresentQueue();
     private:
         void createPhysicalDevice(VulkanInstance& instance, VulkanDisplay& display);
 

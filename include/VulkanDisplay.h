@@ -23,7 +23,11 @@ class VulkanDisplay {
 
         GLFWwindow* getInternalWindow();
 
-        VkSurfaceKHR getInternalSurface();
+        VkSurfaceKHR& getInternalSurface();
+
+        void setFramebufferResized(bool resized);
+
+        bool getFramebufferResized();
 
     private:
         GLFWwindow* window;
@@ -37,6 +41,8 @@ class VulkanDisplay {
 
         unsigned int width = 800;
         unsigned int height = 600;
+
+        bool framebufferResized = false;
 };
 
 #endif
