@@ -35,9 +35,13 @@ int main() {
 
   engine.setSwapchain(swapchain);
 
+  VulkanGraphicsPipeline graphicsPipeline = VulkanGraphicsPipeline();
+
+  engine.setGraphicsPipeline(graphicsPipeline);
+
   while(!engine.getDisplay().shouldWindowClose()) {
     engine.engineLoop();
   }
-  
+
   return 0;
 }

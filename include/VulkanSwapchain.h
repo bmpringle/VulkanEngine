@@ -9,9 +9,9 @@ class VulkanSwapchain {
     public:
         VulkanSwapchain();
 
-        void destroySwapchain(VulkanDevice device);
+        void destroySwapchain(VulkanDevice& device);
 
-        void create(VulkanInstance vkInstance, VulkanDisplay vkDisplay, VulkanDevice vkDevice);
+        void create(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
 
         bool isCreated();
 
@@ -20,12 +20,34 @@ class VulkanSwapchain {
         void setPreferredSurfaceFormat(VkFormat format);
 
         void setPreferredColorSpace(VkColorSpaceKHR colorSpace);
+
+        VkSwapchainKHR& getInternalSwapchain();
+
+        VkFormat& getInternalSwapchainFormat();
+
+        VkExtent2D& getInternalExtent2D();
+
+        std::vector<VkImage>& getInternalImages();
+
+        std::vector<VkImageView>& getInternalImageViews();
+
+        std::vector<VkFramebuffer>& getInternalFramebuffers();
+
+        std::vector<VkCommandBuffer>& getInternalCommandBuffers();
+
+        VkRenderPass& getInternalRenderPass();
     private:
-        void createSwapchainAndImages(VulkanInstance vkInstance, VulkanDisplay vkDisplay, VulkanDevice vkDevice);
+        void createSwapchainAndImages(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
 
-        void createImageViews(VulkanInstance vkInstance, VulkanDisplay vkDisplay, VulkanDevice vkDevice);
+        void createImageViews(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
 
-        VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, VulkanDisplay vkDisplay);
+        void createRenderpass(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
+
+        void createFramebuffers(VulkanDevice& device);
+
+        void createCommandBuffers(VulkanDevice& device);
+
+        VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, VulkanDisplay& vkDisplay);
 
         VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
@@ -41,6 +63,12 @@ class VulkanSwapchain {
 
         std::vector<VkImageView> swapChainImageViews;
 
+        std::vector<VkFramebuffer> swapChainFramebuffers;
+
+        std::vector<VkCommandBuffer> commandBuffers;
+
+        VkRenderPass renderPass;
+        
         bool hasBeenCreated = false;
 
         VkPresentModeKHR preferredPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;

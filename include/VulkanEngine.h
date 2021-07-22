@@ -7,6 +7,7 @@
 #include "VulkanDisplay.h"
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
+#include "VulkanGraphicsPipeline.h"
 
 #include <vector>
 #include "QueueFamilyIndices.h"
@@ -38,6 +39,9 @@ class VulkanEngine {
         //set the current engine display. setting this will recreate *everything* else (except for the instance and display and device), so be careful. also calls VulkanSwapchain::create(VulkanInstance instance, VulkanDisplay display, VulkanDevice device) even if you already did.
         void setSwapchain(VulkanSwapchain swapchain);
 
+        //set the current engine display. setting this will recreate *everything* else (except for the instance and display and device), so be careful. also calls VulkanGraphicsPipeline::create(VulkanDevice device, VulkanSwapchain swapchain) even if you already did.
+        void setGraphicsPipeline(VulkanGraphicsPipeline pipeline);
+
         VulkanDisplay getDisplay();
 
         VulkanInstance getInstance();
@@ -45,6 +49,8 @@ class VulkanEngine {
         VulkanDevice getDevice();
 
         VulkanSwapchain getSwapchain();
+
+        VulkanGraphicsPipeline getGraphicsPipeline();
 
         //put in your render loop, giving control over to the engine to do things like make draw calls you submitted etc and poll window events.
         void engineLoop();
@@ -54,11 +60,13 @@ class VulkanEngine {
         VulkanDisplay vkDisplay;
         VulkanDevice vkDevice;
         VulkanSwapchain vkSwapchain;
+        VulkanGraphicsPipeline vkPipeline;
 
         bool hasInstance = false;
         bool hasDisplay = false;
         bool hasDevice = false;
         bool hasSwapchain = false;
+        bool hasPipeline = false;
 };
 
 #endif

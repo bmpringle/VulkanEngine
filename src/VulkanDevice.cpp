@@ -10,17 +10,20 @@ VulkanDevice::VulkanDevice() : deviceExtensions({
 }
 
 void VulkanDevice::destroyDevice() {
+    vkDestroyCommandPool(logicalDevice, graphicsCommandPool, nullptr);
+
     vkDestroyDevice(logicalDevice, nullptr);
 }
 
-void VulkanDevice::create(VulkanInstance instance, VulkanDisplay display) {
+void VulkanDevice::create(VulkanInstance& instance, VulkanDisplay& display) {
     createPhysicalDevice(instance, display);
     createLogicalDevice(instance);
+    createCommandPool();
 
     hasBeenCreated = true;
 }
 
-void VulkanDevice::createPhysicalDevice(VulkanInstance instance, VulkanDisplay display) {
+void VulkanDevice::createPhysicalDevice(VulkanInstance& instance, VulkanDisplay& display) {
     //pick VkPhysicalDevice
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance.getInternalInstance(), &deviceCount, nullptr);
@@ -47,7 +50,7 @@ void VulkanDevice::createPhysicalDevice(VulkanInstance instance, VulkanDisplay d
     indices = getDeviceQueueFamilies(physicalDevice, display);
 }
 
-void VulkanDevice::createLogicalDevice(VulkanInstance instance) {
+void VulkanDevice::createLogicalDevice(VulkanInstance& instance) {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>();
 
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -86,7 +89,7 @@ void VulkanDevice::createLogicalDevice(VulkanInstance instance) {
     vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
 }
 
-QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice, VulkanDisplay display) {
+QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice, VulkanDisplay& display) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
@@ -118,7 +121,7 @@ QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice
     return indices;
 }
 
-bool VulkanDevice::canDeviceBeUsed(VkPhysicalDevice device, VulkanDisplay display) {
+bool VulkanDevice::canDeviceBeUsed(VkPhysicalDevice device, VulkanDisplay& display) {
     QueueFamilyIndices indices = getDeviceQueueFamilies(device, display);
 
     bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -148,7 +151,7 @@ bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VkPhysicalDevice device, VulkanDisplay display) {
+SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VkPhysicalDevice device, VulkanDisplay& display) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, display.getInternalSurface(), &details.capabilities);
@@ -180,7 +183,7 @@ bool VulkanDevice::isCreated() {
     return hasBeenCreated;
 }
 
-SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VulkanDisplay display) {
+SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VulkanDisplay& display) {
     return getDeviceSwapChainSupport(physicalDevice, display);
 }
 
@@ -192,6 +195,21 @@ VkPhysicalDevice VulkanDevice::getInternalPhysicalDevice() {
     return physicalDevice;
 }
 
-QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VulkanDisplay display) {
+QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VulkanDisplay& display) {
     return VulkanDevice::getDeviceQueueFamilies(physicalDevice, display);
+}
+
+void VulkanDevice::createCommandPool() {
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    poolInfo.flags = 0; // Optional
+
+    if(vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &graphicsCommandPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create command pool");
+    }
+}
+
+VkCommandPool VulkanDevice::getInternalCommandPool() {
+    return graphicsCommandPool;
 }

@@ -16,32 +16,36 @@ class VulkanDevice {
 
         void destroyDevice();
 
-        void create(VulkanInstance instance, VulkanDisplay display);
+        void create(VulkanInstance& instance, VulkanDisplay& display);
 
         void addDeviceExtension(const char* deviceExtension);
 
         bool isCreated();
 
         //public access only used AFTER creation.
-        SwapChainSupportDetails getDeviceSwapChainSupport(VulkanDisplay display);
+        SwapChainSupportDetails getDeviceSwapChainSupport(VulkanDisplay& display);
 
         VkDevice getInternalLogicalDevice();
 
         VkPhysicalDevice getInternalPhysicalDevice();
 
-        QueueFamilyIndices getDeviceQueueFamilies(VulkanDisplay display);
+        VkCommandPool getInternalCommandPool();
+
+        QueueFamilyIndices getDeviceQueueFamilies(VulkanDisplay& display);
     private:
-        void createPhysicalDevice(VulkanInstance instance, VulkanDisplay display);
+        void createPhysicalDevice(VulkanInstance& instance, VulkanDisplay& display);
 
-        void createLogicalDevice(VulkanInstance instance);
+        void createLogicalDevice(VulkanInstance& instance);
 
-        static QueueFamilyIndices getDeviceQueueFamilies(VkPhysicalDevice pDevice, VulkanDisplay display);
+        void createCommandPool();
+
+        static QueueFamilyIndices getDeviceQueueFamilies(VkPhysicalDevice pDevice, VulkanDisplay& display);
         
-        bool canDeviceBeUsed(VkPhysicalDevice pDevice, VulkanDisplay display);
+        bool canDeviceBeUsed(VkPhysicalDevice pDevice, VulkanDisplay& display);
 
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-        SwapChainSupportDetails getDeviceSwapChainSupport(VkPhysicalDevice device, VulkanDisplay display);
+        SwapChainSupportDetails getDeviceSwapChainSupport(VkPhysicalDevice device, VulkanDisplay& display);
 
         VkPhysicalDevice physicalDevice;
 
@@ -52,6 +56,8 @@ class VulkanDevice {
         VkQueue graphicsQueue;
 
         VkQueue presentQueue;
+
+        VkCommandPool graphicsCommandPool;
 
         std::vector<const char*> deviceExtensions;
 
