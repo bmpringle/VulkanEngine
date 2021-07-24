@@ -15,7 +15,7 @@ void VulkanDevice::destroyDevice() {
     vkDestroyDevice(logicalDevice, nullptr);
 }
 
-void VulkanDevice::create(VulkanInstance& instance, VulkanDisplay& display) {
+void VulkanDevice::create(std::shared_ptr<VulkanInstance> instance, std::shared_ptr<VulkanDisplay> display) {
     createPhysicalDevice(instance, display);
     createLogicalDevice(instance);
     createCommandPool();
@@ -23,10 +23,10 @@ void VulkanDevice::create(VulkanInstance& instance, VulkanDisplay& display) {
     hasBeenCreated = true;
 }
 
-void VulkanDevice::createPhysicalDevice(VulkanInstance& instance, VulkanDisplay& display) {
+void VulkanDevice::createPhysicalDevice(std::shared_ptr<VulkanInstance> instance, std::shared_ptr<VulkanDisplay> display) {
     //pick VkPhysicalDevice
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance.getInternalInstance(), &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(instance->getInternalInstance(), &deviceCount, nullptr);
 
     if(deviceCount == 0) {
         throw std::runtime_error("failed to find GPUs with Vulkan support!");
@@ -34,7 +34,7 @@ void VulkanDevice::createPhysicalDevice(VulkanInstance& instance, VulkanDisplay&
 
     //check if there is a device that has the requirements for the application met
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance.getInternalInstance(), &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(instance->getInternalInstance(), &deviceCount, devices.data());
 
     for(const VkPhysicalDevice& device : devices) {
         if(canDeviceBeUsed(device, display)) {
@@ -50,7 +50,7 @@ void VulkanDevice::createPhysicalDevice(VulkanInstance& instance, VulkanDisplay&
     indices = getDeviceQueueFamilies(physicalDevice, display);
 }
 
-void VulkanDevice::createLogicalDevice(VulkanInstance& instance) {
+void VulkanDevice::createLogicalDevice(std::shared_ptr<VulkanInstance> instance) {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>();
 
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -89,7 +89,7 @@ void VulkanDevice::createLogicalDevice(VulkanInstance& instance) {
     vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
 }
 
-QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice, VulkanDisplay& display) {
+QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice, std::shared_ptr<VulkanDisplay> display) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
@@ -105,7 +105,7 @@ QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice
         }
 
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(pDevice, i, display.getInternalSurface(), &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(pDevice, i, display->getInternalSurface(), &presentSupport);
 
         if(presentSupport) {
             indices.presentFamily = i;
@@ -121,7 +121,7 @@ QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice
     return indices;
 }
 
-bool VulkanDevice::canDeviceBeUsed(VkPhysicalDevice device, VulkanDisplay& display) {
+bool VulkanDevice::canDeviceBeUsed(VkPhysicalDevice device, std::shared_ptr<VulkanDisplay> display) {
     QueueFamilyIndices indices = getDeviceQueueFamilies(device, display);
 
     bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -151,25 +151,25 @@ bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VkPhysicalDevice device, VulkanDisplay& display) {
+SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VkPhysicalDevice device, std::shared_ptr<VulkanDisplay> display) {
     SwapChainSupportDetails details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, display.getInternalSurface(), &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, display->getInternalSurface(), &details.capabilities);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, display.getInternalSurface(), &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, display->getInternalSurface(), &formatCount, nullptr);
 
     if(formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, display.getInternalSurface(), &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, display->getInternalSurface(), &formatCount, details.formats.data());
     }
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, display.getInternalSurface(), &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, display->getInternalSurface(), &presentModeCount, nullptr);
 
     if(presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, display.getInternalSurface(), &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, display->getInternalSurface(), &presentModeCount, details.presentModes.data());
     }
 
     return details;
@@ -183,7 +183,7 @@ bool VulkanDevice::isCreated() {
     return hasBeenCreated;
 }
 
-SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(VulkanDisplay& display) {
+SwapChainSupportDetails VulkanDevice::getDeviceSwapChainSupport(std::shared_ptr<VulkanDisplay> display) {
     return getDeviceSwapChainSupport(physicalDevice, display);
 }
 
@@ -195,7 +195,7 @@ VkPhysicalDevice& VulkanDevice::getInternalPhysicalDevice() {
     return physicalDevice;
 }
 
-QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VulkanDisplay& display) {
+QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(std::shared_ptr<VulkanDisplay> display) {
     return VulkanDevice::getDeviceQueueFamilies(physicalDevice, display);
 }
 

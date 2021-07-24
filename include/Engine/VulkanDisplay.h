@@ -9,9 +9,9 @@ class VulkanDisplay {
     public:
         VulkanDisplay();
 
-        void destroyDisplay(VulkanInstance& instance);
+        void destroyDisplay(std::shared_ptr<VulkanInstance> instance);
 
-        void create(VulkanInstance& instance);
+        void create(std::shared_ptr<VulkanInstance> instance);
 
         void setWindowName(std::string newWindowName);
 

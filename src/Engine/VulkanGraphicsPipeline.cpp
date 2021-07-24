@@ -84,7 +84,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 }
 
-void VulkanGraphicsPipeline::create(VulkanDevice& device, VulkanSwapchain& swapchain) {
+void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain) {
     std::vector<char> vertShaderCode = readFile(vertexShader);
     std::vector<char> fragShaderCode = readFile(fragmentShader);
 
@@ -99,19 +99,19 @@ void VulkanGraphicsPipeline::create(VulkanDevice& device, VulkanSwapchain& swapc
     viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float) swapchain.getInternalExtent2D().width;
-    viewport.height = (float) swapchain.getInternalExtent2D().height;
+    viewport.width = (float) swapchain->getInternalExtent2D().width;
+    viewport.height = (float) swapchain->getInternalExtent2D().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     scissor = {};
     scissor.offset = {0, 0};
-    scissor.extent = swapchain.getInternalExtent2D();
+    scissor.extent = swapchain->getInternalExtent2D();
 
     viewportState.pViewports = &viewport;
     viewportState.pScissors = &scissor;
 
-    if(vkCreatePipelineLayout(device.getInternalLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+    if(vkCreatePipelineLayout(device->getInternalLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -127,23 +127,23 @@ void VulkanGraphicsPipeline::create(VulkanDevice& device, VulkanSwapchain& swapc
 
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages;
-    pipelineInfo.renderPass = swapchain.getInternalRenderPass();
+    pipelineInfo.renderPass = swapchain->getInternalRenderPass();
     pipelineInfo.subpass = 0;
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
 
-    if(vkCreateGraphicsPipelines(device.getInternalLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+    if(vkCreateGraphicsPipelines(device->getInternalLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(device.getInternalLogicalDevice(), vertShaderModule, nullptr);
-    vkDestroyShaderModule(device.getInternalLogicalDevice(), fragShaderModule, nullptr);
+    vkDestroyShaderModule(device->getInternalLogicalDevice(), vertShaderModule, nullptr);
+    vkDestroyShaderModule(device->getInternalLogicalDevice(), fragShaderModule, nullptr);
 }
 
-void VulkanGraphicsPipeline::destroyGraphicsPipeline(VulkanDevice& device) {
-    vkDestroyPipeline(device.getInternalLogicalDevice(), graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(device.getInternalLogicalDevice(), pipelineLayout, nullptr);
+void VulkanGraphicsPipeline::destroyGraphicsPipeline(std::shared_ptr<VulkanDevice> device) {
+    vkDestroyPipeline(device->getInternalLogicalDevice(), graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(device->getInternalLogicalDevice(), pipelineLayout, nullptr);
 }
 
 std::vector<char> VulkanGraphicsPipeline::readFile(const std::string& filename) {
@@ -164,7 +164,7 @@ std::vector<char> VulkanGraphicsPipeline::readFile(const std::string& filename) 
     return buffer;
 }
 
-VkShaderModule VulkanGraphicsPipeline::createShaderModule(const std::vector<char>& shaderCode, VulkanDevice& device) {
+VkShaderModule VulkanGraphicsPipeline::createShaderModule(const std::vector<char>& shaderCode, std::shared_ptr<VulkanDevice> device) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
@@ -172,7 +172,7 @@ VkShaderModule VulkanGraphicsPipeline::createShaderModule(const std::vector<char
 
     VkShaderModule shader;
     
-    if(vkCreateShaderModule(device.getInternalLogicalDevice(), &createInfo, nullptr, &shader) != VK_SUCCESS) {
+    if(vkCreateShaderModule(device->getInternalLogicalDevice(), &createInfo, nullptr, &shader) != VK_SUCCESS) {
         std::runtime_error("failed to create shader");
     }
 

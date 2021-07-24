@@ -7,23 +7,23 @@ VulkanSwapchain::VulkanSwapchain() {
 
 }
 
-void VulkanSwapchain::destroySwapchain(VulkanDevice& device) {
-    vkFreeCommandBuffers(device.getInternalLogicalDevice(), device.getInternalCommandPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+void VulkanSwapchain::destroySwapchain(std::shared_ptr<VulkanDevice> device) {
+    vkFreeCommandBuffers(device->getInternalLogicalDevice(), device->getInternalCommandPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
     for(auto framebuffer : swapChainFramebuffers) {
-        vkDestroyFramebuffer(device.getInternalLogicalDevice(), framebuffer, nullptr);
+        vkDestroyFramebuffer(device->getInternalLogicalDevice(), framebuffer, nullptr);
     }
 
-    vkDestroyRenderPass(device.getInternalLogicalDevice(), renderPass, nullptr);
+    vkDestroyRenderPass(device->getInternalLogicalDevice(), renderPass, nullptr);
 
     for(auto imageView : swapChainImageViews) {
-        vkDestroyImageView(device.getInternalLogicalDevice(), imageView, nullptr);
+        vkDestroyImageView(device->getInternalLogicalDevice(), imageView, nullptr);
     }
 
-    vkDestroySwapchainKHR(device.getInternalLogicalDevice(), swapchain, nullptr);
+    vkDestroySwapchainKHR(device->getInternalLogicalDevice(), swapchain, nullptr);
 }
 
-void VulkanSwapchain::create(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice) {
+void VulkanSwapchain::create(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice) {
     createSwapchainAndImages(vkInstance, vkDisplay, vkDevice);
     createImageViews(vkInstance, vkDisplay, vkDevice);
     createRenderpass(vkInstance, vkDisplay, vkDevice);
@@ -32,8 +32,8 @@ void VulkanSwapchain::create(VulkanInstance& vkInstance, VulkanDisplay& vkDispla
     hasBeenCreated = true;
 }
 
-void VulkanSwapchain::createSwapchainAndImages(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice) {
-    SwapChainSupportDetails swapChainSupport = vkDevice.getDeviceSwapChainSupport(vkDisplay);
+void VulkanSwapchain::createSwapchainAndImages(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice) {
+    SwapChainSupportDetails swapChainSupport = vkDevice->getDeviceSwapChainSupport(vkDisplay);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -51,7 +51,7 @@ void VulkanSwapchain::createSwapchainAndImages(VulkanInstance& vkInstance, Vulka
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = vkDisplay.getInternalSurface();
+    createInfo.surface = vkDisplay->getInternalSurface();
 
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
@@ -60,7 +60,7 @@ void VulkanSwapchain::createSwapchainAndImages(VulkanInstance& vkInstance, Vulka
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = vkDevice.getDeviceQueueFamilies(vkDisplay);
+    QueueFamilyIndices indices = vkDevice->getDeviceQueueFamilies(vkDisplay);
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     if(indices.graphicsFamily != indices.presentFamily) {
@@ -82,16 +82,16 @@ void VulkanSwapchain::createSwapchainAndImages(VulkanInstance& vkInstance, Vulka
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if(vkCreateSwapchainKHR(vkDevice.getInternalLogicalDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
+    if(vkCreateSwapchainKHR(vkDevice->getInternalLogicalDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
         std::runtime_error("failed to create swapchain!");
     }
 
-    vkGetSwapchainImagesKHR(vkDevice.getInternalLogicalDevice(), swapchain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(vkDevice.getInternalLogicalDevice(), swapchain, &imageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, swapChainImages.data());
 }
 
-void VulkanSwapchain::createImageViews(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice) {
+void VulkanSwapchain::createImageViews(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice) {
     swapChainImageViews.resize(swapChainImages.size());
 
     for(size_t i = 0; i < swapChainImageViews.size(); ++i) {
@@ -113,13 +113,13 @@ void VulkanSwapchain::createImageViews(VulkanInstance& vkInstance, VulkanDisplay
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        if(vkCreateImageView(vkDevice.getInternalLogicalDevice(), &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
+        if(vkCreateImageView(vkDevice->getInternalLogicalDevice(), &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
             throw std::runtime_error("couldn't create VkImageView to correspond to VkImage");
         }
     }
 }
 
-void VulkanSwapchain::createRenderpass(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice) {
+void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice) {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -163,7 +163,7 @@ void VulkanSwapchain::createRenderpass(VulkanInstance& vkInstance, VulkanDisplay
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if(vkCreateRenderPass(vkDevice.getInternalLogicalDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    if(vkCreateRenderPass(vkDevice->getInternalLogicalDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 }
@@ -192,12 +192,12 @@ VkPresentModeKHR VulkanSwapchain::chooseSwapPresentMode(const std::vector<VkPres
     return VK_PRESENT_MODE_FIFO_KHR; //gauranteed to be available, so fall back to it if it isn't available
 }
 
-VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, VulkanDisplay& vkDisplay) {
+VkExtent2D VulkanSwapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, std::shared_ptr<VulkanDisplay> vkDisplay) {
     if(capabilities.currentExtent.width != UINT32_MAX) {
         return capabilities.currentExtent;
     }else {
         int width, height;
-        glfwGetFramebufferSize(vkDisplay.getInternalWindow(), &width, &height);
+        glfwGetFramebufferSize(vkDisplay->getInternalWindow(), &width, &height);
 
         VkExtent2D actualExtent = {
             static_cast<uint32_t>(width),
@@ -247,7 +247,7 @@ VkRenderPass& VulkanSwapchain::getInternalRenderPass() {
     return renderPass;
 }
 
-void VulkanSwapchain::createFramebuffers(VulkanDevice& device) {
+void VulkanSwapchain::createFramebuffers(std::shared_ptr<VulkanDevice> device) {
     swapChainFramebuffers.resize(swapChainImageViews.size());
 
     for(size_t i = 0; i < swapChainImageViews.size(); ++i) {
@@ -264,7 +264,7 @@ void VulkanSwapchain::createFramebuffers(VulkanDevice& device) {
         createInfo.height = swapChainExtent.height;
         createInfo.layers = 1;
 
-        if(vkCreateFramebuffer(device.getInternalLogicalDevice(), &createInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+        if(vkCreateFramebuffer(device->getInternalLogicalDevice(), &createInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
             std::runtime_error("failed to create a framebuffer corresponding to a vkimageview");
         }
     }
@@ -274,16 +274,16 @@ std::vector<VkFramebuffer>& VulkanSwapchain::getInternalFramebuffers() {
     return swapChainFramebuffers;
 }
 
-void VulkanSwapchain::createCommandBuffers(VulkanDevice& device) {
+void VulkanSwapchain::createCommandBuffers(std::shared_ptr<VulkanDevice> device) {
     commandBuffers.resize(swapChainFramebuffers.size());
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = device.getInternalCommandPool();
+    allocInfo.commandPool = device->getInternalCommandPool();
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-    if(vkAllocateCommandBuffers(device.getInternalLogicalDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+    if(vkAllocateCommandBuffers(device->getInternalLogicalDevice(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 }

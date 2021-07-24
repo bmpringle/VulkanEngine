@@ -9,9 +9,9 @@ class VulkanSwapchain {
     public:
         VulkanSwapchain();
 
-        void destroySwapchain(VulkanDevice& device);
+        void destroySwapchain(std::shared_ptr<VulkanDevice> device);
 
-        void create(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
+        void create(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
         bool isCreated();
 
@@ -37,17 +37,17 @@ class VulkanSwapchain {
 
         VkRenderPass& getInternalRenderPass();
     private:
-        void createSwapchainAndImages(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
+        void createSwapchainAndImages(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
-        void createImageViews(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
+        void createImageViews(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
-        void createRenderpass(VulkanInstance& vkInstance, VulkanDisplay& vkDisplay, VulkanDevice& vkDevice);
+        void createRenderpass(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
-        void createFramebuffers(VulkanDevice& device);
+        void createFramebuffers(std::shared_ptr<VulkanDevice> device);
 
-        void createCommandBuffers(VulkanDevice& device);
+        void createCommandBuffers(std::shared_ptr<VulkanDevice> device);
         
-        VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, VulkanDisplay& vkDisplay);
+        VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, std::shared_ptr<VulkanDisplay> vkDisplay);
 
         VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 

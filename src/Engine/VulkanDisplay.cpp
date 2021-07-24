@@ -10,12 +10,12 @@ void VulkanDisplay::setWindowName(std::string newWindowName) {
     windowName = newWindowName;
 }
 
-void VulkanDisplay::destroyDisplay(VulkanInstance& instance) {
+void VulkanDisplay::destroyDisplay(std::shared_ptr<VulkanInstance> instance) {
     glfwDestroyWindow(window);
 
     glfwTerminate();
 
-    vkDestroySurfaceKHR(instance.getInternalInstance(), surface, nullptr);
+    vkDestroySurfaceKHR(instance->getInternalInstance(), surface, nullptr);
 }
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
@@ -23,13 +23,13 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
     display->setFramebufferResized(true);
 }
 
-void VulkanDisplay::create(VulkanInstance& instance) {
+void VulkanDisplay::create(std::shared_ptr<VulkanInstance> instance) {
     window = glfwCreateWindow(width, height, windowName.data(), monitor, nullptr);
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
-    if(glfwCreateWindowSurface(instance.getInternalInstance(), window, nullptr, &surface) != VK_SUCCESS) {
+    if(glfwCreateWindowSurface(instance->getInternalInstance(), window, nullptr, &surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
     }
 }

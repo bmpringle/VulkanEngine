@@ -8,9 +8,9 @@ class VulkanGraphicsPipeline {
     public:
         VulkanGraphicsPipeline();
 
-        void create(VulkanDevice& device, VulkanSwapchain& swapchain);
+        void create(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain);
 
-        void destroyGraphicsPipeline(VulkanDevice& device);
+        void destroyGraphicsPipeline(std::shared_ptr<VulkanDevice> device);
 
         void setVertexShader(std::string shader);
 
@@ -21,7 +21,7 @@ class VulkanGraphicsPipeline {
     private:
         std::vector<char> readFile(const std::string& filename);
 
-        VkShaderModule createShaderModule(const std::vector<char>& shaderCode, VulkanDevice& device);
+        VkShaderModule createShaderModule(const std::vector<char>& shaderCode, std::shared_ptr<VulkanDevice> device);
 
         VkPipeline graphicsPipeline;
 

@@ -16,14 +16,14 @@ class VulkanDevice {
 
         void destroyDevice();
 
-        void create(VulkanInstance& instance, VulkanDisplay& display);
+        void create(std::shared_ptr<VulkanInstance> instance, std::shared_ptr<VulkanDisplay> display);
 
         void addDeviceExtension(const char* deviceExtension);
 
         bool isCreated();
 
         //public access only used AFTER creation.
-        SwapChainSupportDetails getDeviceSwapChainSupport(VulkanDisplay& display);
+        SwapChainSupportDetails getDeviceSwapChainSupport(std::shared_ptr<VulkanDisplay> display);
 
         VkDevice& getInternalLogicalDevice();
 
@@ -31,25 +31,25 @@ class VulkanDevice {
 
         VkCommandPool& getInternalCommandPool();
 
-        QueueFamilyIndices getDeviceQueueFamilies(VulkanDisplay& display);
+        QueueFamilyIndices getDeviceQueueFamilies(std::shared_ptr<VulkanDisplay> display);
 
         VkQueue& getInternalGraphicsQueue();
 
         VkQueue& getInternalPresentQueue();
     private:
-        void createPhysicalDevice(VulkanInstance& instance, VulkanDisplay& display);
+        void createPhysicalDevice(std::shared_ptr<VulkanInstance> instance, std::shared_ptr<VulkanDisplay> display);
 
-        void createLogicalDevice(VulkanInstance& instance);
+        void createLogicalDevice(std::shared_ptr<VulkanInstance> instance);
 
         void createCommandPool();
 
-        static QueueFamilyIndices getDeviceQueueFamilies(VkPhysicalDevice pDevice, VulkanDisplay& display);
+        static QueueFamilyIndices getDeviceQueueFamilies(VkPhysicalDevice pDevice, std::shared_ptr<VulkanDisplay> display);
         
-        bool canDeviceBeUsed(VkPhysicalDevice pDevice, VulkanDisplay& display);
+        bool canDeviceBeUsed(VkPhysicalDevice pDevice, std::shared_ptr<VulkanDisplay> display);
 
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-        SwapChainSupportDetails getDeviceSwapChainSupport(VkPhysicalDevice device, VulkanDisplay& display);
+        SwapChainSupportDetails getDeviceSwapChainSupport(VkPhysicalDevice device, std::shared_ptr<VulkanDisplay> display);
 
         VkPhysicalDevice physicalDevice;
 

@@ -7,9 +7,9 @@ class VulkanRenderSyncObjects {
     public:
         VulkanRenderSyncObjects();
 
-        void destroySyncObjects(VulkanDevice& device);
+        void destroySyncObjects(std::shared_ptr<VulkanDevice> device);
 
-        void create(VulkanDevice& device, VulkanSwapchain& swapchain);
+        void create(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain);
 
         std::vector<VkSemaphore>& getInternalImageAvailableSemaphores();
 

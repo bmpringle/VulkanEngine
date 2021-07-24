@@ -16,6 +16,8 @@
 
 #include <fstream>
 
+#include <memory>
+
 class VulkanEngine {
     public:
         VulkanEngine();
@@ -23,49 +25,44 @@ class VulkanEngine {
         ~VulkanEngine();
 
         //set the current engine instance. setting this will recreate *everything* else, so be careful. also calls VulkanInstance::create() even if you already did.
-        void setInstance(VulkanInstance instance);
+        void setInstance(std::shared_ptr<VulkanInstance> instance);
 
         //set the current engine display. setting this will recreate *everything* else (except for the instance), so be careful. also calls VulkanDisplay::create(VulkanInstance instance) even if you already did.
-        void setDisplay(VulkanDisplay display);
+        void setDisplay(std::shared_ptr<VulkanDisplay> display);
 
         //set the current engine device. setting this will recreate *everything* else (except for the instance and display), so be careful. also calls VulkanDevice::create(VulkanInstance instance, VulkanDisplay display) even if you already did.
-        void setDevice(VulkanDevice device);
+        void setDevice(std::shared_ptr<VulkanDevice> device);
 
         //set the current engine swapchain. setting this will recreate *everything* else (except for the instance and display and device), so be careful. also calls VulkanSwapchain::create(VulkanInstance instance, VulkanDisplay display, VulkanDevice device) even if you already did.
-        void setSwapchain(VulkanSwapchain swapchain);
+        void setSwapchain(std::shared_ptr<VulkanSwapchain> swapchain);
 
         //set the current engine pipeline. setting this will recreate *everything* else (except for the instance and display and device), so be careful. also calls VulkanGraphicsPipeline::create(VulkanDevice device, VulkanSwapchain swapchain) even if you already did.
-        void setGraphicsPipeline(VulkanGraphicsPipeline pipeline);
+        void setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> pipeline);
 
         //set the current engine sync objects. setting this will recreate *everything* else (except for the instance and display and device and swapchain), so be careful. also calls VulkanRenderSyncObjects::create(VulkanDevice device, VulkanSwapchain swapchain) even if you already did.
-        void setSyncObjects(VulkanRenderSyncObjects syncObjects);
+        void setSyncObjects(std::shared_ptr<VulkanRenderSyncObjects> syncObjects);
 
-        VulkanDisplay getDisplay();
+        std::shared_ptr<VulkanDisplay> getDisplay();
 
-        VulkanInstance getInstance();
+        std::shared_ptr<VulkanInstance> getInstance();
 
-        VulkanDevice getDevice();
+        std::shared_ptr<VulkanDevice> getDevice();
 
-        VulkanSwapchain getSwapchain();
+        std::shared_ptr<VulkanSwapchain> getSwapchain();
 
-        VulkanGraphicsPipeline getGraphicsPipeline();
+        std::shared_ptr<VulkanGraphicsPipeline> getGraphicsPipeline();
 
-        VulkanRenderSyncObjects getSyncObjects();
+        std::shared_ptr<VulkanRenderSyncObjects> getSyncObjects();
 
-        //put in your render loop, giving control over to the engine to do things like make draw calls you submitted etc and poll window events.
-        void engineLoop();
-    
+        void recreateSwapchain();
     private:
-        void recordCommandBuffers();
 
-        void drawFrame();
-
-        VulkanInstance vkInstance;
-        VulkanDisplay vkDisplay;
-        VulkanDevice vkDevice;
-        VulkanSwapchain vkSwapchain;
-        VulkanGraphicsPipeline vkPipeline;
-        VulkanRenderSyncObjects vkSyncObjects;
+        std::shared_ptr<VulkanInstance> vkInstance;
+        std::shared_ptr<VulkanDisplay> vkDisplay;
+        std::shared_ptr<VulkanDevice> vkDevice;
+        std::shared_ptr<VulkanSwapchain> vkSwapchain;
+        std::shared_ptr<VulkanGraphicsPipeline> vkPipeline;
+        std::shared_ptr<VulkanRenderSyncObjects> vkSyncObjects;
 
         bool hasInstance = false;
         bool hasDisplay = false;
@@ -74,8 +71,6 @@ class VulkanEngine {
 
         bool hasPipeline = false;
         bool hasSyncObjects = false;
-
-        size_t currentFrame = 0;
 };
 
 #endif
