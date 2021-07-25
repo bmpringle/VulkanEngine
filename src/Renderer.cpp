@@ -1,7 +1,14 @@
 #include "Renderer.h"
 
-Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
+#include <cstdlib>
+#include <cstring>
 
+Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
+    updateVertexBuffer();
+}
+
+Renderer::~Renderer() {
+    destroyVertexBuffer();
 }
 
 void Renderer::recordCommandBuffers() {
@@ -51,7 +58,15 @@ void Renderer::recordCommandBuffers() {
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+        if(sizeOfCurrentBuffer > 0) {
+            VkBuffer vertexBuffers[] = {vertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+            vkCmdDraw(commandBuffers[i], vertices.size(), 1, 0, 0);
+        }else {
+            //nothing to draw
+        }
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -150,4 +165,80 @@ void Renderer::renderFrame() {
     }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+uint32_t Renderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(vkEngine->getDevice()->getInternalPhysicalDevice(), &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("couldn't find memory type that matched the requested properties.");
+}
+
+void Renderer::createVertexBuffer() {
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(Vertex) * vertices.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create vertex buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBuffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    if(vkAllocateMemory(vkEngine->getDevice()->getInternalLogicalDevice(), &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    }
+
+    vkBindBufferMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBuffer, vertexBufferMemory, 0);
+
+    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory, 0, bufferInfo.size, 0, &mappingToVertexBuffer);
+
+    memcpy(mappingToVertexBuffer, vertices.data(), (size_t) bufferInfo.size);
+}
+
+void Renderer::destroyVertexBuffer() {
+    vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
+    vkUnmapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory);
+    vkDestroyBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBuffer, nullptr);
+    vkFreeMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory, nullptr);
+}
+
+void Renderer::updateVertexBuffer() {
+    if(sizeOfCurrentBuffer == 0) {
+        if(vertices.size() > 0) {
+            createVertexBuffer(); //buffer hasn't been created yet at all
+            sizeOfCurrentBuffer = vertices.size();
+            return;
+        }else {
+            return; //can't allocate empty buffer. trust me, i tried
+        }
+    }
+
+    if(sizeOfCurrentBuffer != vertices.size()) {
+        destroyVertexBuffer();
+        createVertexBuffer();
+    }else {
+        memcpy(mappingToVertexBuffer, vertices.data(), (size_t) sizeof(Vertex) * vertices.size());
+    }
+
+    sizeOfCurrentBuffer = vertices.size();
+}
+
+void Renderer::setVertexData(std::vector<Vertex>& newVertices) {
+    vertices = newVertices;
+    updateVertexBuffer();
 }

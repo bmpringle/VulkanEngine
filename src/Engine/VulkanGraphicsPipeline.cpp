@@ -15,10 +15,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
 
     vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
     inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -111,6 +107,11 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     viewportState.pViewports = &viewport;
     viewportState.pScissors = &scissor;
 
+    vertexInputInfo.vertexBindingDescriptionCount = vertexInputBindingDescriptions.size();
+    vertexInputInfo.pVertexBindingDescriptions = vertexInputBindingDescriptions.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = vertexInputAttributeDescriptions.size();
+    vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions.data();
+
     if(vkCreatePipelineLayout(device->getInternalLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
@@ -189,4 +190,12 @@ void VulkanGraphicsPipeline::setFragmentShader(std::string shader) {
 
 VkPipeline& VulkanGraphicsPipeline::getInternalGraphicsPipeline() {
     return graphicsPipeline;
+}
+
+void VulkanGraphicsPipeline::setVertexInputBindingDescriptions(std::vector<VkVertexInputBindingDescription> desc) {
+    vertexInputBindingDescriptions = desc;
+}
+
+void VulkanGraphicsPipeline::setVertexInputAttributeDescriptions(std::vector<VkVertexInputAttributeDescription> desc) {
+    vertexInputAttributeDescriptions = desc;
 }

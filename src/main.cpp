@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <chrono>
+
 std::shared_ptr<VulkanEngine> setupEngine() {
   std::shared_ptr<VulkanEngine> engine = std::make_shared<VulkanEngine>();
 
@@ -24,6 +26,9 @@ std::shared_ptr<VulkanEngine> setupEngine() {
   std::shared_ptr<VulkanRenderSyncObjects> syncObjects = std::make_shared<VulkanRenderSyncObjects>();
 
   std::shared_ptr<VulkanGraphicsPipeline> graphicsPipeline = std::make_shared<VulkanGraphicsPipeline>();
+
+  graphicsPipeline->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
+  graphicsPipeline->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
 
   engine->setInstance(instance);
 
@@ -45,7 +50,38 @@ int main() {
 
   Renderer renderer = Renderer(engine);
 
+  std::vector<Vertex> triangle = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+  };
+
+  std::vector<Vertex> rectangle = {
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},   
+    
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},  
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}
+  };
+
+  bool isRenderingTriangle = true;
+
+  std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
   while(!engine->getDisplay()->shouldWindowClose()) {
+    if(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() > 2000) {
+      start = std::chrono::high_resolution_clock::now();
+      
+      if(isRenderingTriangle) {
+        isRenderingTriangle = false;
+        renderer.setVertexData(rectangle);
+      }else {
+        isRenderingTriangle = true;
+        renderer.setVertexData(triangle);
+      }
+    }
     renderer.recordCommandBuffers();
     renderer.renderFrame();
     glfwPollEvents();

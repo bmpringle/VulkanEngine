@@ -17,6 +17,10 @@ class VulkanGraphicsPipeline {
         void setFragmentShader(std::string shader);
 
         VkPipeline& getInternalGraphicsPipeline();
+
+        void setVertexInputBindingDescriptions(std::vector<VkVertexInputBindingDescription> desc);
+
+        void setVertexInputAttributeDescriptions(std::vector<VkVertexInputAttributeDescription> desc);
     
     private:
         std::vector<char> readFile(const std::string& filename);
@@ -27,6 +31,10 @@ class VulkanGraphicsPipeline {
 
         std::string vertexShader = "shaders/output/vert.spv";
         std::string fragmentShader = "shaders/output/frag.spv";
+
+        std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions = std::vector<VkVertexInputBindingDescription>();
+
+        std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions = std::vector<VkVertexInputAttributeDescription>();
 
         VkPipelineShaderStageCreateInfo createInfoVertexStage;
 
