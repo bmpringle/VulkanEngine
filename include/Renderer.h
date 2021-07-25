@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Vertex.h"
+#include "UniformBuffer.h"
 
 class Renderer {
     public:
@@ -20,11 +21,21 @@ class Renderer {
         void setVertexData(std::vector<Vertex>& newVertices);
 
     private:
+        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+
         void createVertexBuffer();
 
         void updateVertexBuffer();
 
         void destroyVertexBuffer();
+
+        void destroyUniformBuffers();
+
+        void createUniformBuffers();
+
+        void updateDescriptorSets();
+
+        void updateUniformBuffer(uint32_t imageIndex);
 
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
@@ -40,6 +51,9 @@ class Renderer {
         uint32_t sizeOfCurrentBuffer = 0;
 
         void* mappingToVertexBuffer;
+
+        std::vector<VkBuffer> uniformBuffers;
+        std::vector<VkDeviceMemory> uniformBuffersMemory;
 };
 
 #endif

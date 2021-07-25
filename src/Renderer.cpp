@@ -3,11 +3,20 @@
 #include <cstdlib>
 #include <cstring>
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+
 Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
     updateVertexBuffer();
+    createUniformBuffers();
 }
 
 Renderer::~Renderer() {
+    vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
+    destroyUniformBuffers();
     destroyVertexBuffer();
 }
 
@@ -58,6 +67,8 @@ void Renderer::recordCommandBuffers() {
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline()->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline()->getDescriptorSets()[i], 0, nullptr);
+
         if(sizeOfCurrentBuffer > 0) {
             VkBuffer vertexBuffers[] = {vertexBuffer};
             VkDeviceSize offsets[] = {0};
@@ -106,9 +117,12 @@ void Renderer::renderFrame() {
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
+    updateUniformBuffer(imageIndex);
+
     if(result == VK_ERROR_OUT_OF_DATE_KHR) {
         vkDeviceWaitIdle(device);
         vkEngine->recreateSwapchain();
+        createUniformBuffers();
         return;
     }else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
@@ -160,6 +174,7 @@ void Renderer::renderFrame() {
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vkDisplay->getFramebufferResized()) {
         vkDisplay->setFramebufferResized(false);
         vkEngine->recreateSwapchain();
+        createUniformBuffers();
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
     }
@@ -181,37 +196,14 @@ uint32_t Renderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pro
 }
 
 void Renderer::createVertexBuffer() {
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(Vertex) * vertices.size();
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    
+    createBuffer(sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer, vertexBufferMemory);
+    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory, 0, sizeof(Vertex) * vertices.size(), 0, &mappingToVertexBuffer);
 
-    if (vkCreateBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create vertex buffer!");
-    }
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBuffer, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    if(vkAllocateMemory(vkEngine->getDevice()->getInternalLogicalDevice(), &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
-    }
-
-    vkBindBufferMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBuffer, vertexBufferMemory, 0);
-
-    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory, 0, bufferInfo.size, 0, &mappingToVertexBuffer);
-
-    memcpy(mappingToVertexBuffer, vertices.data(), (size_t) bufferInfo.size);
+    memcpy(mappingToVertexBuffer, vertices.data(), (size_t) sizeof(Vertex) * vertices.size());
 }
 
 void Renderer::destroyVertexBuffer() {
-    vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     vkUnmapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory);
     vkDestroyBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBuffer, nullptr);
     vkFreeMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory, nullptr);
@@ -229,6 +221,7 @@ void Renderer::updateVertexBuffer() {
     }
 
     if(sizeOfCurrentBuffer != vertices.size()) {
+        vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
         destroyVertexBuffer();
         createVertexBuffer();
     }else {
@@ -241,4 +234,97 @@ void Renderer::updateVertexBuffer() {
 void Renderer::setVertexData(std::vector<Vertex>& newVertices) {
     vertices = newVertices;
     updateVertexBuffer();
+}
+
+void Renderer::destroyUniformBuffers() {
+    for (size_t i = 0; i < uniformBuffers.size(); i++) {
+        vkDestroyBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffers[i], nullptr);
+        vkFreeMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[i], nullptr);
+    }
+}
+
+void Renderer::createUniformBuffers() {
+    if(uniformBuffers.size() > 0) {
+        destroyUniformBuffers();
+    }
+
+    VkDeviceSize bufferSize = sizeof(UniformBuffer);
+
+    uniformBuffers.resize(vkEngine->getSwapchain()->getInternalImages().size());
+    uniformBuffersMemory.resize(vkEngine->getSwapchain()->getInternalImages().size());
+
+    for (size_t i = 0; i < uniformBuffers.size(); i++) {
+        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+    }
+
+    updateDescriptorSets();
+}
+
+void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create vertex buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(vkEngine->getDevice()->getInternalLogicalDevice(), buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if(vkAllocateMemory(vkEngine->getDevice()->getInternalLogicalDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    }
+
+    vkBindBufferMemory(vkEngine->getDevice()->getInternalLogicalDevice(), buffer, bufferMemory, 0);
+}
+
+void Renderer::updateUniformBuffer(uint32_t imageIndex) {
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    UniformBuffer ubo{};
+    ubo.modelMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.viewMatrix = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.projectionMatrix = glm::perspective(glm::radians(45.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, 0.1f, 10.0f);
+
+    ubo.projectionMatrix[1][1] *= -1; // opengl and vulkans y coordinates are flipped, so invert the matrix like this to fix it.
+
+    void* data;
+    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[imageIndex], 0, sizeof(ubo), 0, &data);
+    
+    memcpy(data, &ubo, sizeof(ubo));
+    
+    vkUnmapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[imageIndex]);
+}
+
+void Renderer::updateDescriptorSets() {
+    for (size_t i = 0; i < vkEngine->getSwapchain()->getInternalImages().size(); i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UniformBuffer);
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = vkEngine->getGraphicsPipeline()->getDescriptorSets()[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), 1, &descriptorWrite, 0, nullptr);
+    }
 }

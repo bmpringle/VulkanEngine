@@ -29,6 +29,9 @@ std::shared_ptr<VulkanEngine> setupEngine() {
 
   graphicsPipeline->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
   graphicsPipeline->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
+  graphicsPipeline->setVertexShader("shaders/output/3dvert.spv");
+  graphicsPipeline->setFragmentShader("shaders/output/3dfrag.spv");
+  graphicsPipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
 
   engine->setInstance(instance);
 
@@ -73,7 +76,7 @@ int main() {
   while(!engine->getDisplay()->shouldWindowClose()) {
     if(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() > 2000) {
       start = std::chrono::high_resolution_clock::now();
-      
+
       if(isRenderingTriangle) {
         isRenderingTriangle = false;
         renderer.setVertexData(rectangle);

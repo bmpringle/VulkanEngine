@@ -1,1 +1,2 @@
-python compileShaderPair.py -v shaders/src/shader.vert -f shaders/src/shader.frag -vo shaders/output/vert.spv -fo shaders/output/frag.spv
+python compileShaderPair.py -v shaders/src/2dshader.vert -f shaders/src/2dshader.frag -vo shaders/output/2dvert.spv -fo shaders/output/2dfrag.spv
+python compileShaderPair.py -v shaders/src/3dshader.vert -f shaders/src/3dshader.frag -vo shaders/output/3dvert.spv -fo shaders/output/3dfrag.spv

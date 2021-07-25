@@ -33,7 +33,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f; 
     rasterizer.depthBiasClamp = 0.0f;
@@ -71,13 +71,18 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
 
     pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0; 
-    pipelineLayoutInfo.pSetLayouts = nullptr; 
     pipelineLayoutInfo.pushConstantRangeCount = 0; 
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
     pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+    poolSize = {};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
 }
 
 void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain) {
@@ -112,6 +117,20 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     vertexInputInfo.vertexAttributeDescriptionCount = vertexInputAttributeDescriptions.size();
     vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions.data();
 
+    if(isDescriptorLayoutSet) {
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = layoutBindings.size();
+        layoutInfo.pBindings = layoutBindings.data();
+
+        if (vkCreateDescriptorSetLayout(device->getInternalLogicalDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor set layout!");
+        }
+
+        pipelineLayoutInfo.setLayoutCount = 1; 
+        pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; 
+    }
+
     if(vkCreatePipelineLayout(device->getInternalLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
@@ -138,11 +157,36 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
+    poolSize.descriptorCount = static_cast<uint32_t>(swapchain->getInternalImages().size());
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(swapchain->getInternalImages().size());
+
+    if (vkCreateDescriptorPool(device->getInternalLogicalDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+
+    std::vector<VkDescriptorSetLayout> layouts(swapchain->getInternalImages().size(), descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchain->getInternalImages().size());
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(swapchain->getInternalImages().size());
+    if (vkAllocateDescriptorSets(device->getInternalLogicalDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
     vkDestroyShaderModule(device->getInternalLogicalDevice(), vertShaderModule, nullptr);
     vkDestroyShaderModule(device->getInternalLogicalDevice(), fragShaderModule, nullptr);
 }
 
 void VulkanGraphicsPipeline::destroyGraphicsPipeline(std::shared_ptr<VulkanDevice> device) {
+    vkDestroyDescriptorPool(device->getInternalLogicalDevice(), descriptorPool, nullptr);
+
+    if(isDescriptorLayoutSet) {
+        vkDestroyDescriptorSetLayout(device->getInternalLogicalDevice(), descriptorSetLayout, nullptr);
+    }
     vkDestroyPipeline(device->getInternalLogicalDevice(), graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(device->getInternalLogicalDevice(), pipelineLayout, nullptr);
 }
@@ -198,4 +242,17 @@ void VulkanGraphicsPipeline::setVertexInputBindingDescriptions(std::vector<VkVer
 
 void VulkanGraphicsPipeline::setVertexInputAttributeDescriptions(std::vector<VkVertexInputAttributeDescription> desc) {
     vertexInputAttributeDescriptions = desc;
+}
+
+void VulkanGraphicsPipeline::addDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding binding) {
+    layoutBindings.push_back(binding);
+    isDescriptorLayoutSet = true;
+}
+
+std::vector<VkDescriptorSet>& VulkanGraphicsPipeline::getDescriptorSets() {
+    return descriptorSets;
+}
+
+VkPipelineLayout& VulkanGraphicsPipeline::getPipelineLayout() {
+    return pipelineLayout;
 }

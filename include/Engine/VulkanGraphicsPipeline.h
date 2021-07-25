@@ -18,9 +18,15 @@ class VulkanGraphicsPipeline {
 
         VkPipeline& getInternalGraphicsPipeline();
 
+        std::vector<VkDescriptorSet>& getDescriptorSets();
+
+        VkPipelineLayout& getPipelineLayout();
+
         void setVertexInputBindingDescriptions(std::vector<VkVertexInputBindingDescription> desc);
 
         void setVertexInputAttributeDescriptions(std::vector<VkVertexInputAttributeDescription> desc);
+
+        void addDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding binding);
     
     private:
         std::vector<char> readFile(const std::string& filename);
@@ -63,6 +69,20 @@ class VulkanGraphicsPipeline {
         VkRect2D scissor;
 
         VkPipelineLayout pipelineLayout;
+
+        VkDescriptorSetLayout descriptorSetLayout;
+
+        VkDescriptorPool descriptorPool;
+
+        std::vector<VkDescriptorSet> descriptorSets;
+
+        bool isDescriptorLayoutSet = false;
+
+        std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+
+        VkDescriptorPoolSize poolSize;
+
+        VkDescriptorPoolCreateInfo poolInfo;
 };
 
 #endif
