@@ -20,6 +20,12 @@ class Renderer {
 
         void setVertexData(std::vector<Vertex>& newVertices);
 
+        float& getXRotation();
+
+        float& getYRotation();
+
+        glm::vec3& getCameraPosition();
+
     private:
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
@@ -54,6 +60,12 @@ class Renderer {
 
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VkDeviceMemory> uniformBuffersMemory;
+
+        //in degrees
+        float xRotation = 0;
+        float yRotation = 0;
+
+        glm::vec3 camera = glm::vec3(2, 0, -3);
 };
 
 #endif

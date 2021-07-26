@@ -46,12 +46,16 @@ class VulkanSwapchain {
         void createFramebuffers(std::shared_ptr<VulkanDevice> device);
 
         void createCommandBuffers(std::shared_ptr<VulkanDevice> device);
+
+        void createDepthResources(std::shared_ptr<VulkanDevice> device);
         
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, std::shared_ptr<VulkanDisplay> vkDisplay);
 
         VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+
+        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, std::shared_ptr<VulkanDevice> device);
 
         VkSwapchainKHR swapchain;
 
@@ -66,6 +70,12 @@ class VulkanSwapchain {
         std::vector<VkFramebuffer> swapChainFramebuffers;
 
         std::vector<VkCommandBuffer> commandBuffers;
+
+        VkImage depthImage;
+
+        VkDeviceMemory depthImageMemory;
+
+        VkImageView depthImageView;
 
         VkRenderPass renderPass;
         

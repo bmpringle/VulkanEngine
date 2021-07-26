@@ -26,6 +26,8 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 void VulkanDisplay::create(std::shared_ptr<VulkanInstance> instance) {
     window = glfwCreateWindow(width, height, windowName.data(), monitor, nullptr);
 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 

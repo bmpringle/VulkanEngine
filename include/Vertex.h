@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 struct Vertex {
-    glm::vec2 position;
+    glm::vec3 position;
     glm::vec3 color;
 
     static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
@@ -25,7 +25,7 @@ struct Vertex {
 
         attrib1.binding = 0;
         attrib1.location = 0;
-        attrib1.format = VK_FORMAT_R32G32_SFLOAT; //2 floats vector
+        attrib1.format = VK_FORMAT_R32G32B32_SFLOAT; //3 floats vector
         attrib1.offset = offsetof(Vertex, position);
 
         VkVertexInputAttributeDescription attrib2{};

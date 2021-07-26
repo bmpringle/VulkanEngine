@@ -4,10 +4,13 @@
 #include <cstring>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <chrono>
+
+#include <math.h>
 
 Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
     updateVertexBuffer();
@@ -52,16 +55,11 @@ void Renderer::recordCommandBuffers() {
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
+        
+        std::vector<VkClearValue> clearValues = {{{{0.0f, 0.0f, 0.0f, 1.0f}}}, {{{1.0f, 0}}}};
 
-        VkClearValue clearColor = {
-            {
-                {
-                    0.0f, 0.0f, 0.0f, 1.0f
-                }
-            }
-        };
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -286,6 +284,75 @@ void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemor
     vkBindBufferMemory(vkEngine->getDevice()->getInternalLogicalDevice(), buffer, bufferMemory, 0);
 }
 
+glm::mat3x3 calculateXRotationMatrix(double xRotation) {
+    glm::mat3x3 rotationMatrix = glm::mat3x3();
+
+    double xRads = xRotation * M_PI / 180;
+
+    rotationMatrix[0][0] = cos(xRads);
+    rotationMatrix[0][1] = 0;
+    rotationMatrix[0][2] = -sin(xRads);
+
+    rotationMatrix[1][0] = 0;
+    rotationMatrix[1][1] = 1;
+    rotationMatrix[1][2] = 0;
+
+    rotationMatrix[2][0] = sin(xRads);
+    rotationMatrix[2][1] = 0;
+    rotationMatrix[2][2] = cos(xRads);
+
+    return rotationMatrix;
+}
+
+glm::mat3x3 calculateYRotationMatrix(double yRotation) {
+
+    glm::mat3x3 rotationMatrix = glm::mat3x3(1.0f);
+
+    double yRads = yRotation * M_PI / 180;
+
+    rotationMatrix[0][0] = 1;
+    rotationMatrix[0][1] = 0;
+    rotationMatrix[0][2] = 0;
+
+    rotationMatrix[1][0] = 0;
+    rotationMatrix[1][1] = cos(yRads);
+    rotationMatrix[1][2] = sin(yRads);
+
+    rotationMatrix[2][0] = 0;
+    rotationMatrix[2][1] = -sin(yRads);
+    rotationMatrix[2][2] = cos(yRads);
+
+    return rotationMatrix;
+}
+
+glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation) {
+    glm::mat3x3 rotationMatrixX = calculateXRotationMatrix(-xRotation);
+    glm::mat3x3 rotationMatrixY = calculateYRotationMatrix(-yRotation);
+
+    glm::mat3x3 rotationMatrix = rotationMatrixY * rotationMatrixX;
+
+    GLfloat rotationMatrixFloat [16] = {0};
+
+    for(int i = 0; i < 3; ++i) {
+        rotationMatrixFloat[4 * i] = rotationMatrix[i][0];
+        rotationMatrixFloat[4 * i + 1] = rotationMatrix[i][1];
+        rotationMatrixFloat[4 * i + 2] = rotationMatrix[i][2];
+        rotationMatrixFloat[4 * i + 3] = 0;
+    }
+    rotationMatrixFloat[4 * 3] = 0;
+    rotationMatrixFloat[4 * 3 + 1] = 0;
+    rotationMatrixFloat[4 * 3 + 2] = 0;
+    rotationMatrixFloat[4 * 3 + 3] = 1;
+
+    glm::mat4x4 rotationMatrix4x4 = glm::mat4x4(rotationMatrix);
+
+    glm::mat4x4 viewMatrix = glm::mat4x4(1.0f);
+    viewMatrix[3] = glm::vec4(glm::vec3(-camera.x, -camera.y, -camera.z), 1);
+    viewMatrix = rotationMatrix4x4 * viewMatrix;
+
+    return viewMatrix;
+}
+
 void Renderer::updateUniformBuffer(uint32_t imageIndex) {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -293,13 +360,11 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex) {
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBuffer ubo{};
-    ubo.modelMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.modelMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    ubo.viewMatrix = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.viewMatrix = createViewMatrix(camera, xRotation, yRotation);
 
-    ubo.projectionMatrix = glm::perspective(glm::radians(45.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, 0.1f, 10.0f);
-
-    ubo.projectionMatrix[1][1] *= -1; // opengl and vulkans y coordinates are flipped, so invert the matrix like this to fix it.
+    ubo.projectionMatrix = glm::perspective(glm::radians(90.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, 0.1f, 10.0f);
 
     void* data;
     vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[imageIndex], 0, sizeof(ubo), 0, &data);
@@ -327,4 +392,16 @@ void Renderer::updateDescriptorSets() {
 
         vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), 1, &descriptorWrite, 0, nullptr);
     }
+}
+
+float& Renderer::getXRotation() {
+    return xRotation;
+}
+
+float& Renderer::getYRotation() {
+    return yRotation;
+}
+
+glm::vec3& Renderer::getCameraPosition() {
+    return camera;
 }

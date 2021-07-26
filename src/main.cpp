@@ -8,6 +8,8 @@
 
 #include <chrono>
 
+#include <glm/gtx/string_cast.hpp>
+
 std::shared_ptr<VulkanEngine> setupEngine() {
   std::shared_ptr<VulkanEngine> engine = std::make_shared<VulkanEngine>();
 
@@ -48,45 +50,147 @@ std::shared_ptr<VulkanEngine> setupEngine() {
   return engine;
 }
 
+//-1 means it hasn't been set yet
+double previousMouseX = -1;
+double previousMouseY = -1;
+
+float sensitivity = 0.1;
+
+float xDelta = 0;
+float yDelta = 0;
+
+void glfwMouseCallback(GLFWwindow* window, double mouseX, double mouseY) {
+  if(previousMouseX != -1) {
+    xDelta = (previousMouseX - mouseX) * sensitivity;
+  }
+  previousMouseX = mouseX;
+
+  if(previousMouseY != -1) {
+    yDelta = (previousMouseY - mouseY) * sensitivity;
+  }
+  previousMouseY = mouseY;
+}
+
+bool w_pressed = false;
+bool a_pressed = false;
+bool s_pressed = false;
+bool d_pressed = false;
+
+void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+  if(action == GLFW_PRESS) {
+    if(key == GLFW_KEY_W) {
+      w_pressed = true;
+    }else if(key == GLFW_KEY_A) {
+      a_pressed = true;
+    }else if(key == GLFW_KEY_S) {
+      s_pressed = true;
+    }else if(key == GLFW_KEY_D) {
+      d_pressed = true;
+    }
+  }else if(action == GLFW_RELEASE) {
+    if(key == GLFW_KEY_W) {
+      w_pressed = false;
+    }else if(key == GLFW_KEY_A) {
+      a_pressed = false;
+    }else if(key == GLFW_KEY_S) {
+      s_pressed = false;
+    }else if(key == GLFW_KEY_D) {
+      d_pressed = false;
+    }
+  }
+}
+
 int main() {
   std::shared_ptr<VulkanEngine> engine = setupEngine();
+
+  //setup callbacks
+  glfwSetCursorPosCallback(engine->getDisplay()->getInternalWindow(), glfwMouseCallback);
+  glfwSetKeyCallback(engine->getDisplay()->getInternalWindow(), glfwKeyCallback);
 
   Renderer renderer = Renderer(engine);
 
   std::vector<Vertex> triangle = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
   };
 
   std::vector<Vertex> rectangle = {
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},   
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},   
     
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},  
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}, 
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},  
   };
 
-  bool isRenderingTriangle = true;
 
-  std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+  std::vector<Vertex> cube = {
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, //front
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},   
+
+    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}, //back
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},  
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}, //left
+    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+
+    {{1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}}, //right
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}},
+    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}},
+
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}},
+    {{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}},
+    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}},
+    
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}}, //top
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}},
+
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}},
+    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}},
+
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}}, //bottom
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}},
+    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}},
+
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}},
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}},
+
+
+  };
+
+  renderer.setVertexData(cube);
 
   while(!engine->getDisplay()->shouldWindowClose()) {
-    if(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() > 2000) {
-      start = std::chrono::high_resolution_clock::now();
+    renderer.getXRotation() += xDelta;
+    renderer.getYRotation() -= yDelta;
 
-      if(isRenderingTriangle) {
-        isRenderingTriangle = false;
-        renderer.setVertexData(rectangle);
-      }else {
-        isRenderingTriangle = true;
-        renderer.setVertexData(triangle);
-      }
-    }
+    xDelta = 0;
+    yDelta = 0;
+
     renderer.recordCommandBuffers();
+
     renderer.renderFrame();
+
     glfwPollEvents();
   }
 
