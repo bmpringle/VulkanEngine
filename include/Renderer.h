@@ -65,7 +65,7 @@ class Renderer {
         float xRotation = 0;
         float yRotation = 0;
 
-        glm::vec3 camera = glm::vec3(2, 0, -3);
+        glm::vec3 camera = glm::vec3(0, 4, 0);
 };
 
 #endif

@@ -75,6 +75,8 @@ bool w_pressed = false;
 bool a_pressed = false;
 bool s_pressed = false;
 bool d_pressed = false;
+bool up_key_pressed = false;
+bool down_key_pressed = false;
 
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if(action == GLFW_PRESS) {
@@ -86,6 +88,10 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       s_pressed = true;
     }else if(key == GLFW_KEY_D) {
       d_pressed = true;
+    }else if(key == GLFW_KEY_UP) {
+      up_key_pressed = true;
+    }else if(key == GLFW_KEY_DOWN) {
+      down_key_pressed = true;
     }
   }else if(action == GLFW_RELEASE) {
     if(key == GLFW_KEY_W) {
@@ -96,6 +102,10 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       s_pressed = false;
     }else if(key == GLFW_KEY_D) {
       d_pressed = false;
+    }else if(key == GLFW_KEY_UP) {
+      up_key_pressed = false;
+    }else if(key == GLFW_KEY_DOWN) {
+      down_key_pressed = false;
     }
   }
 }
@@ -184,8 +194,38 @@ int main() {
     renderer.getXRotation() += xDelta;
     renderer.getYRotation() -= yDelta;
 
+    if(renderer.getYRotation() > 90) {
+      renderer.getYRotation() = 90;
+    }else if(renderer.getYRotation() < -90) {
+      renderer.getYRotation() = -90;
+    }
+
     xDelta = 0;
     yDelta = 0;
+
+    if(w_pressed) {
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(-0.01 * sin(glm::radians(renderer.getXRotation())), 0, 0.01 * cos(glm::radians(renderer.getXRotation())));
+    }
+
+    if(s_pressed) {
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0.01 * sin(glm::radians(renderer.getXRotation())), 0, -0.01 * cos(glm::radians(renderer.getXRotation())));
+    }
+
+    if(a_pressed) {
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(-0.01 * cos(glm::radians(renderer.getXRotation())), 0, -0.01 * sin(glm::radians(renderer.getXRotation())));
+    }
+
+    if(d_pressed) {
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0.01 * cos(glm::radians(renderer.getXRotation())), 0, 0.01 * sin(glm::radians(renderer.getXRotation())));
+    }
+
+    if(up_key_pressed) {
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0, 0.02, 0);
+    }
+
+    if(down_key_pressed) {
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0, -0.02, 0);
+    }
 
     renderer.recordCommandBuffers();
 

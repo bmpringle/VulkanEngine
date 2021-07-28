@@ -347,20 +347,26 @@ glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation)
     glm::mat4x4 rotationMatrix4x4 = glm::mat4x4(rotationMatrix);
 
     glm::mat4x4 viewMatrix = glm::mat4x4(1.0f);
-    viewMatrix[3] = glm::vec4(glm::vec3(-camera.x, -camera.y, -camera.z), 1);
+    viewMatrix[3] = glm::vec4(glm::vec3(-camera.x, camera.y, camera.z), 1);
     viewMatrix = rotationMatrix4x4 * viewMatrix;
 
     return viewMatrix;
 }
 
 void Renderer::updateUniformBuffer(uint32_t imageIndex) {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    bool rotatingBallGoBrrrr = false;
 
     UniformBuffer ubo{};
-    ubo.modelMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    if(rotatingBallGoBrrrr) {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        ubo.modelMatrix = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    }else {
+        ubo.modelMatrix = glm::mat4x4(1);
+    }
 
     ubo.viewMatrix = createViewMatrix(camera, xRotation, yRotation);
 
