@@ -55,6 +55,26 @@ class VulkanEngine {
         std::shared_ptr<VulkanRenderSyncObjects> getSyncObjects();
 
         void recreateSwapchain();
+
+        //helper functions
+        static void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory, std::shared_ptr<VulkanDevice>  device);
+        
+        static uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, std::shared_ptr<VulkanDevice>  device);
+
+        static void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, std::shared_ptr<VulkanDevice> device);
+
+        static VkCommandBuffer beginSingleTimeCommands(std::shared_ptr<VulkanDevice> device);
+
+        static void endSingleTimeCommands(VkCommandBuffer commandBuffer, std::shared_ptr<VulkanDevice> device);
+
+        static void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, std::shared_ptr<VulkanDevice> device);
+
+        static void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, std::shared_ptr<VulkanDevice> device);
+
+        static void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::shared_ptr<VulkanDevice> device);
+
+        static VkImageView createImageView(VkImage image, VkFormat format, std::shared_ptr<VulkanDevice> device);
+
     private:
 
         std::shared_ptr<VulkanInstance> vkInstance;

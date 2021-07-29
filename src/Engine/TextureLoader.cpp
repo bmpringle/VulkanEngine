@@ -2,6 +2,9 @@
 
 #include <stdexcept>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 std::tuple<int, int, int, stbi_uc*> TextureLoader::getTexturePixels(std::string pathToTexture, int PIXEL_FORMAT_ENUM) {
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(pathToTexture.data(), &texWidth, &texHeight, &texChannels, PIXEL_FORMAT_ENUM);

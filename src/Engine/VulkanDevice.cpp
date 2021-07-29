@@ -66,6 +66,7 @@ void VulkanDevice::createLogicalDevice(std::shared_ptr<VulkanInstance> instance)
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -132,7 +133,10 @@ bool VulkanDevice::canDeviceBeUsed(VkPhysicalDevice device, std::shared_ptr<Vulk
         validSwapChain = details.formats.size() != 0 && details.presentModes.size() != 0;
     }
 
-    return indices.isComplete() && extensionsSupported && validSwapChain;
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+    return indices.isComplete() && extensionsSupported && validSwapChain && supportedFeatures.samplerAnisotropy;
 }
 
 bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {

@@ -34,6 +34,9 @@ std::shared_ptr<VulkanEngine> setupEngine() {
   graphicsPipeline->setVertexShader("shaders/output/3dvert.spv");
   graphicsPipeline->setFragmentShader("shaders/output/3dfrag.spv");
   graphicsPipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+  graphicsPipeline->addTextureToLoad("assets/test.jpg");
+  graphicsPipeline->addTextureToLoad("assets/cube-cube.png");
+  graphicsPipeline->addTextureToLoad("assets/cube-cube-cube.png");
 
   engine->setInstance(instance);
 
@@ -137,55 +140,53 @@ int main() {
 
 
   std::vector<Vertex> cube = {
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, //front
-    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 0}}, //front
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 1}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 1}},
 
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},   
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 0}},
+    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 0}},
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 1}},   
 
-    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}, //back
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
-    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 1}}, //back
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 1}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 0}},
 
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},  
-    {{1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
-    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 1}},  
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 0}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}, //left
-    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-    {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 0}}, //left
+    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 1}},
+    {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 0}},
+    {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 1}},
+    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 1}},
 
-    {{1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}}, //right
-    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}},
-    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}},
+    {{1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 0}}, //right
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 1}},
+    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 0}},
 
-    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}},
-    {{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}},
-    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}},
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 1}},
+    {{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 1}},
+    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 0}},
     
-    {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}}, //top
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}},
-    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}},
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0, 0}}, //top
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {0, 1}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1, 0}},
 
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}},
-    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}},
-    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}},
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {0, 1}},
+    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {1, 1}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}}, //bottom
-    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}},
-    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}},
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {0, 0}}, //bottom
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1}},
+    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {1, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}},
-    {{0.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}},
-    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}},
-
-
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {0, 0}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {0, 1}},
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1}},
   };
 
   renderer.setVertexData(cube);
@@ -204,19 +205,19 @@ int main() {
     yDelta = 0;
 
     if(w_pressed) {
-      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(-0.01 * sin(glm::radians(renderer.getXRotation())), 0, 0.01 * cos(glm::radians(renderer.getXRotation())));
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0.01 * sin(glm::radians(renderer.getXRotation())), 0, 0.01 * cos(glm::radians(renderer.getXRotation())));
     }
 
     if(s_pressed) {
-      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0.01 * sin(glm::radians(renderer.getXRotation())), 0, -0.01 * cos(glm::radians(renderer.getXRotation())));
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(-0.01 * sin(glm::radians(renderer.getXRotation())), 0, -0.01 * cos(glm::radians(renderer.getXRotation())));
     }
 
     if(a_pressed) {
-      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(-0.01 * cos(glm::radians(renderer.getXRotation())), 0, -0.01 * sin(glm::radians(renderer.getXRotation())));
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0.01 * cos(glm::radians(renderer.getXRotation())), 0, -0.01 * sin(glm::radians(renderer.getXRotation())));
     }
 
     if(d_pressed) {
-      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0.01 * cos(glm::radians(renderer.getXRotation())), 0, 0.01 * sin(glm::radians(renderer.getXRotation())));
+      renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(-0.01 * cos(glm::radians(renderer.getXRotation())), 0, 0.01 * sin(glm::radians(renderer.getXRotation())));
     }
 
     if(up_key_pressed) {
@@ -232,6 +233,8 @@ int main() {
     renderer.renderFrame();
 
     glfwPollEvents();
+
+    std::cout << glm::to_string(renderer.getCameraPosition()) << std::endl;
   }
 
   return 0;

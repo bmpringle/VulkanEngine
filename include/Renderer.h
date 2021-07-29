@@ -27,8 +27,6 @@ class Renderer {
         glm::vec3& getCameraPosition();
 
     private:
-        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-
         void createVertexBuffer();
 
         void updateVertexBuffer();
@@ -42,8 +40,6 @@ class Renderer {
         void updateDescriptorSets();
 
         void updateUniformBuffer(uint32_t imageIndex);
-
-        uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
         std::shared_ptr<VulkanEngine> vkEngine;
 
