@@ -14,6 +14,7 @@
 
 Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
     updateVertexBuffer();
+    updateInstanceBuffer();
     createUniformBuffers();
 }
 
@@ -68,11 +69,11 @@ void Renderer::recordCommandBuffers() {
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline()->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline()->getDescriptorSets()[i], 0, nullptr);
 
         if(sizeOfCurrentBuffer > 0) {
-            VkBuffer vertexBuffers[] = {vertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+            VkBuffer vertexBuffers[] = {vertexBuffer, instanceBuffer};
+            VkDeviceSize offsets[] = {0, 0};
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 2, vertexBuffers, offsets);
 
-            vkCmdDraw(commandBuffers[i], vertices.size(), 1, 0, 0);
+            vkCmdDraw(commandBuffers[i], vertices.size(), instanceData.size(), 0, 0);
         }else {
             //nothing to draw
         }
@@ -338,7 +339,7 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex) {
 
     ubo.viewMatrix = glm::lookAt(camera, camera + cameraFront, glm::vec3(0.0f, 1.0f,  0.0f));*/
 
-    ubo.projectionMatrix = glm::perspective(glm::radians(90.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, 0.1f, 10.0f);
+    ubo.projectionMatrix = glm::perspective(glm::radians(90.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, 0.01f, 100.0f);
 
     void* data;
     vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[imageIndex], 0, sizeof(ubo), 0, &data);
@@ -392,4 +393,44 @@ float& Renderer::getYRotation() {
 
 glm::vec3& Renderer::getCameraPosition() {
     return camera;
+}
+
+void Renderer::createInstanceBuffer() {
+    VulkanEngine::createBuffer(sizeof(InstanceData) * instanceData.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, instanceBuffer, instanceBufferMemory, vkEngine->getDevice());
+    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBufferMemory, 0, sizeof(InstanceData) * instanceData.size(), 0, &mappingToInstanceBuffer);
+
+    memcpy(mappingToInstanceBuffer, instanceData.data(), (size_t) sizeof(InstanceData) * instanceData.size());
+}
+
+void Renderer::updateInstanceBuffer() {
+    if(sizeOfCurrentInstanceBuffer == 0) {
+        if(instanceData.size() > 0) {
+            createInstanceBuffer(); //buffer hasn't been created yet at all
+            sizeOfCurrentInstanceBuffer = instanceData.size();
+            return;
+        }else {
+            return; //can't allocate empty buffer. trust me, i tried
+        }
+    }
+
+    if(sizeOfCurrentInstanceBuffer != instanceData.size()) {
+        vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
+        destroyInstanceBuffer();
+        createInstanceBuffer();
+    }else {
+        memcpy(mappingToInstanceBuffer, instanceData.data(), (size_t) sizeof(InstanceData) * instanceData.size());
+    }
+
+    sizeOfCurrentInstanceBuffer = instanceData.size();
+}
+
+void Renderer::destroyInstanceBuffer() {
+    vkUnmapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBufferMemory);
+    vkDestroyBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBuffer, nullptr);
+    vkFreeMemory(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBufferMemory, nullptr);
+}
+
+void Renderer::setInstanceData(std::vector<InstanceData>& newInstanceVertices) {
+    instanceData = newInstanceVertices;
+    updateInstanceBuffer();
 }

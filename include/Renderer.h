@@ -20,6 +20,8 @@ class Renderer {
 
         void setVertexData(std::vector<Vertex>& newVertices);
 
+        void setInstanceData(std::vector<InstanceData>& newInstanceVertices);
+
         float& getXRotation();
 
         float& getYRotation();
@@ -33,6 +35,12 @@ class Renderer {
 
         void destroyVertexBuffer();
 
+        void createInstanceBuffer();
+
+        void updateInstanceBuffer();
+
+        void destroyInstanceBuffer();
+
         void destroyUniformBuffers();
 
         void createUniformBuffers();
@@ -45,14 +53,22 @@ class Renderer {
 
         std::vector<Vertex> vertices;
 
+        std::vector<InstanceData> instanceData;
+
         size_t currentFrame = 0;
 
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
 
+        VkBuffer instanceBuffer;
+        VkDeviceMemory instanceBufferMemory;
+
         uint32_t sizeOfCurrentBuffer = 0;
+        uint32_t sizeOfCurrentInstanceBuffer = 0;
 
         void* mappingToVertexBuffer;
+
+        void* mappingToInstanceBuffer;
 
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VkDeviceMemory> uniformBuffersMemory;

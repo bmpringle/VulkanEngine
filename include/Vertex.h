@@ -7,6 +7,10 @@
 
 #include <glm/glm.hpp>
 
+struct InstanceData {
+    glm::vec3 pos;
+};
+
 struct Vertex {
     glm::vec3 position;
     glm::vec3 color;
@@ -18,7 +22,12 @@ struct Vertex {
         desc.stride = sizeof(Vertex);
         desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-        return {desc};
+        VkVertexInputBindingDescription desc1{};
+        desc1.binding = 1;
+        desc1.stride = sizeof(InstanceData);
+        desc1.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+        return {desc, desc1};
     }
 
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
@@ -40,10 +49,17 @@ struct Vertex {
 
         attrib3.binding = 0;
         attrib3.location = 2;
-        attrib3.format = VK_FORMAT_R32G32_SFLOAT;
+        attrib3.format = VK_FORMAT_R32G32_SFLOAT; //2 floats vector
         attrib3.offset = offsetof(Vertex, texCoord);
 
-        return {attrib1, attrib2, attrib3};
+        VkVertexInputAttributeDescription attrib4{};
+
+        attrib4.binding = 1;
+        attrib4.location = 3;
+        attrib4.format = VK_FORMAT_R32G32B32_SFLOAT; //3 floats vector
+        attrib4.offset = offsetof(InstanceData, pos);
+
+        return {attrib1, attrib2, attrib3, attrib4};
     }
 };
 

@@ -31,8 +31,8 @@ std::shared_ptr<VulkanEngine> setupEngine() {
 
   graphicsPipeline->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
   graphicsPipeline->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
-  graphicsPipeline->setVertexShader("shaders/output/3dvert.spv");
-  graphicsPipeline->setFragmentShader("shaders/output/3dfrag.spv");
+  graphicsPipeline->setVertexShader("shaders/output/3dvert_instanced.spv");
+  graphicsPipeline->setFragmentShader("shaders/output/3dfrag_instanced.spv");
   graphicsPipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
   graphicsPipeline->addTextureToLoad("assets/test.jpg");
   graphicsPipeline->addTextureToLoad("assets/cube-cube.png");
@@ -189,7 +189,20 @@ int main() {
     {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1}},
   };
 
+  std::vector<InstanceData> instanceDataCube {
+    
+  };
+
+  for(int x = 0; x < 150; ++x) {
+    for(int y = 0; y < 150; ++y) {
+      for(int z = 0; z < 150; ++z) {
+        instanceDataCube.push_back(InstanceData({{x, y, z}}));
+      }
+    }
+  }
+
   renderer.setVertexData(cube);
+  renderer.setInstanceData(instanceDataCube);
 
   while(!engine->getDisplay()->shouldWindowClose()) {
     renderer.getXRotation() += xDelta;
@@ -233,8 +246,6 @@ int main() {
     renderer.renderFrame();
 
     glfwPollEvents();
-
-    std::cout << glm::to_string(renderer.getCameraPosition()) << std::endl;
   }
 
   return 0;
