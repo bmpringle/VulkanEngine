@@ -13,15 +13,16 @@
 #include <math.h>
 
 Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
-    updateVertexBuffer();
-    updateInstanceBuffer();
+    vertexBuffer.setVertexData(vkEngine->getDevice(), {});
+    instanceBuffer.setVertexData(vkEngine->getDevice(), {});
     createUniformBuffers();
 }
 
 Renderer::~Renderer() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     destroyUniformBuffers();
-    destroyVertexBuffer();
+    vertexBuffer.destroy(vkEngine->getDevice());
+    instanceBuffer.destroy(vkEngine->getDevice());
 }
 
 void Renderer::recordCommandBuffers() {
@@ -68,12 +69,12 @@ void Renderer::recordCommandBuffers() {
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline()->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline()->getDescriptorSets()[i], 0, nullptr);
 
-        if(sizeOfCurrentBuffer > 0) {
-            VkBuffer vertexBuffers[] = {vertexBuffer, instanceBuffer};
+        if(vertexBuffer.getBufferSize() > 0) {
+            VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer(), instanceBuffer.getVertexBuffer()};
             VkDeviceSize offsets[] = {0, 0};
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 2, vertexBuffers, offsets);
 
-            vkCmdDraw(commandBuffers[i], vertices.size(), instanceData.size(), 0, 0);
+            vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
         }else {
             //nothing to draw
         }
@@ -181,44 +182,8 @@ void Renderer::renderFrame() {
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::createVertexBuffer() {
-    VulkanEngine::createBuffer(sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer, vertexBufferMemory, vkEngine->getDevice());
-    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory, 0, sizeof(Vertex) * vertices.size(), 0, &mappingToVertexBuffer);
-
-    memcpy(mappingToVertexBuffer, vertices.data(), (size_t) sizeof(Vertex) * vertices.size());
-}
-
-void Renderer::destroyVertexBuffer() {
-    vkUnmapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory);
-    vkDestroyBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBuffer, nullptr);
-    vkFreeMemory(vkEngine->getDevice()->getInternalLogicalDevice(), vertexBufferMemory, nullptr);
-}
-
-void Renderer::updateVertexBuffer() {
-    if(sizeOfCurrentBuffer == 0) {
-        if(vertices.size() > 0) {
-            createVertexBuffer(); //buffer hasn't been created yet at all
-            sizeOfCurrentBuffer = vertices.size();
-            return;
-        }else {
-            return; //can't allocate empty buffer. trust me, i tried
-        }
-    }
-
-    if(sizeOfCurrentBuffer != vertices.size()) {
-        vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
-        destroyVertexBuffer();
-        createVertexBuffer();
-    }else {
-        memcpy(mappingToVertexBuffer, vertices.data(), (size_t) sizeof(Vertex) * vertices.size());
-    }
-
-    sizeOfCurrentBuffer = vertices.size();
-}
-
 void Renderer::setVertexData(std::vector<Vertex>& newVertices) {
-    vertices = newVertices;
-    updateVertexBuffer();
+    vertexBuffer.setVertexData(vkEngine->getDevice(), newVertices);
 }
 
 void Renderer::destroyUniformBuffers() {
@@ -395,42 +360,6 @@ glm::vec3& Renderer::getCameraPosition() {
     return camera;
 }
 
-void Renderer::createInstanceBuffer() {
-    VulkanEngine::createBuffer(sizeof(InstanceData) * instanceData.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, instanceBuffer, instanceBufferMemory, vkEngine->getDevice());
-    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBufferMemory, 0, sizeof(InstanceData) * instanceData.size(), 0, &mappingToInstanceBuffer);
-
-    memcpy(mappingToInstanceBuffer, instanceData.data(), (size_t) sizeof(InstanceData) * instanceData.size());
-}
-
-void Renderer::updateInstanceBuffer() {
-    if(sizeOfCurrentInstanceBuffer == 0) {
-        if(instanceData.size() > 0) {
-            createInstanceBuffer(); //buffer hasn't been created yet at all
-            sizeOfCurrentInstanceBuffer = instanceData.size();
-            return;
-        }else {
-            return; //can't allocate empty buffer. trust me, i tried
-        }
-    }
-
-    if(sizeOfCurrentInstanceBuffer != instanceData.size()) {
-        vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
-        destroyInstanceBuffer();
-        createInstanceBuffer();
-    }else {
-        memcpy(mappingToInstanceBuffer, instanceData.data(), (size_t) sizeof(InstanceData) * instanceData.size());
-    }
-
-    sizeOfCurrentInstanceBuffer = instanceData.size();
-}
-
-void Renderer::destroyInstanceBuffer() {
-    vkUnmapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBufferMemory);
-    vkDestroyBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBuffer, nullptr);
-    vkFreeMemory(vkEngine->getDevice()->getInternalLogicalDevice(), instanceBufferMemory, nullptr);
-}
-
 void Renderer::setInstanceData(std::vector<InstanceData>& newInstanceVertices) {
-    instanceData = newInstanceVertices;
-    updateInstanceBuffer();
+    instanceBuffer.setVertexData(vkEngine->getDevice(), newInstanceVertices);
 }
