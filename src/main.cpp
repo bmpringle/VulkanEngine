@@ -192,7 +192,9 @@ int main() {
     {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1, 0}},
   };
 
-  for(Vertex& v : cube) {
+  std::vector<Vertex> cube2 = cube;
+
+  for(Vertex& v : cube2) {
     v.texCoord[2] = 1;
   }
 
@@ -200,16 +202,21 @@ int main() {
     
   };
 
-  for(int x = 0; x < 150; ++x) {
-    for(int y = 0; y < 150; ++y) {
-      for(int z = 0; z < 150; ++z) {
+  std::vector<InstanceData> instanceDataCube2 {
+    
+  };
+
+  for(int x = 0; x < 60; ++x) {
+    for(int y = 0; y < 60; ++y) {
+      for(int z = 0; z < 60; ++z) {
         instanceDataCube.push_back(InstanceData({{x, y, z}}));
+        instanceDataCube2.push_back(InstanceData({{-x, y, z}}));
       }
     }
   }
 
-  renderer.setVertexData(cube);
-  renderer.setInstanceData(instanceDataCube);
+  renderer.setDataPair("block1", cube, instanceDataCube);
+  renderer.setDataPair("block2", cube2, instanceDataCube2);
 
   while(!engine->getDisplay()->shouldWindowClose()) {
     renderer.getXRotation() += xDelta;

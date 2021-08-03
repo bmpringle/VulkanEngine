@@ -20,9 +20,7 @@ class Renderer {
 
         void renderFrame();
 
-        void setVertexData(std::vector<Vertex>& newVertices);
-
-        void setInstanceData(std::vector<InstanceData>& newInstanceVertices);
+        void setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices);
 
         float& getXRotation();
 
@@ -43,9 +41,7 @@ class Renderer {
 
         size_t currentFrame = 0;
 
-        VulkanVertexBuffer<Vertex> vertexBuffer;
-
-        VulkanVertexBuffer<InstanceData> instanceBuffer;
+        std::map<std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> dataIDToVertexData;
 
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VkDeviceMemory> uniformBuffersMemory;

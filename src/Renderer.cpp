@@ -13,16 +13,17 @@
 #include <math.h>
 
 Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
-    vertexBuffer.setVertexData(vkEngine->getDevice(), {});
-    instanceBuffer.setVertexData(vkEngine->getDevice(), {});
     createUniformBuffers();
 }
 
 Renderer::~Renderer() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     destroyUniformBuffers();
-    vertexBuffer.destroy(vkEngine->getDevice());
-    instanceBuffer.destroy(vkEngine->getDevice());
+
+    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> vertexData : dataIDToVertexData) {
+        vertexData.second.first.destroy(vkEngine->getDevice());
+        vertexData.second.second.destroy(vkEngine->getDevice());
+    }
 }
 
 void Renderer::recordCommandBuffers() {
@@ -69,14 +70,19 @@ void Renderer::recordCommandBuffers() {
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline()->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline()->getDescriptorSets()[i], 0, nullptr);
 
-        if(vertexBuffer.getBufferSize() > 0) {
-            VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer(), instanceBuffer.getVertexBuffer()};
-            VkDeviceSize offsets[] = {0, 0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 2, vertexBuffers, offsets);
+        for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> vertexData : dataIDToVertexData) {
+            VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.first;
+            VulkanVertexBuffer<InstanceData>& instanceBuffer = vertexData.second.second;
 
-            vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
-        }else {
-            //nothing to draw
+            if(vertexBuffer.getBufferSize() > 0 && instanceBuffer.getBufferSize() > 0) {
+                VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer(), instanceBuffer.getVertexBuffer()};
+                VkDeviceSize offsets[] = {0, 0};
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 2, vertexBuffers, offsets);
+
+                vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
+            }else {
+                //nothing to draw
+            }
         }
 
         vkCmdEndRenderPass(commandBuffers[i]);
@@ -180,10 +186,6 @@ void Renderer::renderFrame() {
     }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-void Renderer::setVertexData(std::vector<Vertex>& newVertices) {
-    vertexBuffer.setVertexData(vkEngine->getDevice(), newVertices);
 }
 
 void Renderer::destroyUniformBuffers() {
@@ -360,6 +362,18 @@ glm::vec3& Renderer::getCameraPosition() {
     return camera;
 }
 
-void Renderer::setInstanceData(std::vector<InstanceData>& newInstanceVertices) {
+void Renderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices) {
+    if(dataIDToVertexData.count(id) > 0) {
+        dataIDToVertexData[id].first.setVertexData(vkEngine->getDevice(), newVertices);
+        dataIDToVertexData[id].second.setVertexData(vkEngine->getDevice(), newInstanceVertices);
+        return;
+    }
+    
+    VulkanVertexBuffer<Vertex> vertexBuffer = VulkanVertexBuffer<Vertex>();
+    vertexBuffer.setVertexData(vkEngine->getDevice(), newVertices);
+
+    VulkanVertexBuffer<InstanceData> instanceBuffer = VulkanVertexBuffer<InstanceData>();
     instanceBuffer.setVertexData(vkEngine->getDevice(), newInstanceVertices);
+
+    dataIDToVertexData[id] = std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>(vertexBuffer, instanceBuffer);
 }
