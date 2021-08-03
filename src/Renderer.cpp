@@ -358,8 +358,8 @@ void Renderer::updateDescriptorSets() {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = vkEngine->getGraphicsPipeline()->getImageView("assets/cube-cube-cube.png");
-        imageInfo.sampler = vkEngine->getGraphicsPipeline()->getTextureSampler();
+        imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView("game-textures");
+        imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 

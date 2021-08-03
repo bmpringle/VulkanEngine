@@ -204,28 +204,9 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
 
     vkDestroyShaderModule(device->getInternalLogicalDevice(), vertShaderModule, nullptr);
     vkDestroyShaderModule(device->getInternalLogicalDevice(), fragShaderModule, nullptr);
-
-    createTextureImages(device, swapchain);
-    createTextureImageViews(device, swapchain);
-    createTextureSampler(device, swapchain);
 }
 
 void VulkanGraphicsPipeline::destroyGraphicsPipeline(std::shared_ptr<VulkanDevice> device) {
-    
-    vkDestroySampler(device->getInternalLogicalDevice(), textureSampler, nullptr);
-
-    for(std::pair<const std::string, VkImageView> imageViewPair : texturePathToImageView) {
-        vkDestroyImageView(device->getInternalLogicalDevice(), imageViewPair.second, nullptr);
-    }
-
-    for(std::pair<const std::string, VkImage> imagePair : texturePathToImage) {
-        vkDestroyImage(device->getInternalLogicalDevice(), imagePair.second, nullptr);
-    }
-    
-    for(std::pair<const std::string, VkDeviceMemory> imagePair : texturePathToDeviceMemory) {
-        vkFreeMemory(device->getInternalLogicalDevice(), imagePair.second, nullptr);
-    }
-
     vkDestroyDescriptorPool(device->getInternalLogicalDevice(), descriptorPool, nullptr);
 
     if(isDescriptorLayoutSet) {
@@ -299,94 +280,4 @@ std::vector<VkDescriptorSet>& VulkanGraphicsPipeline::getDescriptorSets() {
 
 VkPipelineLayout& VulkanGraphicsPipeline::getPipelineLayout() {
     return pipelineLayout;
-}
-
-void VulkanGraphicsPipeline::addTextureToLoad(std::string texture) {
-    texturesToLoad.push_back(texture);
-}
-
-void VulkanGraphicsPipeline::createTextureImages(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain) {
-    for(std::string texturePath : texturesToLoad) {
-        std::tuple<int, int, int, stbi_uc*> textureData = textureLoader.getTexturePixels(texturePath, STBI_rgb_alpha);
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-
-        VkDeviceSize imageSize = std::get<0>(textureData) * std::get<1>(textureData) * 4;
-
-        VulkanEngine::createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory, device);
-    
-        void* data;
-        vkMapMemory(device->getInternalLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, std::get<3>(textureData), static_cast<size_t>(imageSize));
-        vkUnmapMemory(device->getInternalLogicalDevice(), stagingBufferMemory);
-
-        stbi_image_free(std::get<3>(textureData));
-
-        VkImage textureImage;
-        VkDeviceMemory textureImageMemory;
-
-        VulkanEngine::createImage(std::get<0>(textureData), std::get<1>(textureData), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory, device);
-
-        VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device);
-        VulkanEngine::copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(std::get<0>(textureData)), static_cast<uint32_t>(std::get<1>(textureData)), device);
-    
-        VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device);
-    
-        vkDestroyBuffer(device->getInternalLogicalDevice(), stagingBuffer, nullptr);
-        vkFreeMemory(device->getInternalLogicalDevice(), stagingBufferMemory, nullptr);
-
-        texturePathToImage[texturePath] = textureImage;
-        texturePathToDeviceMemory[texturePath] = textureImageMemory;
-    }
-}
-
-void VulkanGraphicsPipeline::createTextureImageViews(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain) {
-    for(std::string texturePath : texturesToLoad) {
-        VkImageView textureImageView = VulkanEngine::createImageView(texturePathToImage[texturePath], VK_FORMAT_R8G8B8A8_SRGB, device);
-
-        texturePathToImageView[texturePath] = textureImageView;
-    }
-}
-
-void VulkanGraphicsPipeline::createTextureSampler(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain) {
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_NEAREST;
-    samplerInfo.minFilter = VK_FILTER_NEAREST;
-
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-    samplerInfo.anisotropyEnable = VK_TRUE;
-
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(device->getInternalPhysicalDevice(), &properties);
-
-    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
-
-    if(vkCreateSampler(device->getInternalLogicalDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
-}
-
-VkImageView VulkanGraphicsPipeline::getImageView(std::string texturePath) {
-    return texturePathToImageView[texturePath];
-}
-
-VkSampler VulkanGraphicsPipeline::getTextureSampler() {
-    return textureSampler;
 }

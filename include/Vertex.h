@@ -14,7 +14,7 @@ struct InstanceData {
 struct Vertex {
     glm::vec3 position;
     glm::vec3 color;
-    glm::vec2 texCoord;
+    glm::vec3 texCoord;
 
     static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
         VkVertexInputBindingDescription desc{};
@@ -49,7 +49,7 @@ struct Vertex {
 
         attrib3.binding = 0;
         attrib3.location = 2;
-        attrib3.format = VK_FORMAT_R32G32_SFLOAT; //2 floats vector
+        attrib3.format = VK_FORMAT_R32G32B32_SFLOAT; //3 floats vector
         attrib3.offset = offsetof(Vertex, texCoord);
 
         VkVertexInputAttributeDescription attrib4{};

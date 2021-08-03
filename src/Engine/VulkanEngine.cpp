@@ -1,6 +1,6 @@
 #include "VulkanEngine.h"
 
-VulkanEngine::VulkanEngine() {
+VulkanEngine::VulkanEngine() : textureLoader(std::make_shared<TextureLoader>()) {
 
 }
 
@@ -10,6 +10,7 @@ VulkanEngine::~VulkanEngine() {
     vkSyncObjects->destroySyncObjects(vkDevice);
     vkPipeline->destroyGraphicsPipeline(vkDevice);
     vkSwapchain->destroySwapchain(vkDevice);
+    textureLoader->destroyTextureLoader(vkDevice);
     vkDevice->destroyDevice();
     vkDisplay->destroyDisplay(vkInstance);
     vkInstance->destroyInstance();
@@ -28,6 +29,10 @@ void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
         vkSwapchain->destroySwapchain(vkDevice);
     }
 
+    if(hasTextureLoader) {
+        textureLoader->destroyTextureLoader(vkDevice);
+    }
+
     if(hasDevice) {
         vkDevice->destroyDevice();
     }
@@ -40,6 +45,7 @@ void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
         vkInstance->destroyInstance();
     }
 
+
     vkInstance = instance;
     vkInstance->create();
 
@@ -49,6 +55,10 @@ void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
 
     if(hasDevice) {
         vkDevice->create(vkInstance, vkDisplay);
+    }
+
+    if(hasTextureLoader) {
+        textureLoader->create(vkDevice);
     }
 
     if(hasSwapchain) {
@@ -83,6 +93,10 @@ void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
         vkSwapchain->destroySwapchain(vkDevice);
     }
 
+    if(hasTextureLoader) {
+        textureLoader->destroyTextureLoader(vkDevice);
+    }
+
     if(hasDevice) {
         vkDevice->destroyDevice();
     }
@@ -97,6 +111,10 @@ void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
 
     if(hasDevice) {
         vkDevice->create(vkInstance, vkDisplay);
+    }
+
+    if(hasTextureLoader) {
+        textureLoader->create(vkDevice);
     }
 
     if(hasSwapchain) {
@@ -131,6 +149,10 @@ void VulkanEngine::setDevice(std::shared_ptr<VulkanDevice> device) {
         vkSwapchain->destroySwapchain(vkDevice);
     }
 
+    if(hasTextureLoader) {
+        textureLoader->destroyTextureLoader(vkDevice);
+    }
+
     if(hasDevice) {
         vkDevice->destroyDevice();
     }
@@ -140,6 +162,9 @@ void VulkanEngine::setDevice(std::shared_ptr<VulkanDevice> device) {
     vkDevice->create(vkInstance, vkDisplay);
 
     hasDevice = true;
+
+    textureLoader->create(vkDevice);
+    hasTextureLoader = true;
 
     if(hasSwapchain) {
         vkSwapchain->create(vkInstance, vkDisplay, vkDevice);
@@ -234,6 +259,10 @@ std::shared_ptr<VulkanRenderSyncObjects> VulkanEngine::getSyncObjects() {
     return vkSyncObjects;
 }
 
+std::shared_ptr<TextureLoader> VulkanEngine::getTextureLoader() {
+    return textureLoader;
+}
+
 void VulkanEngine::recreateSwapchain() {
     vkDeviceWaitIdle(vkDevice->getInternalLogicalDevice());
     setSwapchain(vkSwapchain);
@@ -278,7 +307,7 @@ void VulkanEngine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
     vkBindBufferMemory(device->getInternalLogicalDevice(), buffer, bufferMemory, 0);
 }
 
-void VulkanEngine::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, std::shared_ptr<VulkanDevice> device) {
+void VulkanEngine::createImage(uint32_t width, uint32_t height, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, std::shared_ptr<VulkanDevice> device) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -286,7 +315,7 @@ void VulkanEngine::createImage(uint32_t width, uint32_t height, VkFormat format,
     imageInfo.extent.height = height;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
+    imageInfo.arrayLayers = layers;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -356,7 +385,7 @@ void VulkanEngine::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     VulkanEngine::endSingleTimeCommands(commandBuffer, device);
 }
 
-void VulkanEngine::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, std::shared_ptr<VulkanDevice> device) {
+void VulkanEngine::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, std::shared_ptr<VulkanDevice> device, int layerCount) {
     VkCommandBuffer commandBuffer = VulkanEngine::beginSingleTimeCommands(device);
 
     VkImageMemoryBarrier barrier{};
@@ -372,7 +401,7 @@ void VulkanEngine::transitionImageLayout(VkImage image, VkFormat format, VkImage
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.layerCount = layerCount;
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -435,17 +464,18 @@ void VulkanEngine::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wi
     endSingleTimeCommands(commandBuffer, device);
 }
 
-VkImageView VulkanEngine::createImageView(VkImage image, VkFormat format, std::shared_ptr<VulkanDevice> device) {
+VkImageView VulkanEngine::createImageView(VkImage image, VkFormat format, std::shared_ptr<VulkanDevice> device, VkImageViewType type, int layerCount) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.viewType = type;
     viewInfo.format = format;
+    
     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
+    viewInfo.subresourceRange.layerCount = layerCount;
+    viewInfo.image = image;
 
     VkImageView imageView;
     if (vkCreateImageView(device->getInternalLogicalDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {

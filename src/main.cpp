@@ -31,12 +31,9 @@ std::shared_ptr<VulkanEngine> setupEngine() {
 
   graphicsPipeline->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
   graphicsPipeline->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
-  graphicsPipeline->setVertexShader("shaders/output/3dvert_instanced.spv");
-  graphicsPipeline->setFragmentShader("shaders/output/3dfrag_instanced.spv");
+  graphicsPipeline->setVertexShader("shaders/output/3dvert_instanced_texArray.spv");
+  graphicsPipeline->setFragmentShader("shaders/output/3dfrag_instanced_texArray.spv");
   graphicsPipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
-  graphicsPipeline->addTextureToLoad("assets/test.jpg");
-  graphicsPipeline->addTextureToLoad("assets/cube-cube.png");
-  graphicsPipeline->addTextureToLoad("assets/cube-cube-cube.png");
 
   engine->setInstance(instance);
 
@@ -49,6 +46,12 @@ std::shared_ptr<VulkanEngine> setupEngine() {
   engine->setGraphicsPipeline(graphicsPipeline);
 
   engine->setSyncObjects(syncObjects);
+
+  std::shared_ptr<TextureLoader> textureLoader = engine->getTextureLoader();
+  textureLoader->loadTexture(device, "assets/test.jpg");
+  textureLoader->loadTexture(device, "assets/cube-cube.png");
+  textureLoader->loadTexture(device, "assets/cube-cube-cube.png");
+  textureLoader->loadTextureArray(device, {"assets/dirt.png", "assets/grass_side.png"}, "game-textures");
 
   return engine;
 }
@@ -140,54 +143,58 @@ int main() {
 
 
   std::vector<Vertex> cube = {
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 0}}, //front
-    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 1}},
-    {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 1}},
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 0, 0}}, //front
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 1, 0}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 1, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 0}},
-    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 0}},
-    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 1}},   
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1, 0, 0}},
+    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 0, 0}},
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0, 1, 0}},   
 
-    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 1}}, //back
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 1}},
-    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 0}},
+    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 1, 0}}, //back
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 1, 0}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 0, 0}},
 
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 1}},  
-    {{1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 0}},
-    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 0}},
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 1, 0}},  
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1, 0, 0}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0, 0, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 0}}, //left
-    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 1}},
-    {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 0}},
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 0, 0}}, //left
+    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 1, 0}},
+    {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 0, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 0}},
-    {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 1}},
-    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 1}},
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 0, 0}},
+    {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0, 1, 0}},
+    {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1, 1, 0}},
 
-    {{1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 0}}, //right
-    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 1}},
-    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 0}},
+    {{1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 0, 0}}, //right
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 1, 0}},
+    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 0, 0}},
 
-    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 1}},
-    {{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 1}},
-    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 0}},
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0, 1, 0}},
+    {{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 1, 0}},
+    {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1, 0, 0}},
     
-    {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0, 0}}, //top
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {0, 1}},
-    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1, 0}},
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0, 0, 0}}, //top
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {0, 1, 0}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1, 0, 0}},
 
-    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {0, 1}},
-    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {1, 1}},
-    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1, 0}},
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {0, 1, 0}},
+    {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {1, 1, 0}},
+    {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1, 0, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {0, 0}}, //bottom
-    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1}},
-    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {1, 0}},
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {0, 0, 0}}, //bottom
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1, 0}},
+    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {1, 0, 0}},
 
-    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {0, 0}},
-    {{0.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {0, 1}},
-    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1}},
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f}, {0, 0, 0}},
+    {{0.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {0, 1, 0}},
+    {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1, 0}},
   };
+
+  for(Vertex& v : cube) {
+    v.texCoord[2] = 1;
+  }
 
   std::vector<InstanceData> instanceDataCube {
     

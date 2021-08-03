@@ -32,20 +32,7 @@ class VulkanGraphicsPipeline {
         void setVertexInputAttributeDescriptions(std::vector<VkVertexInputAttributeDescription> desc);
 
         void addDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding binding);
-
-        void addTextureToLoad(std::string texturePath);
-
-        VkImageView getImageView(std::string texturePath);
-
-        VkSampler getTextureSampler();
-    
     private:
-        void createTextureImages(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain);
-
-        void createTextureImageViews(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain);
-
-        void createTextureSampler(std::shared_ptr<VulkanDevice> device, std::shared_ptr<VulkanSwapchain> swapchain);
-
         std::vector<char> readFile(const std::string& filename);
 
         VkShaderModule createShaderModule(const std::vector<char>& shaderCode, std::shared_ptr<VulkanDevice> device);
@@ -98,16 +85,6 @@ class VulkanGraphicsPipeline {
         std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 
         VkDescriptorPoolCreateInfo poolInfo;
-
-        std::vector<std::string> texturesToLoad;
-
-        TextureLoader textureLoader = TextureLoader();
-
-        std::map<std::string, VkImage> texturePathToImage = std::map<std::string, VkImage>();
-        std::map<std::string, VkDeviceMemory> texturePathToDeviceMemory = std::map<std::string, VkDeviceMemory>();
-        std::map<std::string, VkImageView> texturePathToImageView = std::map<std::string, VkImageView>();
-
-        VkSampler textureSampler;
 };
 
 #endif
