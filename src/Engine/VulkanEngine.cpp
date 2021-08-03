@@ -8,7 +8,11 @@ VulkanEngine::~VulkanEngine() {
     vkDeviceWaitIdle(vkDevice->getInternalLogicalDevice());
 
     vkSyncObjects->destroySyncObjects(vkDevice);
-    vkPipeline->destroyGraphicsPipeline(vkDevice);
+
+    for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+        vkPipeline->destroyGraphicsPipeline(vkDevice);
+    }
+
     vkSwapchain->destroySwapchain(vkDevice);
     textureLoader->destroyTextureLoader(vkDevice);
     vkDevice->destroyDevice();
@@ -18,7 +22,9 @@ VulkanEngine::~VulkanEngine() {
 
 void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
     if(hasPipeline) {
-        vkPipeline->destroyGraphicsPipeline(vkDevice);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->destroyGraphicsPipeline(vkDevice);
+        }
     }
 
     if(hasSyncObjects) {
@@ -66,7 +72,9 @@ void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
     }
 
     if(hasPipeline) {
-        vkPipeline->create(vkDevice, vkSwapchain);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->create(vkDevice, vkSwapchain);
+        }
     }
 
     if(hasSyncObjects) {
@@ -82,7 +90,9 @@ void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
     }
 
     if(hasPipeline) {
-        vkPipeline->destroyGraphicsPipeline(vkDevice);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->destroyGraphicsPipeline(vkDevice);
+        }
     }
 
     if(hasSyncObjects) {
@@ -122,7 +132,9 @@ void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
     }
 
     if(hasPipeline) {
-        vkPipeline->create(vkDevice, vkSwapchain);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->create(vkDevice, vkSwapchain);
+        }
     }
     
     if(hasSyncObjects) {
@@ -138,7 +150,9 @@ void VulkanEngine::setDevice(std::shared_ptr<VulkanDevice> device) {
     }
 
     if(hasPipeline) {
-        vkPipeline->destroyGraphicsPipeline(vkDevice);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->destroyGraphicsPipeline(vkDevice);
+        }
     }
 
     if(hasSyncObjects) {
@@ -171,7 +185,9 @@ void VulkanEngine::setDevice(std::shared_ptr<VulkanDevice> device) {
     }
 
     if(hasPipeline) {
-        vkPipeline->create(vkDevice, vkSwapchain);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->create(vkDevice, vkSwapchain);
+        }
     }
 
     if(hasSyncObjects) {
@@ -185,7 +201,9 @@ void VulkanEngine::setSwapchain(std::shared_ptr<VulkanSwapchain> swapchain) {
     }
 
     if(hasPipeline) {
-        vkPipeline->destroyGraphicsPipeline(vkDevice);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->destroyGraphicsPipeline(vkDevice);
+        }
     }
 
     if(hasSwapchain) {
@@ -197,7 +215,9 @@ void VulkanEngine::setSwapchain(std::shared_ptr<VulkanSwapchain> swapchain) {
     vkSwapchain->create(vkInstance, vkDisplay, vkDevice);
 
     if(hasPipeline) {
-        vkPipeline->create(vkDevice, vkSwapchain);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->create(vkDevice, vkSwapchain);
+        }
     }
 
     hasSwapchain = true;
@@ -209,12 +229,19 @@ void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> p
     }
 
     if(hasPipeline) {
-        vkPipeline->destroyGraphicsPipeline(vkDevice);
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->destroyGraphicsPipeline(vkDevice);
+        }
     }
 
-    vkPipeline = pipeline;
+    pipeline->create(vkDevice, vkSwapchain);
+    vkPipelines.push_back(pipeline);
 
-    vkPipeline->create(vkDevice, vkSwapchain);
+    if(hasPipeline) {
+        for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
+            vkPipeline->create(vkDevice, vkSwapchain);
+        }
+    }
 
     hasPipeline = true;
 }
@@ -251,8 +278,8 @@ std::shared_ptr<VulkanSwapchain> VulkanEngine::getSwapchain() {
     return vkSwapchain;
 }
 
-std::shared_ptr<VulkanGraphicsPipeline> VulkanEngine::getGraphicsPipeline() {
-    return vkPipeline;
+std::shared_ptr<VulkanGraphicsPipeline> VulkanEngine::getGraphicsPipeline(int pipelineIndex) {
+    return vkPipelines[pipelineIndex];
 }
 
 std::shared_ptr<VulkanRenderSyncObjects> VulkanEngine::getSyncObjects() {

@@ -50,7 +50,7 @@ class VulkanEngine {
 
         std::shared_ptr<VulkanSwapchain> getSwapchain();
 
-        std::shared_ptr<VulkanGraphicsPipeline> getGraphicsPipeline();
+        std::shared_ptr<VulkanGraphicsPipeline> getGraphicsPipeline(int index);
 
         std::shared_ptr<VulkanRenderSyncObjects> getSyncObjects();
 
@@ -83,7 +83,9 @@ class VulkanEngine {
         std::shared_ptr<VulkanDisplay> vkDisplay;
         std::shared_ptr<VulkanDevice> vkDevice;
         std::shared_ptr<VulkanSwapchain> vkSwapchain;
-        std::shared_ptr<VulkanGraphicsPipeline> vkPipeline;
+
+        std::vector<std::shared_ptr<VulkanGraphicsPipeline>> vkPipelines;
+
         std::shared_ptr<VulkanRenderSyncObjects> vkSyncObjects;
 
         std::shared_ptr<TextureLoader> textureLoader;

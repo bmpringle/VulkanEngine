@@ -10,6 +10,8 @@
 
 #include <glm/gtx/string_cast.hpp>
 
+const int numberOfOverlayTextures = 5;
+
 std::shared_ptr<VulkanEngine> setupEngine() {
   std::shared_ptr<VulkanEngine> engine = std::make_shared<VulkanEngine>();
 
@@ -17,35 +19,76 @@ std::shared_ptr<VulkanEngine> setupEngine() {
   instance->setAppName("Test App");
   instance->addValidationLayer("VK_LAYER_KHRONOS_validation");
 
+
   std::shared_ptr<VulkanDisplay> display = std::make_shared<VulkanDisplay>();
   display->setInitialWindowDimensions(1000, 800);
   display->setWindowName("Test App Window");
 
-  std::shared_ptr<VulkanDevice> device = std::make_shared<VulkanDevice>();
-
-  std::shared_ptr<VulkanSwapchain> swapchain = std::make_shared<VulkanSwapchain>();
-
-  std::shared_ptr<VulkanRenderSyncObjects> syncObjects = std::make_shared<VulkanRenderSyncObjects>();
-
-  std::shared_ptr<VulkanGraphicsPipeline> graphicsPipeline = std::make_shared<VulkanGraphicsPipeline>();
-
-  graphicsPipeline->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
-  graphicsPipeline->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
-  graphicsPipeline->setVertexShader("shaders/output/3dvert_instanced_texArray.spv");
-  graphicsPipeline->setFragmentShader("shaders/output/3dfrag_instanced_texArray.spv");
-  graphicsPipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
 
   engine->setInstance(instance);
 
   engine->setDisplay(display);
 
+  std::shared_ptr<VulkanDevice> device = std::make_shared<VulkanDevice>();
+
   engine->setDevice(device);
+
+  std::shared_ptr<VulkanSwapchain> swapchain = std::make_shared<VulkanSwapchain>();
 
   engine->setSwapchain(swapchain);
 
-  engine->setGraphicsPipeline(graphicsPipeline);
+  std::shared_ptr<VulkanRenderSyncObjects> syncObjects = std::make_shared<VulkanRenderSyncObjects>();
 
   engine->setSyncObjects(syncObjects);
+
+  std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineBlocks = std::make_shared<VulkanGraphicsPipeline>();
+
+  graphicsPipelineBlocks->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
+  graphicsPipelineBlocks->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
+  graphicsPipelineBlocks->setVertexShader("shaders/output/3dvert_instanced_texArray.spv");
+  graphicsPipelineBlocks->setFragmentShader("shaders/output/3dfrag_instanced_texArray.spv");
+  graphicsPipelineBlocks->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+
+  //texture array binding
+  VkDescriptorSetLayoutBinding textureArrayLayoutBinding{};
+  textureArrayLayoutBinding.binding = 1;
+  textureArrayLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  textureArrayLayoutBinding.descriptorCount = 1;
+  textureArrayLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  textureArrayLayoutBinding.pImmutableSamplers = nullptr;
+
+  graphicsPipelineBlocks->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
+
+  graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+
+  graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+
+  engine->setGraphicsPipeline(graphicsPipelineBlocks);
+
+
+  std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineOverlays = std::make_shared<VulkanGraphicsPipeline>();
+
+  graphicsPipelineOverlays->setVertexInputBindingDescriptions(OverlayVertex::getBindingDescriptions());
+  graphicsPipelineOverlays->setVertexInputAttributeDescriptions(OverlayVertex::getAttributeDescriptions());
+  graphicsPipelineOverlays->setVertexShader("shaders/output/vert_overlay.spv");
+  graphicsPipelineOverlays->setFragmentShader("shaders/output/frag_overlay.spv");
+  //graphicsPipelineOverlays->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+
+  //array of textures binding
+  VkDescriptorSetLayoutBinding arrayOfTexturesLayoutBinding{};
+  arrayOfTexturesLayoutBinding.binding = 0;
+  arrayOfTexturesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  arrayOfTexturesLayoutBinding.descriptorCount = 2;
+  arrayOfTexturesLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  arrayOfTexturesLayoutBinding.pImmutableSamplers = nullptr;
+
+  graphicsPipelineOverlays->addDescriptorSetLayoutBinding(arrayOfTexturesLayoutBinding);
+
+  graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * numberOfOverlayTextures);
+
+  engine->setGraphicsPipeline(graphicsPipelineOverlays);
+
+  
 
   std::shared_ptr<TextureLoader> textureLoader = engine->getTextureLoader();
   textureLoader->loadTexture(device, "assets/test.jpg");
@@ -206,6 +249,16 @@ int main() {
     
   };
 
+  std::vector<OverlayVertex> texturedRectangleOverlay {
+    {{0, 0}, {0, 0, 0}, {0, 0}, 0},
+    {{1, 1}, {0, 0, 0}, {1, 1}, 0},
+    {{1, 0}, {0, 0, 0}, {1, 0}, 0},
+
+    {{0, 0}, {0, 0, 0}, {0, 0}, 0},
+    {{0, 1}, {0, 0, 0}, {0, 1}, 0},
+    {{1, 1}, {0, 0, 0}, {1, 1}, 0},
+  };
+
   for(int x = 0; x < 60; ++x) {
     for(int y = 0; y < 60; ++y) {
       for(int z = 0; z < 60; ++z) {
@@ -217,6 +270,8 @@ int main() {
 
   renderer.setDataPair("block1", cube, instanceDataCube);
   renderer.setDataPair("block2", cube2, instanceDataCube2);
+
+  renderer.setOverlayVertices("exampleRectOverlay", texturedRectangleOverlay);
 
   while(!engine->getDisplay()->shouldWindowClose()) {
     renderer.getXRotation() += xDelta;

@@ -115,15 +115,6 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     vertexInputInfo.vertexAttributeDescriptionCount = vertexInputAttributeDescriptions.size();
     vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions.data();
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    layoutBindings.push_back(samplerLayoutBinding);
-
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = layoutBindings.size();
@@ -132,8 +123,6 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     if (vkCreateDescriptorSetLayout(device->getInternalLogicalDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
-
-     layoutBindings.pop_back();
 
     pipelineLayoutInfo.setLayoutCount = 1; 
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; 
@@ -176,11 +165,14 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(swapchain->getInternalImages().size());
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(swapchain->getInternalImages().size());
+    std::vector<VkDescriptorPoolSize> poolSizes{};
+
+    for(std::pair<VkDescriptorType, uint32_t> data : poolData) {
+        VkDescriptorPoolSize size{};
+        size.type = data.first;
+        size.descriptorCount = data.second;
+        poolSizes.push_back(size);
+    }
 
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
@@ -280,4 +272,12 @@ std::vector<VkDescriptorSet>& VulkanGraphicsPipeline::getDescriptorSets() {
 
 VkPipelineLayout& VulkanGraphicsPipeline::getPipelineLayout() {
     return pipelineLayout;
+}
+
+VkDescriptorSetLayoutBinding& VulkanGraphicsPipeline::getDescriptorSetLayoutBinding(int index) {
+    return layoutBindings.at(index);
+}
+
+void VulkanGraphicsPipeline::setDescriptorPoolData(VkDescriptorType type, uint32_t size) {
+    poolData.push_back(std::make_pair(type, size));
 }

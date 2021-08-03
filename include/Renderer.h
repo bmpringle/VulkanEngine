@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Vertex.h"
+#include "OverlayVertex.h"
 #include "UniformBuffer.h"
 
 #include "VulkanVertexBuffer.h"
@@ -21,6 +22,8 @@ class Renderer {
         void renderFrame();
 
         void setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices);
+
+        void setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices);
 
         float& getXRotation();
 
@@ -42,6 +45,8 @@ class Renderer {
         size_t currentFrame = 0;
 
         std::map<std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> dataIDToVertexData;
+
+        std::map<std::string, VulkanVertexBuffer<OverlayVertex>> dataIDToVertexOverlayData;
 
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VkDeviceMemory> uniformBuffersMemory;

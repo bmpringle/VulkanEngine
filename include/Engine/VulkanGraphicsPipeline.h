@@ -32,6 +32,10 @@ class VulkanGraphicsPipeline {
         void setVertexInputAttributeDescriptions(std::vector<VkVertexInputAttributeDescription> desc);
 
         void addDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding binding);
+
+        VkDescriptorSetLayoutBinding& getDescriptorSetLayoutBinding(int index);
+
+        void setDescriptorPoolData(VkDescriptorType type, uint32_t size);
     private:
         std::vector<char> readFile(const std::string& filename);
 
@@ -83,6 +87,8 @@ class VulkanGraphicsPipeline {
         bool isDescriptorLayoutSet = false;
 
         std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+
+        std::vector<std::pair<VkDescriptorType, uint32_t>> poolData;
 
         VkDescriptorPoolCreateInfo poolInfo;
 };

@@ -31,11 +31,11 @@ void Renderer::recordCommandBuffers() {
     std::vector<VkFramebuffer>& swapChainFramebuffers = vkEngine->getSwapchain()->getInternalFramebuffers();
     VkRenderPass& renderPass = vkEngine->getSwapchain()->getInternalRenderPass();
     VkExtent2D& swapChainExtent = vkEngine->getSwapchain()->getInternalExtent2D();
-    VkPipeline& graphicsPipeline = vkEngine->getGraphicsPipeline()->getInternalGraphicsPipeline();
 
     std::vector<VkFence>& imagesInFlight = vkEngine->getSyncObjects()->getInternalImagesInFlight();
 
     for(size_t i = 0; i < commandBuffers.size(); i++) {
+
         if(imagesInFlight[i] != VK_NULL_HANDLE) {
             vkWaitForFences(vkEngine->getDevice()->getInternalLogicalDevice(), 1, &imagesInFlight[i], VK_TRUE, UINT64_MAX);
         }
@@ -66,9 +66,10 @@ void Renderer::recordCommandBuffers() {
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline()->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline()->getDescriptorSets()[i], 0, nullptr);
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(0)->getInternalGraphicsPipeline());
+
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(0)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i], 0, nullptr);
 
         for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> vertexData : dataIDToVertexData) {
             VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.first;
@@ -82,6 +83,23 @@ void Renderer::recordCommandBuffers() {
                 vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
             }else {
                 //nothing to draw
+            }
+        }
+
+
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getInternalGraphicsPipeline());
+
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
+        
+        for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
+            VulkanVertexBuffer<OverlayVertex> vertexBuffer = vertexData.second;
+
+            if(vertexBuffer.getBufferSize() > 0) {
+                VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer()};
+                VkDeviceSize offsets[] = {0};
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+                vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), 1, 0, 0);
             }
         }
 
@@ -328,23 +346,48 @@ void Renderer::updateDescriptorSets() {
         imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView("game-textures");
         imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
-        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+        std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+
+        //descriptor writes for block pipeline
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = vkEngine->getGraphicsPipeline()->getDescriptorSets()[i];
+        descriptorWrites[0].dstSet = vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].descriptorType = vkEngine->getGraphicsPipeline(0)->getDescriptorSetLayoutBinding(0).descriptorType;
+        descriptorWrites[0].descriptorCount = vkEngine->getGraphicsPipeline(0)->getDescriptorSetLayoutBinding(0).descriptorCount;
         descriptorWrites[0].pBufferInfo = &bufferInfo;
 
         descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = vkEngine->getGraphicsPipeline()->getDescriptorSets()[i];
+        descriptorWrites[1].dstSet = vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].descriptorType = vkEngine->getGraphicsPipeline(0)->getDescriptorSetLayoutBinding(1).descriptorType;
+        descriptorWrites[1].descriptorCount = vkEngine->getGraphicsPipeline(0)->getDescriptorSetLayoutBinding(1).descriptorCount;
         descriptorWrites[1].pImageInfo = &imageInfo;
+
+        //descriptor writes for overlay pipeline
+
+        std::vector<VkDescriptorImageInfo> imageInfos{};
+
+        std::vector<std::string> texturesToAdd = {"assets/test.jpg", "assets/cube-cube.png"};
+
+        for(std::string& texture : texturesToAdd) {
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = vkEngine->getTextureLoader()->getImageView(texture);
+            imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
+
+            imageInfos.push_back(imageInfo);
+        }
+
+        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[2].dstSet = vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i];
+        descriptorWrites[2].dstBinding = 0;
+        descriptorWrites[2].dstArrayElement = 0;
+        descriptorWrites[2].descriptorType = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(0).descriptorType;
+        descriptorWrites[2].descriptorCount = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(0).descriptorCount;
+        descriptorWrites[2].pImageInfo = imageInfos.data();
 
         vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -368,7 +411,7 @@ void Renderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std
         dataIDToVertexData[id].second.setVertexData(vkEngine->getDevice(), newInstanceVertices);
         return;
     }
-    
+
     VulkanVertexBuffer<Vertex> vertexBuffer = VulkanVertexBuffer<Vertex>();
     vertexBuffer.setVertexData(vkEngine->getDevice(), newVertices);
 
@@ -376,4 +419,16 @@ void Renderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std
     instanceBuffer.setVertexData(vkEngine->getDevice(), newInstanceVertices);
 
     dataIDToVertexData[id] = std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>(vertexBuffer, instanceBuffer);
+}
+
+void Renderer::setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices) {
+    if(dataIDToVertexOverlayData.count(id) > 0) {
+        dataIDToVertexOverlayData[id].setVertexData(vkEngine->getDevice(), newVertices);
+        return;
+    }
+
+    VulkanVertexBuffer<OverlayVertex> vertexBuffer = VulkanVertexBuffer<OverlayVertex>();
+    vertexBuffer.setVertexData(vkEngine->getDevice(), newVertices);
+
+    dataIDToVertexOverlayData[id] = vertexBuffer;
 }
