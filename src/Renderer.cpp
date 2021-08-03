@@ -207,24 +207,30 @@ void Renderer::renderFrame() {
 }
 
 void Renderer::destroyUniformBuffers() {
-    for (size_t i = 0; i < uniformBuffers.size(); i++) {
-        vkDestroyBuffer(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffers[i], nullptr);
-        vkFreeMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[i], nullptr);
+    for (size_t i = 0; i < blockUniformBuffers.size(); i++) {
+        blockUniformBuffers.at(i).destroy(vkEngine->getDevice());
+    }
+
+    for (size_t i = 0; i < overlayUniformBuffers.size(); i++) {
+        overlayUniformBuffers.at(i).destroy(vkEngine->getDevice());
     }
 }
 
 void Renderer::createUniformBuffers() {
-    if(uniformBuffers.size() > 0) {
+    if(blockUniformBuffers.size() > 0) {
         destroyUniformBuffers();
     }
 
-    VkDeviceSize bufferSize = sizeof(UniformBuffer);
+    blockUniformBuffers.resize(vkEngine->getSwapchain()->getInternalImages().size());
+    overlayUniformBuffers.resize(vkEngine->getSwapchain()->getInternalImages().size());
 
-    uniformBuffers.resize(vkEngine->getSwapchain()->getInternalImages().size());
-    uniformBuffersMemory.resize(vkEngine->getSwapchain()->getInternalImages().size());
 
-    for (size_t i = 0; i < uniformBuffers.size(); i++) {
-        VulkanEngine::createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i], vkEngine->getDevice());
+    for (size_t i = 0; i < blockUniformBuffers.size(); i++) {
+        blockUniformBuffers.at(i).create(vkEngine->getDevice());
+    }
+
+    for (size_t i = 0; i < blockUniformBuffers.size(); i++) {
+        overlayUniformBuffers.at(i).create(vkEngine->getDevice());
     }
 
     updateDescriptorSets();
@@ -326,18 +332,15 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex) {
 
     ubo.projectionMatrix = glm::perspective(glm::radians(90.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, 0.01f, 100.0f);
 
-    void* data;
-    vkMapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[imageIndex], 0, sizeof(ubo), 0, &data);
-    
-    memcpy(data, &ubo, sizeof(ubo));
-    
-    vkUnmapMemory(vkEngine->getDevice()->getInternalLogicalDevice(), uniformBuffersMemory[imageIndex]);
+    blockUniformBuffers.at(imageIndex).setVertexData(vkEngine->getDevice(), ubo);
+
+    overlayUniformBuffers.at(imageIndex).setVertexData(vkEngine->getDevice(), overlayUBO);
 }
 
 void Renderer::updateDescriptorSets() {
     for (size_t i = 0; i < vkEngine->getSwapchain()->getInternalImages().size(); i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
+        bufferInfo.buffer = blockUniformBuffers.at(i).getUniformBuffer();
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBuffer);
 
@@ -346,7 +349,7 @@ void Renderer::updateDescriptorSets() {
         imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView("game-textures");
         imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
-        std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+        std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
         //descriptor writes for block pipeline
 
@@ -381,13 +384,26 @@ void Renderer::updateDescriptorSets() {
             imageInfos.push_back(imageInfo);
         }
 
+        VkDescriptorBufferInfo bufferInfoOverlay{};
+        bufferInfoOverlay.buffer = overlayUniformBuffers.at(i).getUniformBuffer();
+        bufferInfoOverlay.offset = 0;
+        bufferInfoOverlay.range = sizeof(OverlayUniformBuffer);
+
         descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[2].dstSet = vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i];
         descriptorWrites[2].dstBinding = 0;
         descriptorWrites[2].dstArrayElement = 0;
         descriptorWrites[2].descriptorType = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(0).descriptorType;
         descriptorWrites[2].descriptorCount = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(0).descriptorCount;
-        descriptorWrites[2].pImageInfo = imageInfos.data();
+        descriptorWrites[2].pBufferInfo = &bufferInfoOverlay;
+
+        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[3].dstSet = vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i];
+        descriptorWrites[3].dstBinding = 1;
+        descriptorWrites[3].dstArrayElement = 0;
+        descriptorWrites[3].descriptorType = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(1).descriptorType;
+        descriptorWrites[3].descriptorCount = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(1).descriptorCount;
+        descriptorWrites[3].pImageInfo = imageInfos.data();
 
         vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }

@@ -72,17 +72,19 @@ std::shared_ptr<VulkanEngine> setupEngine() {
   graphicsPipelineOverlays->setVertexInputAttributeDescriptions(OverlayVertex::getAttributeDescriptions());
   graphicsPipelineOverlays->setVertexShader("shaders/output/vert_overlay.spv");
   graphicsPipelineOverlays->setFragmentShader("shaders/output/frag_overlay.spv");
-  //graphicsPipelineOverlays->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+  graphicsPipelineOverlays->addDescriptorSetLayoutBinding(OverlayUniformBuffer::getDescriptorSetLayout());
 
   //array of textures binding
   VkDescriptorSetLayoutBinding arrayOfTexturesLayoutBinding{};
-  arrayOfTexturesLayoutBinding.binding = 0;
+  arrayOfTexturesLayoutBinding.binding = 1;
   arrayOfTexturesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
   arrayOfTexturesLayoutBinding.descriptorCount = 2;
   arrayOfTexturesLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
   arrayOfTexturesLayoutBinding.pImmutableSamplers = nullptr;
 
   graphicsPipelineOverlays->addDescriptorSetLayoutBinding(arrayOfTexturesLayoutBinding);
+
+  graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
 
   graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * numberOfOverlayTextures);
 
@@ -251,12 +253,12 @@ int main() {
 
   std::vector<OverlayVertex> texturedRectangleOverlay {
     {{0, 0}, {0, 0, 0}, {0, 0}, 0},
-    {{1, 1}, {0, 0, 0}, {1, 1}, 0},
-    {{1, 0}, {0, 0, 0}, {1, 0}, 0},
+    {{75, 75}, {0, 0, 0}, {1, 1}, 0},
+    {{75, 0}, {0, 0, 0}, {1, 0}, 0},
 
     {{0, 0}, {0, 0, 0}, {0, 0}, 0},
-    {{0, 1}, {0, 0, 0}, {0, 1}, 0},
-    {{1, 1}, {0, 0, 0}, {1, 1}, 0},
+    {{0, 75}, {0, 0, 0}, {0, 1}, 0},
+    {{75, 75}, {0, 0, 0}, {1, 1}, 0},
   };
 
   for(int x = 0; x < 60; ++x) {

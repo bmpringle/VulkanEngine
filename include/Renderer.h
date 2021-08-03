@@ -7,9 +7,12 @@
 
 #include "Vertex.h"
 #include "OverlayVertex.h"
-#include "UniformBuffer.h"
 
 #include "VulkanVertexBuffer.h"
+#include "VulkanUniformBuffer.h"
+
+#include "UniformBuffer.h"
+#include "OverlayUniformBuffer.h"
 
 class Renderer {
     public:
@@ -48,14 +51,19 @@ class Renderer {
 
         std::map<std::string, VulkanVertexBuffer<OverlayVertex>> dataIDToVertexOverlayData;
 
-        std::vector<VkBuffer> uniformBuffers;
-        std::vector<VkDeviceMemory> uniformBuffersMemory;
+        std::vector<VulkanUniformBuffer<UniformBuffer>> blockUniformBuffers;
+
+        std::vector<VulkanUniformBuffer<OverlayUniformBuffer>> overlayUniformBuffers;
 
         //in degrees
         float xRotation = 0;
         float yRotation = 0;
 
         glm::vec3 camera = glm::vec3(0, 4, 0);
+
+        OverlayUniformBuffer overlayUBO = {
+            {100, 100}
+        };
 };
 
 #endif
