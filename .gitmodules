@@ -7,3 +7,6 @@
 [submodule "stb"]
 	path = stb
 	url = https://github.com/nothings/stb
+[submodule "StringToText"]
+	path = StringToText
+	url = https://github.com/bmpringle/StringToText

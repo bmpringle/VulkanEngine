@@ -13,3 +13,7 @@ try:
 except FileNotFoundError:
     print("Error, cmake needed to build glfw")
     #cmake needed for glfw
+
+output, error = execCmd('python3 compileDeps.py', cwdOverride = './StringToText/')
+output, error = execCmd('make library -j8', cwdOverride = './StringToText/')
+output, error = execCmd('cp -a ./lib/. ../lib/', cwdOverride = './StringToText/')
