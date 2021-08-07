@@ -56,8 +56,8 @@ void TextureLoader::createTextureImage(std::shared_ptr<VulkanDevice> device, std
     texturePathToDeviceMemory[texturePath] = textureImageMemory;
 }
 
-void TextureLoader::createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string texturePath) {
-    texturePathToImageView[texturePath] = VulkanEngine::createImageView(texturePathToImage[texturePath], VK_FORMAT_R8G8B8A8_SRGB, device, VK_IMAGE_VIEW_TYPE_2D, 1);
+void TextureLoader::createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string texturePath, VkFormat format) {
+    texturePathToImageView[texturePath] = VulkanEngine::createImageView(texturePathToImage[texturePath], format, device, VK_IMAGE_VIEW_TYPE_2D, 1);
 }
 
 void TextureLoader::createTextureSampler(std::shared_ptr<VulkanDevice> device) {
@@ -136,7 +136,7 @@ void TextureLoader::destroyTextureLoader(std::shared_ptr<VulkanDevice> device) {
 
 void TextureLoader::loadTexture(std::shared_ptr<VulkanDevice> device, std::string texturePath) {
     createTextureImage(device, texturePath);
-    createTextureImageView(device, texturePath);
+    createTextureImageView(device, texturePath, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
 void TextureLoader::loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName) {
@@ -246,4 +246,38 @@ void TextureLoader::copyBufferToImageInLayers(VkBuffer buffer, VkImage image, ui
     );
 
     VulkanEngine::endSingleTimeCommands(commandBuffer, device);
+}
+
+void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text) {
+    TextBitmap bitmap = unitypeConverter.getTextFromString(text);
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    VkDeviceSize imageSize = bitmap.rows * bitmap.stride;
+
+    VulkanEngine::createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory, device);
+
+    void* data;
+    vkMapMemory(device->getInternalLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+    memcpy(data, bitmap.bitmap.data(), static_cast<size_t>(imageSize));
+    vkUnmapMemory(device->getInternalLogicalDevice(), stagingBufferMemory);
+
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
+
+    VulkanEngine::createImage(bitmap.stride, bitmap.rows, 1, VK_FORMAT_R8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory, device);
+
+    VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, 1);
+    VulkanEngine::copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(bitmap.stride), static_cast<uint32_t>(bitmap.rows), device);
+
+    VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device, 1);
+
+    vkDestroyBuffer(device->getInternalLogicalDevice(), stagingBuffer, nullptr);
+    vkFreeMemory(device->getInternalLogicalDevice(), stagingBufferMemory, nullptr);
+
+    texturePathToImage[textureID] = textureImage;
+    texturePathToDeviceMemory[textureID] = textureImageMemory;
+
+    createTextureImageView(device, textureID, VK_FORMAT_R8_SRGB);
 }

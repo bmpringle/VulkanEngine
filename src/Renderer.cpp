@@ -16,6 +16,97 @@ Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
     createUniformBuffers();
 }
 
+Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
+    std::shared_ptr<VulkanInstance> instance = std::make_shared<VulkanInstance>();
+    instance->setAppName("Test App");
+    instance->addValidationLayer("VK_LAYER_KHRONOS_validation");
+
+
+    std::shared_ptr<VulkanDisplay> display = std::make_shared<VulkanDisplay>();
+    display->setInitialWindowDimensions(1000, 800);
+    display->setWindowName("Test App Window");
+
+
+    vkEngine->setInstance(instance);
+
+    vkEngine->setDisplay(display);
+
+    std::shared_ptr<VulkanDevice> device = std::make_shared<VulkanDevice>();
+
+    vkEngine->setDevice(device);
+
+    std::shared_ptr<VulkanSwapchain> swapchain = std::make_shared<VulkanSwapchain>();
+
+    vkEngine->setSwapchain(swapchain);
+
+    std::shared_ptr<VulkanRenderSyncObjects> syncObjects = std::make_shared<VulkanRenderSyncObjects>();
+
+    vkEngine->setSyncObjects(syncObjects);
+
+    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineBlocks = std::make_shared<VulkanGraphicsPipeline>();
+
+    graphicsPipelineBlocks->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
+    graphicsPipelineBlocks->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
+    graphicsPipelineBlocks->setVertexShader("shaders/output/3dvert_instanced_texArray.spv");
+    graphicsPipelineBlocks->setFragmentShader("shaders/output/3dfrag_instanced_texArray.spv");
+    graphicsPipelineBlocks->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+
+    //texture array binding
+    VkDescriptorSetLayoutBinding textureArrayLayoutBinding{};
+    textureArrayLayoutBinding.binding = 1;
+    textureArrayLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    textureArrayLayoutBinding.descriptorCount = 1;
+    textureArrayLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    textureArrayLayoutBinding.pImmutableSamplers = nullptr;
+
+    graphicsPipelineBlocks->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
+
+    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+
+    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+
+    vkEngine->setGraphicsPipeline(graphicsPipelineBlocks);
+
+
+    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineOverlays = std::make_shared<VulkanGraphicsPipeline>();
+
+    graphicsPipelineOverlays->setVertexInputBindingDescriptions(OverlayVertex::getBindingDescriptions());
+    graphicsPipelineOverlays->setVertexInputAttributeDescriptions(OverlayVertex::getAttributeDescriptions());
+    graphicsPipelineOverlays->setVertexShader("shaders/output/vert_overlay.spv");
+    graphicsPipelineOverlays->setFragmentShader("shaders/output/frag_overlay.spv");
+    graphicsPipelineOverlays->addDescriptorSetLayoutBinding(OverlayUniformBuffer::getDescriptorSetLayout());
+
+    //array of textures binding
+    VkDescriptorSetLayoutBinding arrayOfTexturesLayoutBinding{};
+    arrayOfTexturesLayoutBinding.binding = 1;
+    arrayOfTexturesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    arrayOfTexturesLayoutBinding.descriptorCount = overlayTextures.size() + 1;
+    arrayOfTexturesLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    arrayOfTexturesLayoutBinding.pImmutableSamplers = nullptr;
+
+    graphicsPipelineOverlays->addDescriptorSetLayoutBinding(arrayOfTexturesLayoutBinding);
+
+    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+
+    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * MAX_OVERLAY_TEXTURES);
+
+    vkEngine->setGraphicsPipeline(graphicsPipelineOverlays);
+
+    std::shared_ptr<TextureLoader> textureLoader = vkEngine->getTextureLoader();
+
+    for(std::string& texture : overlayTextures) {
+        textureLoader->loadTexture(device, texture);
+    }
+
+    textureLoader->loadTextToTexture(device, "text1", "this is text\nin my vulkan engine!");
+
+    overlayTextures.push_back("text1");
+
+    textureLoader->loadTextureArray(device, {"assets/dirt.png", "assets/grass_side.png"}, "game-textures");
+
+    createUniformBuffers();
+}
+
 Renderer::~Renderer() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     destroyUniformBuffers();
@@ -90,7 +181,6 @@ void Renderer::recordCommandBuffers() {
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getInternalGraphicsPipeline());
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
-        
         for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
             VulkanVertexBuffer<OverlayVertex> vertexBuffer = vertexData.second;
 
@@ -371,11 +461,9 @@ void Renderer::updateDescriptorSets() {
 
         //descriptor writes for overlay pipeline
 
-        std::vector<VkDescriptorImageInfo> imageInfos{};
+        std::vector<VkDescriptorImageInfo> imageInfos{}; 
 
-        std::vector<std::string> texturesToAdd = {"assets/test.jpg", "assets/cube-cube.png"};
-
-        for(std::string& texture : texturesToAdd) {
+        for(std::string& texture : overlayTextures) {
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfo.imageView = vkEngine->getTextureLoader()->getImageView(texture);
@@ -447,4 +535,16 @@ void Renderer::setOverlayVertices(std::string id, std::vector<OverlayVertex> new
     vertexBuffer.setVertexData(vkEngine->getDevice(), newVertices);
 
     dataIDToVertexOverlayData[id] = vertexBuffer;
+}
+
+std::shared_ptr<VulkanEngine> Renderer::getEngine() {
+    return vkEngine;
+}
+
+void Renderer::addTexture(std::string id, std::string texturePath) {
+
+}
+
+void Renderer::addTextTexture(std::string id, std::string text) {
+    
 }
