@@ -21,7 +21,6 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
     instance->setAppName("Test App");
     instance->addValidationLayer("VK_LAYER_KHRONOS_validation");
 
-
     std::shared_ptr<VulkanDisplay> display = std::make_shared<VulkanDisplay>();
     display->setInitialWindowDimensions(1000, 800);
     display->setWindowName("Test App Window");
@@ -32,6 +31,8 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
     vkEngine->setDisplay(display);
 
     std::shared_ptr<VulkanDevice> device = std::make_shared<VulkanDevice>();
+
+    device->addDeviceExtension("VK_EXT_descriptor_indexing");
 
     vkEngine->setDevice(device);
 
@@ -179,7 +180,7 @@ void Renderer::recordCommandBuffers() {
 
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getInternalGraphicsPipeline());
-
+        
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
         for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
             VulkanVertexBuffer<OverlayVertex> vertexBuffer = vertexData.second;
@@ -546,5 +547,5 @@ void Renderer::addTexture(std::string id, std::string texturePath) {
 }
 
 void Renderer::addTextTexture(std::string id, std::string text) {
-    
+
 }

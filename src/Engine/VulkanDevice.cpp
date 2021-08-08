@@ -68,6 +68,11 @@ void VulkanDevice::createLogicalDevice(std::shared_ptr<VulkanInstance> instance)
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
 
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexingFeatures {};
+    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+    indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+    indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
@@ -75,6 +80,7 @@ void VulkanDevice::createLogicalDevice(std::shared_ptr<VulkanInstance> instance)
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.pNext = (void*) &indexingFeatures;
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
@@ -136,7 +142,16 @@ bool VulkanDevice::canDeviceBeUsed(VkPhysicalDevice device, std::shared_ptr<Vulk
     VkPhysicalDeviceFeatures supportedFeatures;
     vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-    return indices.isComplete() && extensionsSupported && validSwapChain && supportedFeatures.samplerAnisotropy;
+    VkPhysicalDeviceFeatures2 supportedFeatures2;
+    supportedFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    VkPhysicalDeviceVulkan12Features supportedFeatures12;
+    supportedFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    
+    supportedFeatures2.pNext = (void*) &supportedFeatures12;
+
+    vkGetPhysicalDeviceFeatures2(device, &supportedFeatures2);
+    
+    return indices.isComplete() && extensionsSupported && validSwapChain && supportedFeatures.samplerAnisotropy && supportedFeatures12.runtimeDescriptorArray && supportedFeatures12.descriptorBindingPartiallyBound;
 }
 
 bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {

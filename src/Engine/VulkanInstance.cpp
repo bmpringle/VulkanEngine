@@ -31,7 +31,7 @@ void VulkanInstance::tryAddInstanceExtension(const char* extension) {
     if(hasExtension) {
         instanceExtensions.push_back(extension);
     }else {
-        std::runtime_error(std::string(extension) + " isn't supported on this vulkan implementation");
+        throw std::runtime_error(std::string(extension) + " isn't supported on this vulkan implementation");
     }
 }
 
@@ -74,7 +74,7 @@ void VulkanInstance::create() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "A Bad Engine (TM) (Patent Pending)";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_API_VERSION_1_2;
 
     //Create VkInstanceCreateInfo struct and fill with data
     VkInstanceCreateInfo createInfo{};

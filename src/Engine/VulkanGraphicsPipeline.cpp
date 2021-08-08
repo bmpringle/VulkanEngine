@@ -119,6 +119,7 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = layoutBindings.size();
     layoutInfo.pBindings = layoutBindings.data();
+    layoutInfo.flags = descriptorSetLayoutFlags;
 
     if (vkCreateDescriptorSetLayout(device->getInternalLogicalDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -126,6 +127,11 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
 
     pipelineLayoutInfo.setLayoutCount = 1; 
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; 
+
+    if(pushContsantDescriptors.size() > 0) {
+        pipelineLayoutInfo.pushConstantRangeCount = pushContsantDescriptors.size();
+        pipelineLayoutInfo.pPushConstantRanges = pushContsantDescriptors.data();
+    }
 
     if(vkCreatePipelineLayout(device->getInternalLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
@@ -280,4 +286,12 @@ VkDescriptorSetLayoutBinding& VulkanGraphicsPipeline::getDescriptorSetLayoutBind
 
 void VulkanGraphicsPipeline::setDescriptorPoolData(VkDescriptorType type, uint32_t size) {
     poolData.push_back(std::make_pair(type, size));
+}
+
+void VulkanGraphicsPipeline::setPushConstantDescriptor(VkPushConstantRange desc) {
+    pushContsantDescriptors.push_back(desc);
+}
+
+void VulkanGraphicsPipeline::setDescriptorSetLayoutFlags(VkDescriptorSetLayoutCreateFlags flags) {
+    descriptorSetLayoutFlags = flags;
 }

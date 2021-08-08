@@ -36,6 +36,10 @@ class VulkanGraphicsPipeline {
         VkDescriptorSetLayoutBinding& getDescriptorSetLayoutBinding(int index);
 
         void setDescriptorPoolData(VkDescriptorType type, uint32_t size);
+
+        void setPushConstantDescriptor(VkPushConstantRange desc);
+
+        void setDescriptorSetLayoutFlags(VkDescriptorSetLayoutCreateFlags flags);
     private:
         std::vector<char> readFile(const std::string& filename);
 
@@ -91,6 +95,10 @@ class VulkanGraphicsPipeline {
         std::vector<std::pair<VkDescriptorType, uint32_t>> poolData;
 
         VkDescriptorPoolCreateInfo poolInfo;
+
+        std::vector<VkPushConstantRange> pushContsantDescriptors;
+
+        VkDescriptorSetLayoutCreateFlags descriptorSetLayoutFlags;
 };
 
 #endif
