@@ -76,6 +76,9 @@ class Renderer {
         const int MAX_OVERLAY_TEXTURES = 10;
 
         std::vector<std::string> overlayTextures = {"assets/test.jpg", "assets/cube-cube.png", "assets/dirt.png", "assets/test-OLD.jpg", "assets/grass_side.png"};
+
+
+        std::string missingTexture = "assets/missing_texture.png";
 };
 
 #endif

@@ -81,7 +81,7 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
     VkDescriptorSetLayoutBinding arrayOfTexturesLayoutBinding{};
     arrayOfTexturesLayoutBinding.binding = 1;
     arrayOfTexturesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    arrayOfTexturesLayoutBinding.descriptorCount = overlayTextures.size() + 1;
+    arrayOfTexturesLayoutBinding.descriptorCount = MAX_OVERLAY_TEXTURES;
     arrayOfTexturesLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     arrayOfTexturesLayoutBinding.pImmutableSamplers = nullptr;
 
@@ -98,6 +98,8 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
     for(std::string& texture : overlayTextures) {
         textureLoader->loadTexture(device, texture);
     }
+
+    textureLoader->loadTexture(device, missingTexture);
 
     textureLoader->loadTextToTexture(device, "text1", "this is text\nin my vulkan engine!");
 
@@ -468,6 +470,15 @@ void Renderer::updateDescriptorSets() {
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfo.imageView = vkEngine->getTextureLoader()->getImageView(texture);
+            imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
+
+            imageInfos.push_back(imageInfo);
+        }
+
+        for(int i = overlayTextures.size(); i < MAX_OVERLAY_TEXTURES; ++i) {
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = vkEngine->getTextureLoader()->getImageView("assets/missing_texture.png");
             imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
             imageInfos.push_back(imageInfo);
