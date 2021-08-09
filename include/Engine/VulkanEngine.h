@@ -37,7 +37,7 @@ class VulkanEngine {
         void setSwapchain(std::shared_ptr<VulkanSwapchain> swapchain);
 
         //set the current engine pipeline. setting this will recreate *everything* else (except for the instance and display and device), so be careful. also calls VulkanGraphicsPipeline::create(VulkanDevice device, VulkanSwapchain swapchain) even if you already did.
-        void setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> pipeline);
+        void setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> pipeline, int index);
 
         //set the current engine sync objects. setting this will recreate *everything* else (except for the instance and display and device and swapchain), so be careful. also calls VulkanRenderSyncObjects::create(VulkanDevice device, VulkanSwapchain swapchain) even if you already did.
         void setSyncObjects(std::shared_ptr<VulkanRenderSyncObjects> syncObjects);

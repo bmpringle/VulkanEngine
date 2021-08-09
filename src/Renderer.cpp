@@ -25,7 +25,6 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
     display->setInitialWindowDimensions(1000, 800);
     display->setWindowName("Test App Window");
 
-
     vkEngine->setInstance(instance);
 
     vkEngine->setDisplay(display);
@@ -44,66 +43,11 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
 
     vkEngine->setSyncObjects(syncObjects);
 
-    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineBlocks = std::make_shared<VulkanGraphicsPipeline>();
-
-    graphicsPipelineBlocks->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
-    graphicsPipelineBlocks->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
-    graphicsPipelineBlocks->setVertexShader("shaders/output/3dvert_instanced_texArray.spv");
-    graphicsPipelineBlocks->setFragmentShader("shaders/output/3dfrag_instanced_texArray.spv");
-    graphicsPipelineBlocks->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
-
-    //texture array binding
-    VkDescriptorSetLayoutBinding textureArrayLayoutBinding{};
-    textureArrayLayoutBinding.binding = 1;
-    textureArrayLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    textureArrayLayoutBinding.descriptorCount = 1;
-    textureArrayLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    textureArrayLayoutBinding.pImmutableSamplers = nullptr;
-
-    graphicsPipelineBlocks->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
-
-    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
-
-    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
-
-    vkEngine->setGraphicsPipeline(graphicsPipelineBlocks);
-
-
-    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineOverlays = std::make_shared<VulkanGraphicsPipeline>();
-
-    graphicsPipelineOverlays->setVertexInputBindingDescriptions(OverlayVertex::getBindingDescriptions());
-    graphicsPipelineOverlays->setVertexInputAttributeDescriptions(OverlayVertex::getAttributeDescriptions());
-    graphicsPipelineOverlays->setVertexShader("shaders/output/vert_overlay.spv");
-    graphicsPipelineOverlays->setFragmentShader("shaders/output/frag_overlay.spv");
-    graphicsPipelineOverlays->addDescriptorSetLayoutBinding(OverlayUniformBuffer::getDescriptorSetLayout());
-
-    //array of textures binding
-    VkDescriptorSetLayoutBinding arrayOfTexturesLayoutBinding{};
-    arrayOfTexturesLayoutBinding.binding = 1;
-    arrayOfTexturesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    arrayOfTexturesLayoutBinding.descriptorCount = MAX_OVERLAY_TEXTURES;
-    arrayOfTexturesLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    arrayOfTexturesLayoutBinding.pImmutableSamplers = nullptr;
-
-    graphicsPipelineOverlays->addDescriptorSetLayoutBinding(arrayOfTexturesLayoutBinding);
-
-    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
-
-    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * MAX_OVERLAY_TEXTURES);
-
-    vkEngine->setGraphicsPipeline(graphicsPipelineOverlays);
+    createGraphicsPipelines();
 
     std::shared_ptr<TextureLoader> textureLoader = vkEngine->getTextureLoader();
 
-    for(std::string& texture : overlayTextures) {
-        textureLoader->loadTexture(device, texture);
-    }
-
-    textureLoader->loadTexture(device, missingTexture);
-
-    textureLoader->loadTextToTexture(device, "text1", "this is text\nin my vulkan engine!");
-
-    overlayTextures.push_back("text1");
+    textureLoader->loadTexture(vkEngine->getDevice(), "missing_texture", "assets/missing_texture.png");
 
     textureLoader->loadTextureArray(device, {"assets/dirt.png", "assets/grass_side.png"}, "game-textures");
 
@@ -431,6 +375,18 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex) {
 }
 
 void Renderer::updateDescriptorSets() {
+    bool recreateGraphicsPipelines = false;
+
+    while(overlayTextures.size() > MAX_OVERLAY_TEXTURES) {
+        MAX_OVERLAY_TEXTURES = MAX_OVERLAY_TEXTURES * 2;
+
+        recreateGraphicsPipelines = true;
+    }
+
+    if(recreateGraphicsPipelines) {
+        createGraphicsPipelines();
+    }
+
     for (size_t i = 0; i < vkEngine->getSwapchain()->getInternalImages().size(); i++) {
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = blockUniformBuffers.at(i).getUniformBuffer();
@@ -445,7 +401,6 @@ void Renderer::updateDescriptorSets() {
         std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
         //descriptor writes for block pipeline
-
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i];
         descriptorWrites[0].dstBinding = 0;
@@ -463,7 +418,6 @@ void Renderer::updateDescriptorSets() {
         descriptorWrites[1].pImageInfo = &imageInfo;
 
         //descriptor writes for overlay pipeline
-
         std::vector<VkDescriptorImageInfo> imageInfos{}; 
 
         for(std::string& texture : overlayTextures) {
@@ -478,7 +432,7 @@ void Renderer::updateDescriptorSets() {
         for(int i = overlayTextures.size(); i < MAX_OVERLAY_TEXTURES; ++i) {
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = vkEngine->getTextureLoader()->getImageView("assets/missing_texture.png");
+            imageInfo.imageView = vkEngine->getTextureLoader()->getImageView("missing_texture");
             imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
             imageInfos.push_back(imageInfo);
@@ -554,9 +508,66 @@ std::shared_ptr<VulkanEngine> Renderer::getEngine() {
 }
 
 void Renderer::addTexture(std::string id, std::string texturePath) {
-
+    vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath);
+    overlayTextures.push_back(id);
+    updateDescriptorSets();
 }
 
 void Renderer::addTextTexture(std::string id, std::string text) {
+    vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text);
+    overlayTextures.push_back(id);
+    updateDescriptorSets();
+}
 
+void Renderer::createGraphicsPipelines() {
+    std::shared_ptr<VulkanSwapchain> swapchain = vkEngine->getSwapchain();
+
+    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineBlocks = std::make_shared<VulkanGraphicsPipeline>();
+
+    graphicsPipelineBlocks->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
+    graphicsPipelineBlocks->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
+    graphicsPipelineBlocks->setVertexShader("shaders/output/3dvert_instanced_texArray.spv");
+    graphicsPipelineBlocks->setFragmentShader("shaders/output/3dfrag_instanced_texArray.spv");
+    graphicsPipelineBlocks->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+
+    //texture array binding
+    VkDescriptorSetLayoutBinding textureArrayLayoutBinding{};
+    textureArrayLayoutBinding.binding = 1;
+    textureArrayLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    textureArrayLayoutBinding.descriptorCount = 1;
+    textureArrayLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    textureArrayLayoutBinding.pImmutableSamplers = nullptr;
+
+    graphicsPipelineBlocks->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
+
+    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+
+    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+
+    vkEngine->setGraphicsPipeline(graphicsPipelineBlocks, 0);
+
+
+    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineOverlays = std::make_shared<VulkanGraphicsPipeline>();
+
+    graphicsPipelineOverlays->setVertexInputBindingDescriptions(OverlayVertex::getBindingDescriptions());
+    graphicsPipelineOverlays->setVertexInputAttributeDescriptions(OverlayVertex::getAttributeDescriptions());
+    graphicsPipelineOverlays->setVertexShader("shaders/output/vert_overlay.spv");
+    graphicsPipelineOverlays->setFragmentShader("shaders/output/frag_overlay.spv");
+    graphicsPipelineOverlays->addDescriptorSetLayoutBinding(OverlayUniformBuffer::getDescriptorSetLayout());
+
+    //array of textures binding
+    VkDescriptorSetLayoutBinding arrayOfTexturesLayoutBinding{};
+    arrayOfTexturesLayoutBinding.binding = 1;
+    arrayOfTexturesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    arrayOfTexturesLayoutBinding.descriptorCount = MAX_OVERLAY_TEXTURES;
+    arrayOfTexturesLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    arrayOfTexturesLayoutBinding.pImmutableSamplers = nullptr;
+
+    graphicsPipelineOverlays->addDescriptorSetLayoutBinding(arrayOfTexturesLayoutBinding);
+
+    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+
+    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * MAX_OVERLAY_TEXTURES);
+
+    vkEngine->setGraphicsPipeline(graphicsPipelineOverlays, 1);
 }

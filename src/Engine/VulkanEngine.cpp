@@ -223,7 +223,7 @@ void VulkanEngine::setSwapchain(std::shared_ptr<VulkanSwapchain> swapchain) {
     hasSwapchain = true;
 }
 
-void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> pipeline) {
+void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> pipeline, int index) {
     if(!hasSwapchain) {
         std::runtime_error("you can't set the VulkanGraphicsPipeline without setting a VulkanSwapchain first");
     }
@@ -235,7 +235,14 @@ void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> p
     }
 
     pipeline->create(vkDevice, vkSwapchain);
-    vkPipelines.push_back(pipeline);
+
+    if(index < vkPipelines.size()) {
+        vkPipelines[index] = pipeline;
+    }else if(index == vkPipelines.size()) {
+        vkPipelines.push_back(pipeline);
+    }else {
+        throw std::runtime_error("you can't add a pipeline with an index greater than the current pipeline vector's size!");
+    }
 
     if(hasPipeline) {
         for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {

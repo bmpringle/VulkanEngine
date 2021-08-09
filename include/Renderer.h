@@ -43,6 +43,8 @@ class Renderer {
         void addTextTexture(std::string id, std::string text);
 
     private:
+        void createGraphicsPipelines();
+
         void destroyUniformBuffers();
 
         void createUniformBuffers();
@@ -73,9 +75,9 @@ class Renderer {
             {100, 100}
         };
 
-        const int MAX_OVERLAY_TEXTURES = 10;
+        uint MAX_OVERLAY_TEXTURES = 16;
 
-        std::vector<std::string> overlayTextures = {"assets/test.jpg", "assets/cube-cube.png", "assets/dirt.png", "assets/test-OLD.jpg", "assets/grass_side.png"};
+        std::vector<std::string> overlayTextures = {};
 
 
         std::string missingTexture = "assets/missing_texture.png";

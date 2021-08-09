@@ -19,20 +19,20 @@ GLFW_DIR='./glfw/'
 #place path to Vulkan SDK here:
 VULKAN_HOME='../VulkanSDK'
 
-LIBS=['pthread', 'vulkan.1', 'vulkan.1.2.182']
+LIBS=['pthread', 'vulkan.1', 'vulkan.1.2.182', 'libMoltenVK.dylib']
 LINK='{} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX)
 
 GLFW_INCLUDE=os.sep.join([GLFW_DIR,'include'])
 
 VULKAN_INCLUDE=os.sep.join([VULKAN_HOME, 'macOS/include'])
-VULKAN_LIBS=os.sep.join([VULKAN_HOME, 'macOS/lib'])
+MVK_INCLUDE='./'#os.sep.join([VULKAN_HOME, 'MoltenVK/include'])
 
 BLD = 'dbg' if DBG == 1 else 'rel'
 OPT = 0 if DBG == 1 else 3
 
 env.Append(CPPPATH = ['include']) 
 
-CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
+CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
 
 LIBSSTATIC = Glob(os.sep.join(['lib', '*.a']))
 

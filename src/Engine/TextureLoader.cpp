@@ -16,13 +16,13 @@ std::tuple<int, int, int, stbi_uc*> TextureLoader::getTexturePixels(std::string 
     stbi_uc* pixels = stbi_load(pathToTexture.data(), &texWidth, &texHeight, &texChannels, PIXEL_FORMAT_ENUM);
 
     if (!pixels) {
-        throw std::runtime_error("failed to load texture image!");
+        throw std::runtime_error("failed to load texture image " + pathToTexture + "!");
     }
 
     return std::tuple(texWidth, texHeight, texChannels, pixels);
 }
 
-void TextureLoader::createTextureImage(std::shared_ptr<VulkanDevice> device, std::string texturePath) {
+void TextureLoader::createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath) {
     std::tuple<int, int, int, stbi_uc*> textureData = getTexturePixels(texturePath, STBI_rgb_alpha);
 
     VkBuffer stagingBuffer;
@@ -52,12 +52,12 @@ void TextureLoader::createTextureImage(std::shared_ptr<VulkanDevice> device, std
     vkDestroyBuffer(device->getInternalLogicalDevice(), stagingBuffer, nullptr);
     vkFreeMemory(device->getInternalLogicalDevice(), stagingBufferMemory, nullptr);
 
-    texturePathToImage[texturePath] = textureImage;
-    texturePathToDeviceMemory[texturePath] = textureImageMemory;
+    texturePathToImage[textureID] = textureImage;
+    texturePathToDeviceMemory[textureID] = textureImageMemory;
 }
 
-void TextureLoader::createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string texturePath, VkFormat format) {
-    texturePathToImageView[texturePath] = VulkanEngine::createImageView(texturePathToImage[texturePath], format, device, VK_IMAGE_VIEW_TYPE_2D, 1);
+void TextureLoader::createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string textureID, VkFormat format) {
+    texturePathToImageView[textureID] = VulkanEngine::createImageView(texturePathToImage[textureID], format, device, VK_IMAGE_VIEW_TYPE_2D, 1);
 }
 
 void TextureLoader::createTextureSampler(std::shared_ptr<VulkanDevice> device) {
@@ -134,9 +134,9 @@ void TextureLoader::destroyTextureLoader(std::shared_ptr<VulkanDevice> device) {
     }
 }
 
-void TextureLoader::loadTexture(std::shared_ptr<VulkanDevice> device, std::string texturePath) {
-    createTextureImage(device, texturePath);
-    createTextureImageView(device, texturePath, VK_FORMAT_R8G8B8A8_SRGB);
+void TextureLoader::loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath) {
+    createTextureImage(device, textureID, texturePath);
+    createTextureImageView(device, textureID, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
 void TextureLoader::loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName) {

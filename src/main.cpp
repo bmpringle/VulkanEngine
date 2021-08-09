@@ -180,6 +180,13 @@ int main() {
     }
   }
 
+  renderer.addTexture("test", "assets/test.jpg");
+  renderer.addTexture("cube-cube", "assets/cube-cube.png");
+  renderer.addTexture("dirt", "assets/dirt.png");
+  renderer.addTexture("old-test", "assets/test-OLD.jpg");
+  renderer.addTexture("grass-side", "assets/grass_side.png");
+  renderer.addTextTexture("text1", "this is text in my\nvulkan engine!");
+
   renderer.setDataPair("block1", cube, instanceDataCube);
   renderer.setDataPair("block2", cube2, instanceDataCube2);
 

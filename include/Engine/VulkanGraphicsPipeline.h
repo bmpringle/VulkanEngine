@@ -98,7 +98,7 @@ class VulkanGraphicsPipeline {
 
         std::vector<VkPushConstantRange> pushContsantDescriptors;
 
-        VkDescriptorSetLayoutCreateFlags descriptorSetLayoutFlags;
+        VkDescriptorSetLayoutCreateFlags descriptorSetLayoutFlags = 0;
 };
 
 #endif

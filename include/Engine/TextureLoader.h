@@ -34,16 +34,16 @@ class TextureLoader {
 
         void loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName);
 
-        void loadTexture(std::shared_ptr<VulkanDevice> device, std::string texturePath);
+        void loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath);
 
         void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text);
 
         void copyBufferToImageInLayers(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::shared_ptr<VulkanDevice> device, int numberOfLayers);
 
     private:
-        void createTextureImage(std::shared_ptr<VulkanDevice> device, std::string texturePath);
+        void createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath);
 
-        void createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string texturePath, VkFormat format);
+        void createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string textureID, VkFormat format);
 
         void createTextureSampler(std::shared_ptr<VulkanDevice> device);
 
