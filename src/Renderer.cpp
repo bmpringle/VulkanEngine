@@ -62,6 +62,10 @@ Renderer::~Renderer() {
         vertexData.second.first.destroy(vkEngine->getDevice());
         vertexData.second.second.destroy(vkEngine->getDevice());
     }
+
+    for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
+        vertexData.second.destroy(vkEngine->getDevice());
+    }
 }
 
 void Renderer::recordCommandBuffers() {

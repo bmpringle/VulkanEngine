@@ -205,7 +205,7 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     vkDestroyShaderModule(device->getInternalLogicalDevice(), fragShaderModule, nullptr);
 }
 
-void VulkanGraphicsPipeline::destroyGraphicsPipeline(std::shared_ptr<VulkanDevice> device) {
+void VulkanGraphicsPipeline::destroyGraphicsPipeline(std::shared_ptr<VulkanDevice> device) {   
     vkDestroyDescriptorPool(device->getInternalLogicalDevice(), descriptorPool, nullptr);
 
     if(isDescriptorLayoutSet) {

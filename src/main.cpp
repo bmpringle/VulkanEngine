@@ -268,6 +268,5 @@ int main() {
 
     glfwPollEvents();
   }
-
   return 0;
 }

@@ -23,6 +23,12 @@ void VulkanSwapchain::destroySwapchain(std::shared_ptr<VulkanDevice> device) {
         vkDestroyImageView(device->getInternalLogicalDevice(), imageView, nullptr);
     }
 
+    vkDestroyImageView(device->getInternalLogicalDevice(), depthImageView, nullptr);
+
+    vkDestroyImage(device->getInternalLogicalDevice(), depthImage, nullptr);
+
+    vkFreeMemory(device->getInternalLogicalDevice(), depthImageMemory, nullptr);
+
     vkDestroySwapchainKHR(device->getInternalLogicalDevice(), swapchain, nullptr);
 }
 

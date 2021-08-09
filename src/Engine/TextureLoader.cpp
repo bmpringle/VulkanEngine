@@ -23,6 +23,14 @@ std::tuple<int, int, int, stbi_uc*> TextureLoader::getTexturePixels(std::string 
 }
 
 void TextureLoader::createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath) {
+    if(texturePathToImage.count(textureID) > 0) {
+        vkDestroyImageView(device->getInternalLogicalDevice(), texturePathToImageView[textureID], nullptr);
+
+        vkDestroyImage(device->getInternalLogicalDevice(), texturePathToImage[textureID], nullptr);
+
+        vkFreeMemory(device->getInternalLogicalDevice(), texturePathToDeviceMemory[textureID], nullptr);
+    }
+
     std::tuple<int, int, int, stbi_uc*> textureData = getTexturePixels(texturePath, STBI_rgb_alpha);
 
     VkBuffer stagingBuffer;
@@ -145,6 +153,14 @@ void TextureLoader::loadTexture(std::shared_ptr<VulkanDevice> device, std::strin
 }
 
 void TextureLoader::loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName) {
+    if(texturePathToImage.count(arrayName) > 0) {
+        vkDestroyImageView(device->getInternalLogicalDevice(), textureArrayIDToImageView[arrayName], nullptr);
+
+        vkDestroyImage(device->getInternalLogicalDevice(), textureArrayIDToImage[arrayName], nullptr);
+
+        vkFreeMemory(device->getInternalLogicalDevice(), textureArrayIDToDeviceMemory[arrayName], nullptr);
+    }
+    
     std::vector<std::tuple<int, int, int, stbi_uc*>> textureData;
 
     for(std::string& path : texturePaths) {
@@ -256,6 +272,14 @@ void TextureLoader::copyBufferToImageInLayers(VkBuffer buffer, VkImage image, ui
 }
 
 void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text) {
+    if(texturePathToImage.count(textureID) > 0) {
+        vkDestroyImageView(device->getInternalLogicalDevice(), texturePathToImageView[textureID], nullptr);
+
+        vkDestroyImage(device->getInternalLogicalDevice(), texturePathToImage[textureID], nullptr);
+
+        vkFreeMemory(device->getInternalLogicalDevice(), texturePathToDeviceMemory[textureID], nullptr);
+    }
+
     TextBitmap bitmap = unitypeConverter.getTextFromString(text);
 
     VkBuffer stagingBuffer;

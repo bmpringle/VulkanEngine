@@ -12,10 +12,11 @@ VulkanEngine::~VulkanEngine() {
     for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
         vkPipeline->destroyGraphicsPipeline(vkDevice);
     }
-
+    
     vkSwapchain->destroySwapchain(vkDevice);
     textureLoader->destroyTextureLoader(vkDevice);
     vkDevice->destroyDevice();
+    
     vkDisplay->destroyDisplay(vkInstance);
     vkInstance->destroyInstance();
 }
@@ -233,8 +234,6 @@ void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> p
             vkPipeline->destroyGraphicsPipeline(vkDevice);
         }
     }
-
-    pipeline->create(vkDevice, vkSwapchain);
 
     if(index < vkPipelines.size()) {
         vkPipelines[index] = pipeline;
