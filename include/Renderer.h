@@ -50,6 +50,10 @@ class Renderer {
 
         std::pair<unsigned int, unsigned int> getTextureArrayDimensions(std::string id);
 
+        void loadTextureArray(std::string id, std::vector<std::string> textures);
+
+        void setCurrentTextureArray(std::string id);
+
     private:
         void createGraphicsPipelines();
 
@@ -86,6 +90,8 @@ class Renderer {
         uint MAX_OVERLAY_TEXTURES = 32;
 
         std::vector<std::string> overlayTextures = {};
+
+        std::string textureArrayID = "default";
 
 
         std::string missingTexture = "assets/missing_texture.png";

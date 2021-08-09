@@ -170,6 +170,9 @@ int main() {
   renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\nafter lots of descriptors!");
 
+  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png"});
+  renderer.setCurrentTextureArray("game-textures");
+
   //setup callbacks
   glfwSetCursorPosCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwMouseCallback);
   glfwSetKeyCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwKeyCallback);

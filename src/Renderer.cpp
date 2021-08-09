@@ -49,7 +49,7 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
 
     textureLoader->loadTexture(vkEngine->getDevice(), "missing_texture", "assets/missing_texture.png");
 
-    textureLoader->loadTextureArray(device, {"assets/dirt.png", "assets/grass_side.png"}, "game-textures");
+    loadTextureArray("default", {missingTexture, missingTexture});
 
     createUniformBuffers();
 }
@@ -399,7 +399,7 @@ void Renderer::updateDescriptorSets() {
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView("game-textures");
+        imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView(textureArrayID);
         imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
         std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
@@ -441,7 +441,7 @@ void Renderer::updateDescriptorSets() {
 
             imageInfos.push_back(imageInfo);
         }
-
+        
         VkDescriptorBufferInfo bufferInfoOverlay{};
         bufferInfoOverlay.buffer = overlayUniformBuffers.at(i).getUniformBuffer();
         bufferInfoOverlay.offset = 0;
@@ -462,7 +462,7 @@ void Renderer::updateDescriptorSets() {
         descriptorWrites[3].descriptorType = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(1).descriptorType;
         descriptorWrites[3].descriptorCount = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(1).descriptorCount;
         descriptorWrites[3].pImageInfo = imageInfos.data();
-
+        
         vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
@@ -611,4 +611,13 @@ std::pair<unsigned int, unsigned int> Renderer::getTextureDimensions(std::string
 
 std::pair<unsigned int, unsigned int> Renderer::getTextureArrayDimensions(std::string id) {
     return vkEngine->getTextureLoader()->getTextureArrayDimensions(id);
+}
+
+void Renderer::loadTextureArray(std::string id, std::vector<std::string> textures) {
+    vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id);
+}
+
+void Renderer::setCurrentTextureArray(std::string id) {
+    textureArrayID = id;
+    updateDescriptorSets();
 }
