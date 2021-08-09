@@ -42,6 +42,10 @@ class Renderer {
         
         void addTextTexture(std::string id, std::string text);
 
+        void removeTexture(std::string id);
+
+        unsigned int getTextureID(std::string id);
+
     private:
         void createGraphicsPipelines();
 

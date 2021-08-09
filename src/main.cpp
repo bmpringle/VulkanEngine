@@ -150,36 +150,6 @@ static std::vector<OverlayVertex> texturedRectangleOverlay {
 int main() {
   Renderer renderer = Renderer();
 
-  //setup callbacks
-  glfwSetCursorPosCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwMouseCallback);
-  glfwSetKeyCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwKeyCallback);
-
-  std::vector<Vertex> cube2 = cube;
-
-  for(Vertex& v : cube2) {
-    v.texCoord[2] = 1;
-  }
-
-  std::vector<InstanceData> instanceDataCube;
-
-  std::vector<InstanceData> instanceDataCube2;
-
-  std::vector<OverlayVertex> texturedRectangleOverlay2 = texturedRectangleOverlay;
-
-  for(OverlayVertex& v : texturedRectangleOverlay2) {
-    v.position[0] = v.position[0] - 75;
-    v.texID = 18;
-  }
-
-  for(int x = 0; x < 60; ++x) {
-    for(int y = 0; y < 60; ++y) {
-      for(int z = 0; z < 60; ++z) {
-        instanceDataCube.push_back(InstanceData({{x, y, z}}));
-        instanceDataCube2.push_back(InstanceData({{-x, y, z}}));
-      }
-    }
-  }
-
   renderer.addTexture("test", "assets/test.jpg");
   renderer.addTexture("cube-cube", "assets/cube-cube.png");
   renderer.addTexture("dirt", "assets/dirt.png");
@@ -198,7 +168,41 @@ int main() {
   renderer.addTextTexture("text11", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text12", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\n with lots of descriptors!");
+  renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\n after lots of descriptors!");
+
+  //setup callbacks
+  glfwSetCursorPosCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwMouseCallback);
+  glfwSetKeyCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwKeyCallback);
+
+  std::vector<Vertex> cube2 = cube;
+
+  unsigned int tex_id = renderer.getTextureID("test");
+
+  for(Vertex& v : cube2) {
+    v.texCoord[2] = tex_id;
+  }
+
+  std::vector<InstanceData> instanceDataCube;
+
+  std::vector<InstanceData> instanceDataCube2;
+
+  std::vector<OverlayVertex> texturedRectangleOverlay2 = texturedRectangleOverlay;
+
+  tex_id = renderer.getTextureID("cube-cube");
+
+  for(OverlayVertex& v : texturedRectangleOverlay2) {
+    v.position[0] = v.position[0] - 75;
+    v.texID = tex_id;
+  }
+
+  for(int x = 0; x < 60; ++x) {
+    for(int y = 0; y < 60; ++y) {
+      for(int z = 0; z < 60; ++z) {
+        instanceDataCube.push_back(InstanceData({{x, y, z}}));
+        instanceDataCube2.push_back(InstanceData({{-x, y, z}}));
+      }
+    }
+  }
 
   renderer.setDataPair("block1", cube, instanceDataCube);
   renderer.setDataPair("block2", cube2, instanceDataCube2);

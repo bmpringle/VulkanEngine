@@ -95,6 +95,9 @@ void TextureLoader::createTextureSampler(std::shared_ptr<VulkanDevice> device) {
 }
 
 VkImageView TextureLoader::getImageView(std::string texturePath) {
+    if(texturePathToImageView.count(texturePath) == 0) {
+        throw std::runtime_error("no imageview with id" + texturePath + " fouond");
+    }
     return texturePathToImageView[texturePath];
 }
 

@@ -509,14 +509,39 @@ std::shared_ptr<VulkanEngine> Renderer::getEngine() {
 
 void Renderer::addTexture(std::string id, std::string texturePath) {
     vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath);
-    overlayTextures.push_back(id);
+
+    if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
+        overlayTextures.push_back(id);
+    }
+
     updateDescriptorSets();
 }
 
 void Renderer::addTextTexture(std::string id, std::string text) {
     vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text);
-    overlayTextures.push_back(id);
+
+    if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
+        overlayTextures.push_back(id);
+    }
+    
     updateDescriptorSets();
+}
+
+void Renderer::removeTexture(std::string id) {
+    auto iter = std::find(overlayTextures.begin(), overlayTextures.end(), id);
+    if(iter == overlayTextures.end()) {
+        throw std::runtime_error("couldnt find " + id + " in overlayTextures!");
+    }
+
+    overlayTextures.erase(iter);
+}
+
+unsigned int Renderer::getTextureID(std::string id) {
+    auto iter = std::find(overlayTextures.begin(), overlayTextures.end(), id);
+    if(iter == overlayTextures.end()) {
+        throw std::runtime_error("couldnt find " + id + " in overlayTextures!");
+    }
+    return iter - overlayTextures.begin();
 }
 
 void Renderer::createGraphicsPipelines() {
