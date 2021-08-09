@@ -54,6 +54,8 @@ void TextureLoader::createTextureImage(std::shared_ptr<VulkanDevice> device, std
 
     texturePathToImage[textureID] = textureImage;
     texturePathToDeviceMemory[textureID] = textureImageMemory;
+
+    texturePathToImageDimensions[textureID] = std::make_pair(std::get<0>(textureData), std::get<1>(textureData));
 }
 
 void TextureLoader::createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string textureID, VkFormat format) {
@@ -96,7 +98,7 @@ void TextureLoader::createTextureSampler(std::shared_ptr<VulkanDevice> device) {
 
 VkImageView TextureLoader::getImageView(std::string texturePath) {
     if(texturePathToImageView.count(texturePath) == 0) {
-        throw std::runtime_error("no imageview with id" + texturePath + " fouond");
+        throw std::runtime_error("no imageview with id" + texturePath + " found");
     }
     return texturePathToImageView[texturePath];
 }
@@ -201,6 +203,8 @@ void TextureLoader::loadTextureArray(std::shared_ptr<VulkanDevice> device, std::
 
     textureArrayIDToDeviceMemory[arrayName] = textureImageMemory;
 
+    textureArrayIDToImageDimensions[arrayName] = std::make_pair(std::get<0>(textureData.at(0)), std::get<1>(textureData.at(0)));
+
     textureArrayIDToImageView[arrayName] = VulkanEngine::createImageView(textureArrayIDToImage[arrayName], VK_FORMAT_R8G8B8A8_SRGB, device, VK_IMAGE_VIEW_TYPE_2D_ARRAY, texturePaths.size());
 
     vkDestroyBuffer(device->getInternalLogicalDevice(), stagingBuffer, nullptr);
@@ -282,5 +286,23 @@ void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std:
     texturePathToImage[textureID] = textureImage;
     texturePathToDeviceMemory[textureID] = textureImageMemory;
 
+    texturePathToImageDimensions[textureID] = std::make_pair(bitmap.stride, bitmap.rows);
+
     createTextureImageView(device, textureID, VK_FORMAT_R8_SRGB);
+}
+
+std::pair<unsigned int, unsigned int> TextureLoader::getTextureDimensions(std::string id) {
+    if(texturePathToImageDimensions.count(id) == 0) {
+        throw std::runtime_error("no texture dimensions with id" + id + " found");
+    }
+
+    return texturePathToImageDimensions.at(id);
+}
+
+std::pair<unsigned int, unsigned int> TextureLoader::getTextureArrayDimensions(std::string id) {
+    if(textureArrayIDToImageDimensions.count(id) == 0) {
+        throw std::runtime_error("no texture dimensions with id" + id + " found");
+    }
+
+    return textureArrayIDToImageDimensions.at(id);
 }

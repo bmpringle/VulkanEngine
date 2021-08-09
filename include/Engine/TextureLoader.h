@@ -40,6 +40,10 @@ class TextureLoader {
 
         void copyBufferToImageInLayers(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::shared_ptr<VulkanDevice> device, int numberOfLayers);
 
+        std::pair<unsigned int, unsigned int> getTextureDimensions(std::string id);
+
+        std::pair<unsigned int, unsigned int> getTextureArrayDimensions(std::string id);
+
     private:
         void createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath);
 
@@ -53,6 +57,8 @@ class TextureLoader {
 
         std::map<std::string, VkImageView> texturePathToImageView = std::map<std::string, VkImageView>();
 
+        std::map<std::string, std::pair<unsigned int, unsigned int>> texturePathToImageDimensions = std::map<std::string, std::pair<unsigned int, unsigned int>>();
+
         VkSampler textureSampler;
 
         std::map<std::string, VkImage> textureArrayIDToImage = std::map<std::string, VkImage>();
@@ -60,6 +66,9 @@ class TextureLoader {
         std::map<std::string, VkDeviceMemory> textureArrayIDToDeviceMemory = std::map<std::string, VkDeviceMemory>();
 
         std::map<std::string, VkImageView> textureArrayIDToImageView = std::map<std::string, VkImageView>();
+
+        std::map<std::string, std::pair<unsigned int, unsigned int>> textureArrayIDToImageDimensions = std::map<std::string, std::pair<unsigned int, unsigned int>>();
+
 
         StringToTextConverter unitypeConverter = StringToTextConverter("assets/unifont-13.0.06.ttf");
 };

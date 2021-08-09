@@ -46,6 +46,10 @@ class Renderer {
 
         unsigned int getTextureID(std::string id);
 
+        std::pair<unsigned int, unsigned int> getTextureDimensions(std::string id);
+
+        std::pair<unsigned int, unsigned int> getTextureArrayDimensions(std::string id);
+
     private:
         void createGraphicsPipelines();
 

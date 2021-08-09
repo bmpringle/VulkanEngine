@@ -168,7 +168,7 @@ int main() {
   renderer.addTextTexture("text11", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text12", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\n after lots of descriptors!");
+  renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\nafter lots of descriptors!");
 
   //setup callbacks
   glfwSetCursorPosCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwMouseCallback);
@@ -176,22 +176,37 @@ int main() {
 
   std::vector<Vertex> cube2 = cube;
 
-  unsigned int tex_id = renderer.getTextureID("test");
-
   for(Vertex& v : cube2) {
-    v.texCoord[2] = tex_id;
+    v.texCoord[2] = 2;
   }
 
   std::vector<InstanceData> instanceDataCube;
 
   std::vector<InstanceData> instanceDataCube2;
 
+  unsigned int tex_id = renderer.getTextureID("test");
+
+  for(OverlayVertex& v : texturedRectangleOverlay) {
+    v.texID = tex_id;
+  }
+
   std::vector<OverlayVertex> texturedRectangleOverlay2 = texturedRectangleOverlay;
 
-  tex_id = renderer.getTextureID("cube-cube");
+  tex_id = renderer.getTextureID("text14");
+
+  auto dimensions = renderer.getTextureDimensions("text14");
+
+  float textureAspectRatio = (float) dimensions.second / (float) dimensions.first;
+
+  float yCoord = 75 * textureAspectRatio;
 
   for(OverlayVertex& v : texturedRectangleOverlay2) {
+    if(v.position[1] == 75) {
+      v.position[1] = yCoord;
+    }
+
     v.position[0] = v.position[0] - 75;
+
     v.texID = tex_id;
   }
 

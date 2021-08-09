@@ -600,3 +600,11 @@ void Renderer::createGraphicsPipelines() {
 
     vkEngine->setGraphicsPipeline(graphicsPipelineOverlays, 1);
 }
+
+std::pair<unsigned int, unsigned int> Renderer::getTextureDimensions(std::string id) {
+    return vkEngine->getTextureLoader()->getTextureDimensions(id);
+}
+
+std::pair<unsigned int, unsigned int> Renderer::getTextureArrayDimensions(std::string id) {
+    return vkEngine->getTextureLoader()->getTextureArrayDimensions(id);
+}
