@@ -168,7 +168,7 @@ int main() {
 
   for(OverlayVertex& v : texturedRectangleOverlay2) {
     v.position[0] = v.position[0] - 75;
-    v.texID = 5;
+    v.texID = 18;
   }
 
   for(int x = 0; x < 60; ++x) {
@@ -186,6 +186,19 @@ int main() {
   renderer.addTexture("old-test", "assets/test-OLD.jpg");
   renderer.addTexture("grass-side", "assets/grass_side.png");
   renderer.addTextTexture("text1", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text2", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text3", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text4", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text5", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text6", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text7", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text8", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text9", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text10", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text11", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text12", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
+  renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\n with lots of descriptors!");
 
   renderer.setDataPair("block1", cube, instanceDataCube);
   renderer.setDataPair("block2", cube2, instanceDataCube2);

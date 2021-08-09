@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-/*#ifdef __APPLE__
+#ifdef __APPLE__
 #include <MoltenVK/vk_mvk_moltenvk.h>
-#endif*/
+#endif
 
 void VulkanInstance::addValidationLayer(const char* layer) {
     validationLayers.push_back(layer);
@@ -65,11 +65,17 @@ bool VulkanInstance::checkValidationLayerSupport() {
 }
 
 void VulkanInstance::create() {
-    /*#ifdef __APPLE__
-    MVKConfiguration* config;
+    #ifdef __APPLE__
+    MVKConfiguration config {};
     size_t configSize = sizeof(MVKConfiguration);
-    vkSetMoltenVKConfigurationMVK(VK_NULL_HANDLE, config, &configSize); //set beta argument buffers to be used in order to get more descriptors than 16 for frag shader.
-    #endif*/
+    vkGetMoltenVKConfigurationMVK(VK_NULL_HANDLE, &config, &configSize); //set beta argument buffers to be used in order to get more descriptors than 16 for frag shader.
+    
+    config.useMetalArgumentBuffers = VK_TRUE;
+
+    configSize = sizeof(MVKConfiguration);
+    vkSetMoltenVKConfigurationMVK(VK_NULL_HANDLE, &config, &configSize);
+
+    #endif
 
     std::vector<VkExtensionProperties> extensions = getAllSupportedExtensions();
 

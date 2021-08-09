@@ -40,6 +40,8 @@ class VulkanGraphicsPipeline {
         void setPushConstantDescriptor(VkPushConstantRange desc);
 
         void setDescriptorSetLayoutFlags(VkDescriptorSetLayoutCreateFlags flags);
+
+        void setDescriptorPoolFlags(VkDescriptorPoolCreateFlags flags);
     private:
         std::vector<char> readFile(const std::string& filename);
 
@@ -99,6 +101,8 @@ class VulkanGraphicsPipeline {
         std::vector<VkPushConstantRange> pushContsantDescriptors;
 
         VkDescriptorSetLayoutCreateFlags descriptorSetLayoutFlags = 0;
+
+        VkDescriptorPoolCreateFlags descriptorPoolFlags = 0;
 };
 
 #endif

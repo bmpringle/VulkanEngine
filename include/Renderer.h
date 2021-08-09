@@ -75,7 +75,7 @@ class Renderer {
             {100, 100}
         };
 
-        uint MAX_OVERLAY_TEXTURES = 16;
+        uint MAX_OVERLAY_TEXTURES = 32;
 
         std::vector<std::string> overlayTextures = {};
 

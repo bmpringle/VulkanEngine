@@ -25,7 +25,7 @@ LINK='{} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX)
 GLFW_INCLUDE=os.sep.join([GLFW_DIR,'include'])
 
 VULKAN_INCLUDE=os.sep.join([VULKAN_HOME, 'macOS/include'])
-MVK_INCLUDE='./'#os.sep.join([VULKAN_HOME, 'MoltenVK/include'])
+MVK_INCLUDE=os.sep.join([VULKAN_HOME, 'MoltenVK/include'])
 
 BLD = 'dbg' if DBG == 1 else 'rel'
 OPT = 0 if DBG == 1 else 3

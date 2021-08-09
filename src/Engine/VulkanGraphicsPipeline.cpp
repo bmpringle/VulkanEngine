@@ -183,6 +183,7 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = static_cast<uint32_t>(swapchain->getInternalImages().size());
+    poolInfo.flags = descriptorPoolFlags;
 
     if (vkCreateDescriptorPool(device->getInternalLogicalDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
@@ -294,4 +295,8 @@ void VulkanGraphicsPipeline::setPushConstantDescriptor(VkPushConstantRange desc)
 
 void VulkanGraphicsPipeline::setDescriptorSetLayoutFlags(VkDescriptorSetLayoutCreateFlags flags) {
     descriptorSetLayoutFlags = flags;
+}
+
+void VulkanGraphicsPipeline::setDescriptorPoolFlags(VkDescriptorPoolCreateFlags flags) {
+    descriptorPoolFlags = flags;
 }
