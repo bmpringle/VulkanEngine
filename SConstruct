@@ -9,6 +9,8 @@ DBG = int(ARGUMENTS.get('DBG', 0))
 ARM = int(ARGUMENTS.get('ARM', 1))
 WARN = int(ARGUMENTS.get('WARN', 0))
 
+TEST = int(ARGUMENTS.get('TEST', 0))
+
 VALIDATION_LAYERS = int(ARGUMENTS.get('VALIDATION_LAYERS', 0))
 
 env = Environment()
@@ -32,16 +34,31 @@ OPT = 0 if DBG == 1 else 3
 
 env.Append(CPPPATH = ['include']) 
 
-CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
+CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -fPIC -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
 
 LIBSSTATIC = Glob(os.sep.join(['lib', '*.a']))
 
 VariantDir(os.sep.join(['obj', BLD]), "src", duplicate=0)
-tst = env.Program(os.sep.join(['bin', BLD, 'tstGame']),
-                    source=[Glob('{}/*.cpp'.format(os.sep.join(['obj', BLD]))), Glob('{}/Engine/*.cpp'.format(os.sep.join(['obj', BLD]))), LIBSSTATIC],
+
+env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
+
+sharedLibBuild = env.SharedLibrary(os.sep.join(['lib', BLD, 'libVulkanEngineLib.dylib']),
+                    source=[Glob('{}/Renderer.cpp'.format(os.sep.join(['obj', BLD]))), Glob('{}/Engine/*.cpp'.format(os.sep.join(['obj', BLD]))), LIBSSTATIC],
                     CXX=CXX,
                     CCFLAGS=CCFLAGS,
                     LINK=LINK,
                     LIBS=LIBS)
 
-Default(tst)
+CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {}  -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
+
+LINK='{} -framework OpenGL -framework Cocoa -framework IOKit -L {}'.format(CXX, './lib/rel/')
+LIBS = ['libVulkanEngineLib.dylib']
+
+testExecutableBuild = env.Program(os.sep.join(['bin', BLD, 'tstGame']),
+                    source=[Glob('{}/main.cpp'.format(os.sep.join(['obj', BLD])))],
+                    CXX=CXX,
+                    CCFLAGS=CCFLAGS,
+                    LINK=LINK,
+                    LIBS=LIBS)
+
+Depends(testExecutableBuild, sharedLibBuild)
