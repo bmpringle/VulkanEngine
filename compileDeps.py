@@ -23,3 +23,19 @@ if platform == "linux" or platform == "darwin":
 elif platform == "win32":
     print("unsupported at this time")
     exit()
+
+MACOS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.189.0/mac/vulkansdk-macos-1.2.189.0.dmg"
+
+if platform == "darwin":
+    output, error = execCmd("wget {}".format(MACOS_VULKANSDK))
+    output, error = execCmd("hdiutil attach {}".format("vulkansdk-macos-1.2.189.0.dmg"))
+    output, error = execCmd("cp -rf /Volumes/{}/ ./".format("vulkansdk-macos-1.2.189.0"))
+    output, error = execCmd("hdiutil detach /Volumes/{}/".format("vulkansdk-macos-1.2.189.0"))
+    output, error = execCmd("rm {}".format("vulkansdk-macos-1.2.189.0.dmg"))
+
+    print("Install Vulkan SDK to whatever directory you want, then in the Sconstruct file,\nset the VULKAN_HOME variable to be the path you installed the SDK to. The default is ../VulkanSDK in the Sconstruct file")
+
+    output, error = execCmd("open InstallVulkan.app")
+else:
+    print("auto-install of vulkan sdk unsupported at this moment for non-darwin platforms")
+    exit()
