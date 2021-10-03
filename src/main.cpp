@@ -2,7 +2,7 @@
  * as such, while many things will be changed as I write this program, some parts may be very similar or identical.
 */
 
-#include "Renderer.h"
+#include "VKRenderer.h"
 
 #include <iostream>
 
@@ -148,7 +148,7 @@ static std::vector<OverlayVertex> texturedRectangleOverlay {
 };
 
 int main() {
-  Renderer renderer = Renderer();
+  VKRenderer renderer = VKRenderer();
 
   renderer.addTexture("test", "assets/test.jpg");
   renderer.addTexture("cube-cube", "assets/cube-cube.png");
