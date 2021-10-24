@@ -14,13 +14,13 @@
 #include "UniformBuffer.h"
 #include "OverlayUniformBuffer.h"
 
-class Renderer {
+class VKRenderer {
     public:
-        Renderer(std::shared_ptr<VulkanEngine> engine);
+        VKRenderer(std::shared_ptr<VulkanEngine> engine);
 
-        Renderer();
+        VKRenderer();
 
-        ~Renderer();
+        ~VKRenderer();
 
         void recordCommandBuffers();
 

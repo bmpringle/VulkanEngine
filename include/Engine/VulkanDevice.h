@@ -51,7 +51,7 @@ class VulkanDevice {
 
         SwapChainSupportDetails getDeviceSwapChainSupport(VkPhysicalDevice device, std::shared_ptr<VulkanDisplay> display);
 
-        VkPhysicalDevice physicalDevice;
+        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
         QueueFamilyIndices indices;
 

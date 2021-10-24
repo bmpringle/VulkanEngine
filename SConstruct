@@ -22,7 +22,7 @@ GLFW_DIR='./glfw/'
 VULKAN_HOME='../VulkanSDK'
 
 LIBS=['pthread', 'vulkan.1', 'vulkan.1.2.182', 'libMoltenVK.dylib']
-LINK='{} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX)
+LINK='{} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX)#-L{}'.format(CXX, '{}/macOS/lib/'.format(VULKAN_HOME))
 
 GLFW_INCLUDE=os.sep.join([GLFW_DIR,'include'])
 
@@ -43,7 +43,7 @@ VariantDir(os.sep.join(['obj', BLD]), "src", duplicate=0)
 env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 
 sharedLibBuild = env.SharedLibrary(os.sep.join(['lib', BLD, 'libVulkanEngineLib.dylib']),
-                    source=[Glob('{}/Renderer.cpp'.format(os.sep.join(['obj', BLD]))), Glob('{}/Engine/*.cpp'.format(os.sep.join(['obj', BLD]))), LIBSSTATIC],
+                    source=[Glob('{}/VKRenderer.cpp'.format(os.sep.join(['obj', BLD]))), Glob('{}/Engine/*.cpp'.format(os.sep.join(['obj', BLD]))), LIBSSTATIC],
                     CXX=CXX,
                     CCFLAGS=CCFLAGS,
                     LINK=LINK,
@@ -51,7 +51,7 @@ sharedLibBuild = env.SharedLibrary(os.sep.join(['lib', BLD, 'libVulkanEngineLib.
 
 CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {}  -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
 
-LINK='{} -framework OpenGL -framework Cocoa -framework IOKit -L {}'.format(CXX, './lib/rel/')
+LINK='{} -framework OpenGL -framework Cocoa -framework IOKit -L {}'.format(CXX, './lib/{}/'.format(BLD))
 LIBS = ['libVulkanEngineLib.dylib']
 
 testExecutableBuild = env.Program(os.sep.join(['bin', BLD, 'tstGame']),

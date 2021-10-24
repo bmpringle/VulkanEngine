@@ -12,11 +12,11 @@
 
 #include <math.h>
 
-Renderer::Renderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
+VKRenderer::VKRenderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
     createUniformBuffers();
 }
 
-Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
+VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()) {
     std::shared_ptr<VulkanInstance> instance = std::make_shared<VulkanInstance>();
     instance->setAppName("Test App");
     instance->addValidationLayer("VK_LAYER_KHRONOS_validation");
@@ -54,7 +54,7 @@ Renderer::Renderer() : vkEngine(std::make_shared<VulkanEngine>()) {
     createUniformBuffers();
 }
 
-Renderer::~Renderer() {
+VKRenderer::~VKRenderer() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     destroyUniformBuffers();
 
@@ -68,7 +68,7 @@ Renderer::~Renderer() {
     }
 }
 
-void Renderer::recordCommandBuffers() {
+void VKRenderer::recordCommandBuffers() {
     std::vector<VkCommandBuffer>& commandBuffers = vkEngine->getSwapchain()->getInternalCommandBuffers();
     std::vector<VkFramebuffer>& swapChainFramebuffers = vkEngine->getSwapchain()->getInternalFramebuffers();
     VkRenderPass& renderPass = vkEngine->getSwapchain()->getInternalRenderPass();
@@ -152,7 +152,7 @@ void Renderer::recordCommandBuffers() {
     }
 }
 
-void Renderer::renderFrame() {
+void VKRenderer::renderFrame() {
     std::shared_ptr<VulkanDisplay> vkDisplay = vkEngine->getDisplay();
     std::shared_ptr<VulkanDevice> vkDevice = vkEngine->getDevice();
     std::shared_ptr<VulkanSwapchain> vkSwapchain = vkEngine->getSwapchain();
@@ -247,7 +247,7 @@ void Renderer::renderFrame() {
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::destroyUniformBuffers() {
+void VKRenderer::destroyUniformBuffers() {
     for (size_t i = 0; i < blockUniformBuffers.size(); i++) {
         blockUniformBuffers.at(i).destroy(vkEngine->getDevice());
     }
@@ -257,7 +257,7 @@ void Renderer::destroyUniformBuffers() {
     }
 }
 
-void Renderer::createUniformBuffers() {
+void VKRenderer::createUniformBuffers() {
     if(blockUniformBuffers.size() > 0) {
         destroyUniformBuffers();
     }
@@ -346,7 +346,7 @@ glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation)
     return viewMatrix;
 }
 
-void Renderer::updateUniformBuffer(uint32_t imageIndex) {
+void VKRenderer::updateUniformBuffer(uint32_t imageIndex) {
     bool rotatingBallGoBrrrr = false;
 
     UniformBuffer ubo{};
@@ -378,7 +378,7 @@ void Renderer::updateUniformBuffer(uint32_t imageIndex) {
     overlayUniformBuffers.at(imageIndex).setVertexData(vkEngine->getDevice(), overlayUBO);
 }
 
-void Renderer::updateDescriptorSets() {
+void VKRenderer::updateDescriptorSets() {
     bool recreateGraphicsPipelines = false;
 
     while(overlayTextures.size() > MAX_OVERLAY_TEXTURES) {
@@ -467,19 +467,19 @@ void Renderer::updateDescriptorSets() {
     }
 }
 
-float& Renderer::getXRotation() {
+float& VKRenderer::getXRotation() {
     return xRotation;
 }
 
-float& Renderer::getYRotation() {
+float& VKRenderer::getYRotation() {
     return yRotation;
 }
 
-glm::vec3& Renderer::getCameraPosition() {
+glm::vec3& VKRenderer::getCameraPosition() {
     return camera;
 }
 
-void Renderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices) {
+void VKRenderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices) {
     if(dataIDToVertexData.count(id) > 0) {
         dataIDToVertexData[id].first.setVertexData(vkEngine->getDevice(), newVertices);
         dataIDToVertexData[id].second.setVertexData(vkEngine->getDevice(), newInstanceVertices);
@@ -495,7 +495,7 @@ void Renderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std
     dataIDToVertexData[id] = std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>(vertexBuffer, instanceBuffer);
 }
 
-void Renderer::setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices) {
+void VKRenderer::setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices) {
     if(dataIDToVertexOverlayData.count(id) > 0) {
         dataIDToVertexOverlayData[id].setVertexData(vkEngine->getDevice(), newVertices);
         return;
@@ -507,11 +507,11 @@ void Renderer::setOverlayVertices(std::string id, std::vector<OverlayVertex> new
     dataIDToVertexOverlayData[id] = vertexBuffer;
 }
 
-std::shared_ptr<VulkanEngine> Renderer::getEngine() {
+std::shared_ptr<VulkanEngine> VKRenderer::getEngine() {
     return vkEngine;
 }
 
-void Renderer::addTexture(std::string id, std::string texturePath) {
+void VKRenderer::addTexture(std::string id, std::string texturePath) {
     vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath);
 
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
@@ -521,7 +521,7 @@ void Renderer::addTexture(std::string id, std::string texturePath) {
     updateDescriptorSets();
 }
 
-void Renderer::addTextTexture(std::string id, std::string text) {
+void VKRenderer::addTextTexture(std::string id, std::string text) {
     vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text);
 
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
@@ -531,7 +531,7 @@ void Renderer::addTextTexture(std::string id, std::string text) {
     updateDescriptorSets();
 }
 
-void Renderer::removeTexture(std::string id) {
+void VKRenderer::removeTexture(std::string id) {
     auto iter = std::find(overlayTextures.begin(), overlayTextures.end(), id);
     if(iter == overlayTextures.end()) {
         throw std::runtime_error("couldnt find " + id + " in overlayTextures!");
@@ -540,7 +540,7 @@ void Renderer::removeTexture(std::string id) {
     overlayTextures.erase(iter);
 }
 
-unsigned int Renderer::getTextureID(std::string id) {
+unsigned int VKRenderer::getTextureID(std::string id) {
     auto iter = std::find(overlayTextures.begin(), overlayTextures.end(), id);
     if(iter == overlayTextures.end()) {
         throw std::runtime_error("couldnt find " + id + " in overlayTextures!");
@@ -548,7 +548,7 @@ unsigned int Renderer::getTextureID(std::string id) {
     return iter - overlayTextures.begin();
 }
 
-void Renderer::createGraphicsPipelines() {
+void VKRenderer::createGraphicsPipelines() {
     std::shared_ptr<VulkanSwapchain> swapchain = vkEngine->getSwapchain();
 
     std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineBlocks = std::make_shared<VulkanGraphicsPipeline>();
@@ -605,19 +605,19 @@ void Renderer::createGraphicsPipelines() {
     vkEngine->setGraphicsPipeline(graphicsPipelineOverlays, 1);
 }
 
-std::pair<unsigned int, unsigned int> Renderer::getTextureDimensions(std::string id) {
+std::pair<unsigned int, unsigned int> VKRenderer::getTextureDimensions(std::string id) {
     return vkEngine->getTextureLoader()->getTextureDimensions(id);
 }
 
-std::pair<unsigned int, unsigned int> Renderer::getTextureArrayDimensions(std::string id) {
+std::pair<unsigned int, unsigned int> VKRenderer::getTextureArrayDimensions(std::string id) {
     return vkEngine->getTextureLoader()->getTextureArrayDimensions(id);
 }
 
-void Renderer::loadTextureArray(std::string id, std::vector<std::string> textures) {
+void VKRenderer::loadTextureArray(std::string id, std::vector<std::string> textures) {
     vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id);
 }
 
-void Renderer::setCurrentTextureArray(std::string id) {
+void VKRenderer::setCurrentTextureArray(std::string id) {
     textureArrayID = id;
     updateDescriptorSets();
 }

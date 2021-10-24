@@ -1,5 +1,5 @@
 #include "VulkanDevice.h"
-
+#include "unistd.h"
 VulkanDevice::VulkanDevice() : deviceExtensions({
     "VK_KHR_swapchain",
     #ifdef __APPLE__
@@ -100,6 +100,11 @@ QueueFamilyIndices VulkanDevice::getDeviceQueueFamilies(VkPhysicalDevice pDevice
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
+
+    if(pDevice == VK_NULL_HANDLE) {
+        abort();
+    }
+
     vkGetPhysicalDeviceQueueFamilyProperties(pDevice, &queueFamilyCount, nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
@@ -147,11 +152,21 @@ bool VulkanDevice::canDeviceBeUsed(VkPhysicalDevice device, std::shared_ptr<Vulk
     VkPhysicalDeviceVulkan12Features supportedFeatures12;
     supportedFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     
-    supportedFeatures2.pNext = (void*) &supportedFeatures12;
+    VkPhysicalDeviceProperties deviceProperties = {};
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
-    vkGetPhysicalDeviceFeatures2(device, &supportedFeatures2);
+    /*NOTE: check for whether or not a device has runtimeDescriptorArrays and partiallyBoundDescriptorBindings have been disabled because for reasons I cannot figure out, attempting to query 
+    with vkGetPhysicalDeviceFeatures2 causes a crash on my device. No idea why, and I can't figure out how to fix it so :/.*/
+
+    if(deviceProperties.apiVersion >= VK_MAKE_VERSION(1, 2, 0)) {
+        supportedFeatures2.pNext = (void*) &supportedFeatures12;
+    }
     
-    return indices.isComplete() && extensionsSupported && validSwapChain && supportedFeatures.samplerAnisotropy && supportedFeatures12.runtimeDescriptorArray && supportedFeatures12.descriptorBindingPartiallyBound;
+    if(deviceProperties.apiVersion >= VK_MAKE_VERSION(1, 1, 0)) {
+        //vkGetPhysicalDeviceFeatures2(device, &supportedFeatures2);
+    }
+    
+    return indices.isComplete() && extensionsSupported && validSwapChain && supportedFeatures.samplerAnisotropy; //&& supportedFeatures12.runtimeDescriptorArray && supportedFeatures12.descriptorBindingPartiallyBound;
 }
 
 bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
