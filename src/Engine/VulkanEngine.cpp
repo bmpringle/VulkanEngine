@@ -243,13 +243,13 @@ void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> p
         throw std::runtime_error("you can't add a pipeline with an index greater than the current pipeline vector's size!");
     }
 
+    hasPipeline = true;
+
     if(hasPipeline) {
         for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
             vkPipeline->create(vkDevice, vkSwapchain);
         }
-    }
-
-    hasPipeline = true;
+    }    
 }
 
 void VulkanEngine::setSyncObjects(std::shared_ptr<VulkanRenderSyncObjects> syncObjects) {

@@ -37,6 +37,7 @@ bool s_pressed = false;
 bool d_pressed = false;
 bool up_key_pressed = false;
 bool down_key_pressed = false;
+bool g_key_pressed = false;
 
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if(action == GLFW_PRESS) {
@@ -52,6 +53,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       up_key_pressed = true;
     }else if(key == GLFW_KEY_DOWN) {
       down_key_pressed = true;
+    }else if(key == GLFW_KEY_G) {
+      g_key_pressed = true;
     }
   }else if(action == GLFW_RELEASE) {
     if(key == GLFW_KEY_W) {
@@ -66,6 +69,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       up_key_pressed = false;
     }else if(key == GLFW_KEY_DOWN) {
       down_key_pressed = false;
+    }else if(key == GLFW_KEY_G) {
+      g_key_pressed = false;
     }
   }
 }
@@ -138,14 +143,19 @@ static std::vector<Vertex> cube = {
 };
 
 static std::vector<OverlayVertex> texturedRectangleOverlay {
-  {{0, 0}, {0, 0, 0}, {0, 0}, 0},
-  {{75, 75}, {0, 0, 0}, {1, 1}, 0},
-  {{75, 0}, {0, 0, 0}, {1, 0}, 0},
+  {{0, 0}, {0, 1, 0}, {0, 0}, 0},
+  {{75, 75}, {0, 1, 0}, {1, 1}, 0},
+  {{75, 0}, {0, 1, 0}, {1, 0}, 0},
 
-  {{0, 0}, {0, 0, 0}, {0, 0}, 0},
-  {{0, 75}, {0, 0, 0}, {0, 1}, 0},
-  {{75, 75}, {0, 0, 0}, {1, 1}, 0},
+  {{0, 0}, {0, 1, 0}, {0, 0}, 0},
+  {{0, 75}, {0, 1, 0}, {0, 1}, 0},
+  {{75, 75}, {0, 1, 0}, {1, 1}, 0},
 };
+
+float testChangingOverlayX = 100;
+float testChangingOverlayY = 100;
+
+glm::vec4 testChangingClearColor = glm::vec4(0, 0, 0, 1);
 
 int main() {
   VKRenderer renderer = VKRenderer();
@@ -265,9 +275,25 @@ int main() {
       renderer.getCameraPosition() = renderer.getCameraPosition() + glm::vec3(0, -0.02, 0);
     }
 
+    if(g_key_pressed) {
+      testChangingOverlayX = testChangingOverlayX - 0.1;
+      testChangingOverlayY = testChangingOverlayY - 0.1;
+
+      renderer.setOverlayBounds(testChangingOverlayX, testChangingOverlayY);
+
+      if(testChangingClearColor.x < 1) {
+        testChangingClearColor.x = testChangingClearColor.x + 0.1;
+      }else if(testChangingClearColor.y < 1) {
+        testChangingClearColor.y = testChangingClearColor.y + 0.1;
+      }else if(testChangingClearColor.z < 1) {
+        testChangingClearColor.z = testChangingClearColor.z + 0.1;
+      }
+      renderer.setClearColor(testChangingClearColor);
+    }
+
     renderer.recordCommandBuffers();
 
-    renderer.renderFrame();
+    renderer.renderFrame(); 
 
     glfwPollEvents();
   }

@@ -54,6 +54,10 @@ class VKRenderer {
 
         void setCurrentTextureArray(std::string id);
 
+        void setOverlayBounds(float x, float y);
+
+        void setClearColor(glm::vec4 rgba);
+
     private:
         void createGraphicsPipelines();
 
@@ -95,6 +99,8 @@ class VKRenderer {
 
 
         std::string missingTexture = "assets/missing_texture.png";
+
+        glm::vec4 clearColor = glm::vec4(0, 0, 0, 1);
 };
 
 #endif
