@@ -101,7 +101,7 @@ void VKRenderer::recordCommandBuffers() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
         
-        std::vector<VkClearValue> clearValues = {{{{0.0f, 0.0f, 0.0f, 1.0f}}}, {{{1.0f, 0}}}};
+        std::vector<VkClearValue> clearValues = {{{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{1.0f, 0}}}};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -620,4 +620,12 @@ void VKRenderer::loadTextureArray(std::string id, std::vector<std::string> textu
 void VKRenderer::setCurrentTextureArray(std::string id) {
     textureArrayID = id;
     updateDescriptorSets();
+}
+
+void VKRenderer::setOverlayBounds(float x, float y) {
+    overlayUBO.bounds = {x, y};
+}
+
+void VKRenderer::setClearColor(glm::vec4 rgba) {
+    this->clearColor = rgba;
 }
