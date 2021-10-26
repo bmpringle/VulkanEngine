@@ -289,6 +289,8 @@ int main() {
         testChangingClearColor.z = testChangingClearColor.z + 0.1;
       }
       renderer.setClearColor(testChangingClearColor);
+
+      renderer.removeOverlayVertices("textOverlay");
     }
 
     renderer.recordCommandBuffers();

@@ -30,6 +30,10 @@ class VKRenderer {
 
         void setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices);
 
+        void removeDataPair(std::string id);
+
+        void removeOverlayVertices(std::string id);
+
         float& getXRotation();
 
         float& getYRotation();

@@ -629,3 +629,15 @@ void VKRenderer::setOverlayBounds(float x, float y) {
 void VKRenderer::setClearColor(glm::vec4 rgba) {
     this->clearColor = rgba;
 }
+
+void VKRenderer::removeDataPair(std::string id) {
+    if(dataIDToVertexData.count(id) > 0) {
+        dataIDToVertexData.erase(id);
+    }
+}
+
+void VKRenderer::removeOverlayVertices(std::string id) {
+    if(dataIDToVertexOverlayData.count(id) > 0) {
+        dataIDToVertexOverlayData.erase(id);
+    }
+}
