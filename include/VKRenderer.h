@@ -1,5 +1,5 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef VKRENDERER_H
+#define VKRENDERER_H
 
 #include "Engine/VulkanEngine.h"
 
