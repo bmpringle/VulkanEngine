@@ -62,6 +62,12 @@ class VKRenderer {
 
         void setClearColor(glm::vec4 rgba);
 
+        static glm::mat3x3 calculateXRotationMatrix(double xRotation);
+
+        static glm::mat3x3 calculateYRotationMatrix(double xRotation);
+        
+        static glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation);
+
     private:
         void createGraphicsPipelines();
 

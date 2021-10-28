@@ -277,7 +277,7 @@ void VKRenderer::createUniformBuffers() {
     updateDescriptorSets();
 }
 
-glm::mat3x3 calculateXRotationMatrix(double xRotation) {
+glm::mat3x3 VKRenderer::calculateXRotationMatrix(double xRotation) {
     glm::mat3x3 rotationMatrix = glm::mat3x3();
 
     double xRads = xRotation * M_PI / 180;
@@ -297,7 +297,7 @@ glm::mat3x3 calculateXRotationMatrix(double xRotation) {
     return rotationMatrix;
 }
 
-glm::mat3x3 calculateYRotationMatrix(double yRotation) {
+glm::mat3x3 VKRenderer::calculateYRotationMatrix(double yRotation) {
 
     glm::mat3x3 rotationMatrix = glm::mat3x3(1.0f);
 
@@ -318,7 +318,7 @@ glm::mat3x3 calculateYRotationMatrix(double yRotation) {
     return rotationMatrix;
 }
 
-glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation) {
+glm::mat4x4 VKRenderer::createViewMatrix(glm::vec3 camera, float xRotation, float yRotation) {
     glm::mat3x3 rotationMatrixX = calculateXRotationMatrix(-xRotation);
     glm::mat3x3 rotationMatrixY = calculateYRotationMatrix(-yRotation);
 
