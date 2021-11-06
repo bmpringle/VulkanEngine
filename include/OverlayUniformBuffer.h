@@ -6,7 +6,7 @@
 #include "Engine/VulkanInclude.h"
 
 struct OverlayUniformBuffer {
-    glm::vec2 bounds;
+    alignas(16) glm::vec3 bounds;
 
     static VkDescriptorSetLayoutBinding getDescriptorSetLayout() {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};

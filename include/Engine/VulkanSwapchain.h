@@ -35,7 +35,13 @@ class VulkanSwapchain {
 
         std::vector<VkCommandBuffer>& getInternalCommandBuffers();
 
+        VkImage& getInternalDepthImage();
+
+        VkImageView& getInternalDepthImageView();
+
         VkRenderPass& getInternalRenderPass();
+
+        VkFormat getInternalDepthImageFormat();
     private:
         void createSwapchainAndImages(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
@@ -72,6 +78,8 @@ class VulkanSwapchain {
         std::vector<VkCommandBuffer> commandBuffers;
 
         VkImage depthImage;
+
+        VkFormat depthFormat;
 
         VkDeviceMemory depthImageMemory;
 

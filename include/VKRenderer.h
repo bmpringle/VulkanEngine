@@ -58,14 +58,14 @@ class VKRenderer {
 
         void setCurrentTextureArray(std::string id);
 
-        void setOverlayBounds(float x, float y);
+        void setOverlayBounds(float x, float y, float z);
 
         void setClearColor(glm::vec4 rgba);
 
         static glm::mat3x3 calculateXRotationMatrix(double xRotation);
 
         static glm::mat3x3 calculateYRotationMatrix(double xRotation);
-        
+
         static glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation);
 
     private:
@@ -98,7 +98,7 @@ class VKRenderer {
         glm::vec3 camera = glm::vec3(0, 4, 0);
 
         OverlayUniformBuffer overlayUBO = {
-            {100, 100}
+            {100, 100, 100}
         };
 
         uint MAX_OVERLAY_TEXTURES = 32;

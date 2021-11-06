@@ -143,13 +143,13 @@ static std::vector<Vertex> cube = {
 };
 
 static std::vector<OverlayVertex> texturedRectangleOverlay {
-  {{0, 0}, {0, 1, 0}, {0, 0}, 0},
-  {{75, 75}, {0, 1, 0}, {1, 1}, 0},
-  {{75, 0}, {0, 1, 0}, {1, 0}, 0},
+  {{0, 0, 0}, {0, 1, 0}, {0, 0}, 0},
+  {{75, 75, 0}, {0, 1, 0}, {1, 1}, 0},
+  {{75, 0, 0}, {0, 1, 0}, {1, 0}, 0},
 
-  {{0, 0}, {0, 1, 0}, {0, 0}, 0},
-  {{0, 75}, {0, 1, 0}, {0, 1}, 0},
-  {{75, 75}, {0, 1, 0}, {1, 1}, 0},
+  {{0, 0, 0}, {0, 1, 0}, {0, 0}, 0},
+  {{0, 75, 0}, {0, 1, 0}, {0, 1}, 0},
+  {{75, 75, 0}, {0, 1, 0}, {1, 1}, 0},
 };
 
 float testChangingOverlayX = 100;
@@ -238,6 +238,18 @@ int main() {
   renderer.setOverlayVertices("exampleRectOverlay", texturedRectangleOverlay);
   renderer.setOverlayVertices("textOverlay", texturedRectangleOverlay2);
 
+  std::vector<OverlayVertex> texturedRectangleOverlay3 = texturedRectangleOverlay2;
+
+  tex_id = renderer.getTextureID("text1");
+
+  for(OverlayVertex& v : texturedRectangleOverlay3) {
+    v.position.x -= 20;
+    v.position.z = 99;
+    v.texID = tex_id;
+  }
+
+  renderer.setOverlayVertices("textOverlay2", texturedRectangleOverlay3);
+
   while(!renderer.getEngine()->getDisplay()->shouldWindowClose()) {
     renderer.getXRotation() += xDelta;
     renderer.getYRotation() -= yDelta;
@@ -279,7 +291,7 @@ int main() {
       testChangingOverlayX = testChangingOverlayX - 0.1;
       testChangingOverlayY = testChangingOverlayY - 0.1;
 
-      renderer.setOverlayBounds(testChangingOverlayX, testChangingOverlayY);
+      renderer.setOverlayBounds(testChangingOverlayX, testChangingOverlayY, 100);
 
       if(testChangingClearColor.x < 1) {
         testChangingClearColor.x = testChangingClearColor.x + 0.1;

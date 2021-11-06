@@ -101,13 +101,12 @@ void VKRenderer::recordCommandBuffers() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
         
-        std::vector<VkClearValue> clearValues = {{{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{1.0f, 0}}}};
+        std::vector<VkClearValue> clearValues = {{{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{1.0, 0}}}};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(0)->getInternalGraphicsPipeline());
 
@@ -128,8 +127,12 @@ void VKRenderer::recordCommandBuffers() {
             }
         }
 
-
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getInternalGraphicsPipeline());
+
+        VkClearRect clearRect = {{{0, 0}, swapChainExtent}, 0, 1};
+        VkClearAttachment clearAttachment = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, clearValues.at(1)};
+        VkClearAttachment clearAttachments[2] = {clearAttachment, clearAttachment};
+        vkCmdClearAttachments(commandBuffers[i], 2, &clearAttachments[0], 1, &clearRect);
         
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
         for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
@@ -622,8 +625,8 @@ void VKRenderer::setCurrentTextureArray(std::string id) {
     updateDescriptorSets();
 }
 
-void VKRenderer::setOverlayBounds(float x, float y) {
-    overlayUBO.bounds = {x, y};
+void VKRenderer::setOverlayBounds(float x, float y, float z) {
+    overlayUBO.bounds = {x, y, z};
 }
 
 void VKRenderer::setClearColor(glm::vec4 rgba) {

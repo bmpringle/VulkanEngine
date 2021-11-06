@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 struct OverlayVertex {
-    glm::vec2 position;
+    glm::vec3 position;
     glm::vec3 color;
     glm::vec2 texCoord;
     uint32_t texID;
@@ -27,7 +27,7 @@ struct OverlayVertex {
 
         attrib1.binding = 0;
         attrib1.location = 0;
-        attrib1.format = VK_FORMAT_R32G32_SFLOAT; //2 floats vector
+        attrib1.format = VK_FORMAT_R32G32B32_SFLOAT; //3 floats vector
         attrib1.offset = offsetof(OverlayVertex, position);
 
         VkVertexInputAttributeDescription attrib2{};
