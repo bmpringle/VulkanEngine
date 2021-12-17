@@ -549,14 +549,11 @@ void VKRenderer::addTexture(std::string id, std::string texturePath) {
 void VKRenderer::addTextTexture(std::string id, std::string text) {
     
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
-        std::cout << "mpctr" << mapCounter << std::endl;
-        std::cout << "mpsze" << canObjectBeDestroyedMap.size() << std::endl;
         overlayTextures.push_back(id);
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
         vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }else {
-        std::cout << "mpctrredx" << mapCounter << std::endl;
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
         vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
