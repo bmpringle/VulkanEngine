@@ -303,6 +303,8 @@ int main() {
       renderer.setClearColor(testChangingClearColor);
 
       renderer.removeOverlayVertices("textOverlay");
+
+      renderer.addTextTexture("text1", "this is text in my\nvulkan engine\nafter changing the texture!");
     }
 
     renderer.recordCommandBuffers();

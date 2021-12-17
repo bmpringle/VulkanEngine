@@ -14,6 +14,8 @@
 #include "UniformBuffer.h"
 #include "OverlayUniformBuffer.h"
 
+#include <map>
+
 class VKRenderer {
     public:
         VKRenderer(std::shared_ptr<VulkanEngine> engine);
@@ -107,10 +109,12 @@ class VKRenderer {
 
         std::string textureArrayID = "default";
 
-
         std::string missingTexture = "assets/missing_texture.png";
 
         glm::vec4 clearColor = glm::vec4(0, 0, 0, 1);
+
+        std::map<int, std::pair<int, bool*> > canObjectBeDestroyedMap = std::map<int, std::pair<int, bool*> >();
+        int mapCounter = 0;
 };
 
 #endif

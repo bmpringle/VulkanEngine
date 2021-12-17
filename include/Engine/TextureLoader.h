@@ -15,6 +15,8 @@
 
 #include "StringToText/StringToText.h"
 
+#include "DeleteThread/DeleteThread.h"
+
 class TextureLoader {
     public:
         TextureLoader();
@@ -36,9 +38,11 @@ class TextureLoader {
 
         void loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath);
 
-        void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text);
+        void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, bool* deleteOldTextureBool);
 
         void copyBufferToImageInLayers(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::shared_ptr<VulkanDevice> device, int numberOfLayers);
+
+        std::mutex* getImageDeleteThreadAccessMutex();
 
         std::pair<unsigned int, unsigned int> getTextureDimensions(std::string id);
 
@@ -69,8 +73,32 @@ class TextureLoader {
 
         std::map<std::string, std::pair<unsigned int, unsigned int>> textureArrayIDToImageDimensions = std::map<std::string, std::pair<unsigned int, unsigned int>>();
 
+        void vkDeleteImage(std::shared_ptr<VulkanDevice> device, VkImage img) {
+            vkDestroyImage(device->getInternalLogicalDevice(), img, nullptr);
+        }
+
+        void vkDeleteImageView(std::shared_ptr<VulkanDevice> device, VkImageView imgView) {
+            vkDestroyImageView(device->getInternalLogicalDevice(), imgView, nullptr);
+        }
+
+        void vkDeleteDeviceMemory(std::shared_ptr<VulkanDevice> device, VkDeviceMemory memory) {
+            vkFreeMemory(device->getInternalLogicalDevice(), memory, nullptr);
+        }
+
+        std::function<void(VkImage)> funcFreeImage;
+
+        std::function<void(VkImageView)> funcFreeImageView;
+
+        std::function<void(VkDeviceMemory)> funcFreeDeviceMemory;
 
         StringToTextConverter unitypeConverter = StringToTextConverter("assets/unifont-13.0.06.ttf");
+
+        //gets properly created in TextureLoader::create(std::shared_ptr<VulkanDevice> device), but since it can take care of its own memory, isn't deleted in TextureLoader::destroyTextureLoader(std::shared_ptr<VulkanDevice> device);
+        std::shared_ptr<DeleteThread<VkImage> > imageDeleteThread = std::shared_ptr<DeleteThread<VkImage> >();
+
+        std::shared_ptr<DeleteThread<VkImageView> > imageViewDeleteThread = std::shared_ptr<DeleteThread<VkImageView> >();
+
+        std::shared_ptr<DeleteThread<VkDeviceMemory> > deviceMemoryDeleteThread = std::shared_ptr<DeleteThread<VkDeviceMemory> >();
 };
 
 #endif

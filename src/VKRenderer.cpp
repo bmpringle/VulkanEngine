@@ -248,6 +248,28 @@ void VKRenderer::renderFrame() {
     }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+    std::mutex* accessMutex = vkEngine->getTextureLoader()->getImageDeleteThreadAccessMutex();
+
+    accessMutex->lock();
+    for(auto iterator = canObjectBeDestroyedMap.begin(); iterator != canObjectBeDestroyedMap.end();) {
+        if(iterator->second.second == nullptr) {
+            std::cout << canObjectBeDestroyedMap.size() << std::endl;
+            std::cout << iterator->first << std::endl;
+            abort();
+        }
+        if(iterator->second.first == currentFrame && *iterator->second.second == false) {
+            *iterator->second.second = true;
+            iterator->second.first = -1;
+        }
+
+        if(iterator->second.first == -1 && *iterator->second.second == false) {
+            canObjectBeDestroyedMap.erase(iterator++);
+        }else {
+            ++iterator;
+        }
+    }
+    accessMutex->unlock();
 }
 
 void VKRenderer::destroyUniformBuffers() {
@@ -525,10 +547,19 @@ void VKRenderer::addTexture(std::string id, std::string texturePath) {
 }
 
 void VKRenderer::addTextTexture(std::string id, std::string text) {
-    vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text);
-
+    
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
+        std::cout << "mpctr" << mapCounter << std::endl;
+        std::cout << "mpsze" << canObjectBeDestroyedMap.size() << std::endl;
         overlayTextures.push_back(id);
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
+    }else {
+        std::cout << "mpctrredx" << mapCounter << std::endl;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
     }
     
     updateDescriptorSets();

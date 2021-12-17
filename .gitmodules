@@ -10,3 +10,6 @@
 [submodule "StringToText"]
 	path = StringToText
 	url = https://github.com/bmpringle/StringToText
+[submodule "DeleteThread"]
+	path = DeleteThread
+	url = https://github.com/bmpringle/DeleteThread
