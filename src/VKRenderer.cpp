@@ -678,7 +678,7 @@ void VKRenderer::loadTextureArray(std::string id, std::vector<std::string> textu
 }
 
 unsigned int VKRenderer::getTextureArrayID(std::string arrayID, std::string textureID) {
-    return texureArrayTexturesToIDs[arrayID][textureID];
+    return texureArrayTexturesToIDs.at(arrayID).at(textureID);
 }
 
 void VKRenderer::setCurrentTextureArray(std::string id) {
