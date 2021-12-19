@@ -208,6 +208,8 @@ int main() {
 
   std::vector<InstanceData> instanceDataCube3;
 
+  std::vector<InstanceData> instanceDataCube4;
+
   unsigned int tex_id = renderer.getTextureID("test");
 
   for(OverlayVertex& v : texturedRectangleOverlay) {
@@ -240,12 +242,16 @@ int main() {
         instanceDataCube.push_back(InstanceData({{x, y, z}}));
         instanceDataCube2.push_back(InstanceData({{-x, y, z}}));
         instanceDataCube3.push_back(InstanceData({{-x, y, -z}}));
+        instanceDataCube4.push_back(InstanceData({{-x, y, -z*2}}));
       }
     }
   }
 
-  renderer.setDataPair("block1", cube, instanceDataCube);
-  renderer.setDataPair("block2", cube2, instanceDataCube2);
+  renderer.setModel("block1", cube);
+  renderer.setModel("block2", cube2);
+
+  renderer.addInstancesToModel("block1", "set1", instanceDataCube);
+  renderer.addInstancesToModel("block2", "set1", instanceDataCube2);
 
   renderer.setOverlayVertices("exampleRectOverlay", texturedRectangleOverlay);
   renderer.setOverlayVertices("textOverlay", texturedRectangleOverlay2);
@@ -320,7 +326,9 @@ int main() {
     }
 
     if(l_key_pressed) {
-      renderer.setSecondPartOfDataPair("block2", instanceDataCube3);
+      renderer.addInstancesToModel("block2", "set1", instanceDataCube3);
+
+      renderer.addInstancesToModel("block2", "set2", instanceDataCube4);
     }
 
     renderer.recordCommandBuffers();

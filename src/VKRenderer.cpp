@@ -60,9 +60,11 @@ VKRenderer::~VKRenderer() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     destroyUniformBuffers();
 
-    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> vertexData : dataIDToVertexData) {
+    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>> vertexData : dataIDToVertexData) {
         vertexData.second.first.destroy(vkEngine->getDevice());
-        vertexData.second.second.destroy(vkEngine->getDevice());
+        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>> data : vertexData.second.second) {
+            data.second.destroy(vkEngine->getDevice());
+        }
     }
 
     for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
@@ -114,18 +116,20 @@ void VKRenderer::recordCommandBuffers() {
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(0)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i], 0, nullptr);
 
-        for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> vertexData : dataIDToVertexData) {
-            VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.first;
-            VulkanVertexBuffer<InstanceData>& instanceBuffer = vertexData.second.second;
+        for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>> vertexData : dataIDToVertexData) {
+            for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>> data : vertexData.second.second) {
+                VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.first;
+                VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second;
 
-            if(vertexBuffer.getBufferSize() > 0 && instanceBuffer.getBufferSize() > 0) {
-                VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer(), instanceBuffer.getVertexBuffer()};
-                VkDeviceSize offsets[] = {0, 0};
-                vkCmdBindVertexBuffers(commandBuffers[i], 0, 2, vertexBuffers, offsets);
+                if(vertexBuffer.getBufferSize() > 0 && instanceBuffer.getBufferSize() > 0) {
+                    VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer(), instanceBuffer.getVertexBuffer()};
+                    VkDeviceSize offsets[] = {0, 0};
+                    vkCmdBindVertexBuffers(commandBuffers[i], 0, 2, vertexBuffers, offsets);
 
-                vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
-            }else {
-                //nothing to draw
+                    vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
+                }else {
+                    //nothing to draw
+                }
             }
         }
 
@@ -506,40 +510,6 @@ glm::vec3& VKRenderer::getCameraPosition() {
     return camera;
 }
 
-void VKRenderer::setSecondPartOfDataPair(std::string id, std::vector<InstanceData>& newInstanceVertices) {
-    if(dataIDToVertexData.count(id) > 0) {
-        dataIDToVertexData[id].second.setVertexData(vkEngine->getDevice(), newInstanceVertices);
-        return;
-    }else {
-        throw std::runtime_error(id + "'s data pair cannot be modified because it does not exist");
-    }
-}
-
-void VKRenderer::setFirstPartOfDataPair(std::string id, std::vector<Vertex>& newVertices) {
-    if(dataIDToVertexData.count(id) > 0) {
-        dataIDToVertexData[id].first.setVertexData(vkEngine->getDevice(), newVertices);
-        return;
-    }else {
-        throw std::runtime_error(id + "'s data pair cannot be modified because it does not exist");
-    }
-}
-
-void VKRenderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices) {
-    if(dataIDToVertexData.count(id) > 0) {
-        dataIDToVertexData[id].first.setVertexData(vkEngine->getDevice(), newVertices);
-        dataIDToVertexData[id].second.setVertexData(vkEngine->getDevice(), newInstanceVertices);
-        return;
-    }
-
-    VulkanVertexBuffer<Vertex> vertexBuffer = VulkanVertexBuffer<Vertex>();
-    vertexBuffer.setVertexData(vkEngine->getDevice(), newVertices);
-
-    VulkanVertexBuffer<InstanceData> instanceBuffer = VulkanVertexBuffer<InstanceData>();
-    instanceBuffer.setVertexData(vkEngine->getDevice(), newInstanceVertices);
-
-    dataIDToVertexData[id] = std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>(vertexBuffer, instanceBuffer);
-}
-
 void VKRenderer::setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices) {
     if(dataIDToVertexOverlayData.count(id) > 0) {
         dataIDToVertexOverlayData[id].setVertexData(vkEngine->getDevice(), newVertices);
@@ -710,14 +680,50 @@ void VKRenderer::setClearColor(glm::vec4 rgba) {
     this->clearColor = rgba;
 }
 
-void VKRenderer::removeDataPair(std::string id) {
-    if(dataIDToVertexData.count(id) > 0) {
-        dataIDToVertexData.erase(id);
-    }
-}
-
 void VKRenderer::removeOverlayVertices(std::string id) {
     if(dataIDToVertexOverlayData.count(id) > 0) {
         dataIDToVertexOverlayData.erase(id);
     }
+}
+
+void VKRenderer::setModel(std::string modelID, std::vector<Vertex>& modelVertices) {
+    if(dataIDToVertexData.count(modelID) > 0) {
+        dataIDToVertexData[modelID].first.setVertexData(vkEngine->getDevice(), modelVertices);
+        return;
+    }
+
+    VulkanVertexBuffer<Vertex> vertexBuffer = VulkanVertexBuffer<Vertex>();
+    vertexBuffer.setVertexData(vkEngine->getDevice(), modelVertices);
+
+    dataIDToVertexData[modelID].first = vertexBuffer;
+}
+
+void VKRenderer::removeModel(std::string modelID) {
+    if(dataIDToVertexData.count(modelID) > 0) {
+        dataIDToVertexData.erase(modelID);
+    }
+}
+
+void VKRenderer::addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances) {
+    if(dataIDToVertexData.count(modelID) == 0) {
+        throw std::runtime_error(modelID + " hasn't been set yet, so you can't set instances for it.");
+    }
+
+    if(dataIDToVertexData[modelID].second.count(instanceVectorID) > 0) {
+        dataIDToVertexData[modelID].second[instanceVectorID].setVertexData(vkEngine->getDevice(), instances);
+        return;
+    }
+
+    VulkanVertexBuffer<InstanceData> instanceBuffer = VulkanVertexBuffer<InstanceData>();
+    instanceBuffer.setVertexData(vkEngine->getDevice(), instances);
+
+    dataIDToVertexData[modelID].second[instanceVectorID] = instanceBuffer;
+}
+
+void VKRenderer::removeInstancesFromModel(std::string modelID, std::string instanceVectorID) {
+    if(dataIDToVertexData.count(modelID) == 0) {
+        throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
+    }
+
+    dataIDToVertexData[modelID].second.erase(instanceVectorID);
 }

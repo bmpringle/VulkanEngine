@@ -28,15 +28,15 @@ class VKRenderer {
 
         void renderFrame();
 
-        void setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices);
+        void setModel(std::string modelID, std::vector<Vertex>& modelVertices);
 
-        void setFirstPartOfDataPair(std::string id, std::vector<Vertex>& newVertices);
+        void removeModel(std::string modelID);
 
-        void setSecondPartOfDataPair(std::string id, std::vector<InstanceData>& newInstanceVertices);
+        void addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances);
+
+        void removeInstancesFromModel(std::string modelID, std::string instanceVectorID);
 
         void setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices);
-
-        void removeDataPair(std::string id);
 
         void removeOverlayVertices(std::string id);
 
@@ -91,7 +91,7 @@ class VKRenderer {
 
         size_t currentFrame = 0;
 
-        std::map<std::string, std::pair<VulkanVertexBuffer<Vertex>, VulkanVertexBuffer<InstanceData>>> dataIDToVertexData;
+        std::map<std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>> dataIDToVertexData;
 
         std::map<std::string, VulkanVertexBuffer<OverlayVertex>> dataIDToVertexOverlayData;
 
