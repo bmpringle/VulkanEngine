@@ -34,9 +34,9 @@ class TextureLoader {
 
         VkSampler getTextureSampler();
 
-        void loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName);
+        void loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName, bool* deleteOldTextureBool);
 
-        void loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath);
+        void loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, bool* deleteOldTextureBool);
 
         void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, bool* deleteOldTextureBool);
 
@@ -49,7 +49,7 @@ class TextureLoader {
         std::pair<unsigned int, unsigned int> getTextureArrayDimensions(std::string id);
 
     private:
-        void createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath);
+        void createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, bool* deleteOldTextureBool);
 
         void createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string textureID, VkFormat format);
 

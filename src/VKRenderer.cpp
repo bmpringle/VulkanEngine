@@ -47,7 +47,9 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()) {
 
     std::shared_ptr<TextureLoader> textureLoader = vkEngine->getTextureLoader();
 
-    textureLoader->loadTexture(vkEngine->getDevice(), "missing_texture", "assets/missing_texture.png");
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+    textureLoader->loadTexture(vkEngine->getDevice(), "missing_texture", "assets/missing_texture.png", canObjectBeDestroyedMap[mapCounter].second);
+    ++mapCounter;
 
     loadTextureArray("default", {missingTexture, missingTexture});
 
@@ -555,10 +557,16 @@ std::shared_ptr<VulkanEngine> VKRenderer::getEngine() {
 }
 
 void VKRenderer::addTexture(std::string id, std::string texturePath) {
-    vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath);
 
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
         overlayTextures.push_back(id);
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+        vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
+    }else {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
     }
 
     updateDescriptorSets();
@@ -670,11 +678,19 @@ void VKRenderer::loadTextureArray(std::string id, std::vector<std::string> textu
     for(std::string tex : textures) {
         texturesToIDs[tex] = i;
         ++i;
+    }   
+
+    if(texureArrayTexturesToIDs.count(id) == 0) {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+        vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
+    }else {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
     }
 
     texureArrayTexturesToIDs[id] = texturesToIDs;
-    
-    vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id);
 }
 
 unsigned int VKRenderer::getTextureArrayID(std::string arrayID, std::string textureID) {
