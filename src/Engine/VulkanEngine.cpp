@@ -87,7 +87,7 @@ void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
 
 void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
     if(!hasInstance) {
-        std::runtime_error("you can't set the VulkanDisplay without setting a VulkanInstance first");
+        throw std::runtime_error("you can't set the VulkanDisplay without setting a VulkanInstance first");
     }
 
     if(hasPipeline) {
@@ -147,7 +147,7 @@ void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
 
 void VulkanEngine::setDevice(std::shared_ptr<VulkanDevice> device) {
     if(!hasDisplay) {
-        std::runtime_error("you can't set the VulkanDevice without setting a VulkanDisplay first");
+        throw std::runtime_error("you can't set the VulkanDevice without setting a VulkanDisplay first");
     }
 
     if(hasPipeline) {
@@ -198,7 +198,7 @@ void VulkanEngine::setDevice(std::shared_ptr<VulkanDevice> device) {
 
 void VulkanEngine::setSwapchain(std::shared_ptr<VulkanSwapchain> swapchain) {
     if(!hasDevice) {
-        std::runtime_error("you can't set the VulkanSwapchain without setting a VulkanDevice first");
+        throw std::runtime_error("you can't set the VulkanSwapchain without setting a VulkanDevice first");
     }
 
     if(hasPipeline) {
@@ -226,7 +226,7 @@ void VulkanEngine::setSwapchain(std::shared_ptr<VulkanSwapchain> swapchain) {
 
 void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> pipeline, int index) {
     if(!hasSwapchain) {
-        std::runtime_error("you can't set the VulkanGraphicsPipeline without setting a VulkanSwapchain first");
+        throw std::runtime_error("you can't set the VulkanGraphicsPipeline without setting a VulkanSwapchain first");
     }
 
     if(hasPipeline) {
@@ -254,7 +254,7 @@ void VulkanEngine::setGraphicsPipeline(std::shared_ptr<VulkanGraphicsPipeline> p
 
 void VulkanEngine::setSyncObjects(std::shared_ptr<VulkanRenderSyncObjects> syncObjects) {
     if(!hasSwapchain) {
-        std::runtime_error("you can't set the VulkanGraphicsPipeline without setting a VulkanSwapchain first");
+        throw std::runtime_error("you can't set the VulkanGraphicsPipeline without setting a VulkanSwapchain first");
     }
 
     if(hasSyncObjects) {

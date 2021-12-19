@@ -30,6 +30,10 @@ class VKRenderer {
 
         void setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices);
 
+        void setFirstPartOfDataPair(std::string id, std::vector<Vertex>& newVertices);
+
+        void setSecondPartOfDataPair(std::string id, std::vector<InstanceData>& newInstanceVertices);
+
         void setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices);
 
         void removeDataPair(std::string id);
@@ -51,6 +55,8 @@ class VKRenderer {
         void removeTexture(std::string id);
 
         unsigned int getTextureID(std::string id);
+
+        unsigned int getTextureArrayID(std::string arrayID, std::string textureID);
 
         std::pair<unsigned int, unsigned int> getTextureDimensions(std::string id);
 
@@ -92,6 +98,8 @@ class VKRenderer {
         std::vector<VulkanUniformBuffer<UniformBuffer>> blockUniformBuffers;
 
         std::vector<VulkanUniformBuffer<OverlayUniformBuffer>> overlayUniformBuffers;
+
+        std::map<std::string, std::map<std::string, unsigned int> > texureArrayTexturesToIDs;
 
         //in degrees
         float xRotation = 0;

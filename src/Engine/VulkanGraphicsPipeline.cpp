@@ -242,7 +242,7 @@ VkShaderModule VulkanGraphicsPipeline::createShaderModule(const std::vector<char
     VkShaderModule shader;
     
     if(vkCreateShaderModule(device->getInternalLogicalDevice(), &createInfo, nullptr, &shader) != VK_SUCCESS) {
-        std::runtime_error("failed to create shader");
+        throw std::runtime_error("failed to create shader");
     }
 
     return shader;

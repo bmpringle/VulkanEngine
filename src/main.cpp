@@ -38,6 +38,7 @@ bool d_pressed = false;
 bool up_key_pressed = false;
 bool down_key_pressed = false;
 bool g_key_pressed = false;
+bool l_key_pressed = false;
 
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if(action == GLFW_PRESS) {
@@ -55,6 +56,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       down_key_pressed = true;
     }else if(key == GLFW_KEY_G) {
       g_key_pressed = true;
+    }else if(key == GLFW_KEY_L) {
+      l_key_pressed = true;
     }
   }else if(action == GLFW_RELEASE) {
     if(key == GLFW_KEY_W) {
@@ -71,6 +74,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       down_key_pressed = false;
     }else if(key == GLFW_KEY_G) {
       g_key_pressed = false;
+    }else if(key == GLFW_KEY_L) {
+      l_key_pressed = false;
     }
   }
 }
@@ -190,12 +195,18 @@ int main() {
   std::vector<Vertex> cube2 = cube;
 
   for(Vertex& v : cube2) {
-    v.texCoord[2] = 2;
+    v.texCoord[2] = renderer.getTextureArrayID("game-textures", "assets/grass_side.png");
+  }
+
+  for(Vertex& v : cube) {
+    v.texCoord[2] = renderer.getTextureArrayID("game-textures", "assets/dirt.png");
   }
 
   std::vector<InstanceData> instanceDataCube;
 
   std::vector<InstanceData> instanceDataCube2;
+
+  std::vector<InstanceData> instanceDataCube3;
 
   unsigned int tex_id = renderer.getTextureID("test");
 
@@ -228,6 +239,7 @@ int main() {
       for(int z = 0; z < 60; ++z) {
         instanceDataCube.push_back(InstanceData({{x, y, z}}));
         instanceDataCube2.push_back(InstanceData({{-x, y, z}}));
+        instanceDataCube3.push_back(InstanceData({{-x, y, -z}}));
       }
     }
   }
@@ -305,6 +317,10 @@ int main() {
       renderer.removeOverlayVertices("textOverlay");
 
       renderer.addTextTexture("text1", "this is text in my\nvulkan engine\nafter changing the texture!");
+    }
+
+    if(l_key_pressed) {
+      renderer.setSecondPartOfDataPair("block2", instanceDataCube3);
     }
 
     renderer.recordCommandBuffers();

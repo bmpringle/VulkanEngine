@@ -80,7 +80,7 @@ void VulkanInstance::create() {
     std::vector<VkExtensionProperties> extensions = getAllSupportedExtensions();
 
     if(!checkValidationLayerSupport()) {
-        std::runtime_error("some of the validation layers you requested couldn't be found!");
+        throw std::runtime_error("some of the validation layers you requested couldn't be found!");
     }
 
     //Create VkApplicationInfo struct and fill with data

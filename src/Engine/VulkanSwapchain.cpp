@@ -93,7 +93,7 @@ void VulkanSwapchain::createSwapchainAndImages(std::shared_ptr<VulkanInstance> v
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     if(vkCreateSwapchainKHR(vkDevice->getInternalLogicalDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
-        std::runtime_error("failed to create swapchain!");
+        throw std::runtime_error("failed to create swapchain!");
     }
 
     vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, nullptr);
@@ -275,7 +275,7 @@ void VulkanSwapchain::createFramebuffers(std::shared_ptr<VulkanDevice> device) {
         createInfo.layers = 1;
 
         if(vkCreateFramebuffer(device->getInternalLogicalDevice(), &createInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-            std::runtime_error("failed to create a framebuffer corresponding to a vkimageview");
+            throw std::runtime_error("failed to create a framebuffer corresponding to a vkimageview");
         }
     }
 }

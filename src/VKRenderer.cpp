@@ -504,6 +504,24 @@ glm::vec3& VKRenderer::getCameraPosition() {
     return camera;
 }
 
+void VKRenderer::setSecondPartOfDataPair(std::string id, std::vector<InstanceData>& newInstanceVertices) {
+    if(dataIDToVertexData.count(id) > 0) {
+        dataIDToVertexData[id].second.setVertexData(vkEngine->getDevice(), newInstanceVertices);
+        return;
+    }else {
+        throw std::runtime_error(id + "'s data pair cannot be modified because it does not exist");
+    }
+}
+
+void VKRenderer::setFirstPartOfDataPair(std::string id, std::vector<Vertex>& newVertices) {
+    if(dataIDToVertexData.count(id) > 0) {
+        dataIDToVertexData[id].first.setVertexData(vkEngine->getDevice(), newVertices);
+        return;
+    }else {
+        throw std::runtime_error(id + "'s data pair cannot be modified because it does not exist");
+    }
+}
+
 void VKRenderer::setDataPair(std::string id, std::vector<Vertex>& newVertices, std::vector<InstanceData>& newInstanceVertices) {
     if(dataIDToVertexData.count(id) > 0) {
         dataIDToVertexData[id].first.setVertexData(vkEngine->getDevice(), newVertices);
@@ -645,7 +663,22 @@ std::pair<unsigned int, unsigned int> VKRenderer::getTextureArrayDimensions(std:
 }
 
 void VKRenderer::loadTextureArray(std::string id, std::vector<std::string> textures) {
+    std::map<std::string, unsigned int> texturesToIDs;
+
+    unsigned int i = 0;
+
+    for(std::string tex : textures) {
+        texturesToIDs[tex] = i;
+        ++i;
+    }
+
+    texureArrayTexturesToIDs[id] = texturesToIDs;
+    
     vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id);
+}
+
+unsigned int VKRenderer::getTextureArrayID(std::string arrayID, std::string textureID) {
+    return texureArrayTexturesToIDs[arrayID][textureID];
 }
 
 void VKRenderer::setCurrentTextureArray(std::string id) {
