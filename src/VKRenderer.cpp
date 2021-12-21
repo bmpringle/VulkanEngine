@@ -60,14 +60,14 @@ VKRenderer::~VKRenderer() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     destroyUniformBuffers();
 
-    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>> vertexData : dataIDToVertexData) {
+    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
         vertexData.second.first.destroy(vkEngine->getDevice());
-        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>> data : vertexData.second.second) {
+        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
             data.second.destroy(vkEngine->getDevice());
         }
     }
 
-    for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
+    for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
         vertexData.second.destroy(vkEngine->getDevice());
     }
 }
@@ -116,8 +116,8 @@ void VKRenderer::recordCommandBuffers() {
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(0)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i], 0, nullptr);
 
-        for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>> vertexData : dataIDToVertexData) {
-            for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>> data : vertexData.second.second) {
+        for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
+            for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
                 VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.first;
                 VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second;
 
@@ -141,7 +141,7 @@ void VKRenderer::recordCommandBuffers() {
         vkCmdClearAttachments(commandBuffers[i], 2, &clearAttachments[0], 1, &clearRect);
         
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
-        for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>> vertexData : dataIDToVertexOverlayData) {
+        for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
             VulkanVertexBuffer<OverlayVertex> vertexBuffer = vertexData.second;
 
             if(vertexBuffer.getBufferSize() > 0) {
