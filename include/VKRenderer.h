@@ -24,6 +24,10 @@ class VKRenderer {
 
         ~VKRenderer();
 
+        void setCameraNear(float n);
+
+        void setCameraFar(float f);
+
         void recordCommandBuffers();
 
         void renderFrame();
@@ -123,6 +127,9 @@ class VKRenderer {
 
         std::map<int, std::pair<int, bool*> > canObjectBeDestroyedMap = std::map<int, std::pair<int, bool*> >();
         int mapCounter = 0;
+
+        float near = 0.01f;
+        float far = 100.0f;
 };
 
 #endif

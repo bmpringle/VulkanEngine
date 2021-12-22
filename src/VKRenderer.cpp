@@ -117,19 +117,29 @@ void VKRenderer::recordCommandBuffers() {
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(0)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i], 0, nullptr);
 
         for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
-            for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
-                VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.first;
-                VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second;
+            VulkanVertexBuffer<Vertex> vertexBuffer = vertexData.second.first;
+            VkDeviceSize offsets[] = {0};
 
-                if(vertexBuffer.getBufferSize() > 0 && instanceBuffer.getBufferSize() > 0) {
-                    VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer(), instanceBuffer.getVertexBuffer()};
-                    VkDeviceSize offsets[] = {0, 0};
-                    vkCmdBindVertexBuffers(commandBuffers[i], 0, 2, vertexBuffers, offsets);
+            VkBuffer buffer = vertexData.second.first.getVertexBuffer();
 
-                    vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
-                }else {
-                    //nothing to draw
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
+
+            if(vertexBuffer.getBufferSize() > 0) {
+                for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
+                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second;
+
+                    if(instanceBuffer.getBufferSize() > 0) {
+                        VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
+
+                        vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, &instanceDataBuffer, offsets);
+
+                        vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
+                    }else {
+                        //nothing to draw
+                    }
                 }
+            }else {
+                //nothing to draw
             }
         }
 
@@ -402,7 +412,7 @@ void VKRenderer::updateUniformBuffer(uint32_t imageIndex) {
 
     ubo.viewMatrix = glm::lookAt(camera, camera + cameraFront, glm::vec3(0.0f, 1.0f,  0.0f));*/
 
-    ubo.projectionMatrix = glm::perspective(glm::radians(90.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, 0.01f, 100.0f);
+    ubo.projectionMatrix = glm::perspective(glm::radians(90.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, near, far);
 
     blockUniformBuffers.at(imageIndex).setVertexData(vkEngine->getDevice(), ubo);
 
@@ -726,4 +736,12 @@ void VKRenderer::removeInstancesFromModel(std::string modelID, std::string insta
     }
 
     dataIDToVertexData[modelID].second.erase(instanceVectorID);
+}
+
+void VKRenderer::setCameraNear(float n) {
+    near = n;
+}
+
+void VKRenderer::setCameraFar(float f) {
+    far = f;
 }
