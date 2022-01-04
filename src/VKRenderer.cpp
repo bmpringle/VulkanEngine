@@ -769,15 +769,18 @@ void VKRenderer::setCameraFar(float f) {
 }
 
 void VKRenderer::clearAllInstances() {
+    vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     bool temp = true;
     for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
         for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
             data.second.destroy(vkEngine->getDevice(), &temp);
         }
+        vertexData.second.second.clear();
     }
 }
 
 void VKRenderer::clearAllOverlays() {
+    vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     bool temp = true;
     for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
         vertexData.second.destroy(vkEngine->getDevice(), &temp);
