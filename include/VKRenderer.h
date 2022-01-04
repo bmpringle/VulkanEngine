@@ -40,6 +40,10 @@ class VKRenderer {
 
         void removeInstancesFromModel(std::string modelID, std::string instanceVectorID);
 
+        void clearAllInstances();
+
+        void clearAllOverlays();
+
         void setOverlayVertices(std::string id, std::vector<OverlayVertex> newVertices);
 
         void removeOverlayVertices(std::string id);

@@ -767,3 +767,17 @@ void VKRenderer::setCameraNear(float n) {
 void VKRenderer::setCameraFar(float f) {
     far = f;
 }
+
+void VKRenderer::clearAllInstances() {
+    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
+        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
+            data.second.destroy(vkEngine->getDevice(), &temp);
+        }
+    }
+}
+
+void VKRenderer::clearAllOverlays() {
+    for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
+        vertexData.second.destroy(vkEngine->getDevice(), &temp);
+    }
+}
