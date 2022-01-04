@@ -22,6 +22,10 @@ VulkanEngine::~VulkanEngine() {
 }
 
 void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
+    if(hasDevice) {
+        vkDeviceWaitIdle(vkDevice->getInternalLogicalDevice());
+    }
+
     if(hasPipeline) {
         for(std::shared_ptr<VulkanGraphicsPipeline> vkPipeline : vkPipelines) {
             vkPipeline->destroyGraphicsPipeline(vkDevice);
@@ -86,6 +90,10 @@ void VulkanEngine::setInstance(std::shared_ptr<VulkanInstance> instance) {
 }
 
 void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
+    if(hasDevice) {
+        vkDeviceWaitIdle(vkDevice->getInternalLogicalDevice());
+    }
+    
     if(!hasInstance) {
         throw std::runtime_error("you can't set the VulkanDisplay without setting a VulkanInstance first");
     }
@@ -146,6 +154,10 @@ void VulkanEngine::setDisplay(std::shared_ptr<VulkanDisplay> display) {
 }
 
 void VulkanEngine::setDevice(std::shared_ptr<VulkanDevice> device) {
+    if(hasDevice) {
+        vkDeviceWaitIdle(vkDevice->getInternalLogicalDevice());
+    }
+
     if(!hasDisplay) {
         throw std::runtime_error("you can't set the VulkanDevice without setting a VulkanDisplay first");
     }

@@ -25,14 +25,6 @@ std::tuple<int, int, int, stbi_uc*> TextureLoader::getTexturePixels(std::string 
 }
 
 void TextureLoader::createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, bool* deleteOldTextureBool) {
-    if(texturePathToImage.count(textureID) > 0) {
-        imageViewDeleteThread->addObjectToDelete(texturePathToImageView[textureID], deleteOldTextureBool);
-
-        imageDeleteThread->addObjectToDelete(texturePathToImage[textureID], deleteOldTextureBool);
-
-        deviceMemoryDeleteThread->addObjectToDelete(texturePathToDeviceMemory[textureID], deleteOldTextureBool);
-    }
-
     std::tuple<int, int, int, stbi_uc*> textureData = getTexturePixels(texturePath, STBI_rgb_alpha);
 
     VkBuffer stagingBuffer;
@@ -154,21 +146,33 @@ void TextureLoader::destroyTextureLoader(std::shared_ptr<VulkanDevice> device) {
     for(std::pair<const std::string, VkDeviceMemory> imagePair : texturePathToDeviceMemory) {
         vkFreeMemory(device->getInternalLogicalDevice(), imagePair.second, nullptr);
     }
+
+    imageViewDeleteThread->forceJoin();
+    imageDeleteThread->forceJoin();
+    deviceMemoryDeleteThread->forceJoin();
 }
 
 void TextureLoader::loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, bool* deleteOldTextureBool) {
+    VkImage oldImage = texturePathToImage[textureID];
+    VkImageView oldImageView = texturePathToImageView[textureID];
+    VkDeviceMemory oldDeviceMemory = texturePathToDeviceMemory[textureID];
+
     createTextureImage(device, textureID, texturePath, deleteOldTextureBool);
     createTextureImageView(device, textureID, VK_FORMAT_R8G8B8A8_SRGB);
+
+    if(texturePathToImage.count(textureID) > 0) {
+        imageViewDeleteThread->addObjectToDelete(oldImageView, deleteOldTextureBool);
+
+        imageDeleteThread->addObjectToDelete(oldImage, deleteOldTextureBool);
+
+        deviceMemoryDeleteThread->addObjectToDelete(oldDeviceMemory, deleteOldTextureBool);
+    }
 }
 
 void TextureLoader::loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName, bool* deleteOldTextureBool) {
-    if(texturePathToImage.count(arrayName) > 0) {
-        imageViewDeleteThread->addObjectToDelete(textureArrayIDToImageView[arrayName], deleteOldTextureBool);
-
-        imageDeleteThread->addObjectToDelete(textureArrayIDToImage[arrayName], deleteOldTextureBool);
-
-        deviceMemoryDeleteThread->addObjectToDelete(textureArrayIDToDeviceMemory[arrayName], deleteOldTextureBool);
-    }
+    VkImage oldImage = textureArrayIDToImage[arrayName];
+    VkImageView oldImageView = textureArrayIDToImageView[arrayName];
+    VkDeviceMemory oldDeviceMemory = texturePathToDeviceMemory[arrayName];
     
     std::vector<std::tuple<int, int, int, stbi_uc*>> textureData;
 
@@ -234,6 +238,14 @@ void TextureLoader::loadTextureArray(std::shared_ptr<VulkanDevice> device, std::
 
     vkDestroyBuffer(device->getInternalLogicalDevice(), stagingBuffer, nullptr);
     vkFreeMemory(device->getInternalLogicalDevice(), stagingBufferMemory, nullptr);
+
+    if(textureArrayIDToImage.count(arrayName) > 0) {
+        imageViewDeleteThread->addObjectToDelete(oldImageView, deleteOldTextureBool);
+
+        imageDeleteThread->addObjectToDelete(oldImage, deleteOldTextureBool);
+
+        deviceMemoryDeleteThread->addObjectToDelete(oldDeviceMemory, deleteOldTextureBool);
+    }
 }
 
 VkImageView TextureLoader::getTextureArrayImageView(std::string arrayID) {
@@ -281,13 +293,9 @@ void TextureLoader::copyBufferToImageInLayers(VkBuffer buffer, VkImage image, ui
 }
 
 void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, bool* deleteOldTextureBool) {
-    if(texturePathToImage.count(textureID) > 0) {
-        imageViewDeleteThread->addObjectToDelete(texturePathToImageView[textureID], deleteOldTextureBool);
-
-        imageDeleteThread->addObjectToDelete(texturePathToImage[textureID], deleteOldTextureBool);
-
-        deviceMemoryDeleteThread->addObjectToDelete(texturePathToDeviceMemory[textureID], deleteOldTextureBool);
-    }
+    VkImage oldImage = texturePathToImage[textureID];
+    VkImageView oldImageView = texturePathToImageView[textureID];
+    VkDeviceMemory oldDeviceMemory = texturePathToDeviceMemory[textureID];
 
     TextBitmap bitmap = unitypeConverter.getTextFromString(text);
 
@@ -322,6 +330,14 @@ void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std:
     texturePathToImageDimensions[textureID] = std::make_pair(bitmap.stride, bitmap.rows);
 
     createTextureImageView(device, textureID, VK_FORMAT_R8_SRGB);
+
+    if(texturePathToImage.count(textureID) > 0) {
+        imageViewDeleteThread->addObjectToDelete(oldImageView, deleteOldTextureBool);
+
+        imageDeleteThread->addObjectToDelete(oldImage, deleteOldTextureBool);
+
+        deviceMemoryDeleteThread->addObjectToDelete(oldDeviceMemory, deleteOldTextureBool);
+    }   
 }
 
 std::pair<unsigned int, unsigned int> TextureLoader::getTextureDimensions(std::string id) {

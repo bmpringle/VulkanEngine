@@ -58,18 +58,25 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()) {
 
 VKRenderer::~VKRenderer() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
+
     destroyUniformBuffers();
 
+    bool temp = true;
+
     for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
-        vertexData.second.first.destroy(vkEngine->getDevice());
+        vertexData.second.first.destroy(vkEngine->getDevice(), &temp);
         for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
-            data.second.destroy(vkEngine->getDevice());
+            data.second.destroy(vkEngine->getDevice(), &temp);
         }
     }
 
     for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
-        vertexData.second.destroy(vkEngine->getDevice());
+        vertexData.second.destroy(vkEngine->getDevice(), &temp);
     }
+
+    VulkanVertexBuffer<OverlayVertex>::forceJoinDeleteThreads();
+    VulkanVertexBuffer<Vertex>::forceJoinDeleteThreads();
+    VulkanVertexBuffer<InstanceData>::forceJoinDeleteThreads();
 }
 
 void VKRenderer::recordCommandBuffers() {
@@ -692,6 +699,9 @@ void VKRenderer::setClearColor(glm::vec4 rgba) {
 
 void VKRenderer::removeOverlayVertices(std::string id) {
     if(dataIDToVertexOverlayData.count(id) > 0) {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        dataIDToVertexOverlayData[id].destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
         dataIDToVertexOverlayData.erase(id);
     }
 }
@@ -710,6 +720,14 @@ void VKRenderer::setModel(std::string modelID, std::vector<Vertex>& modelVertice
 
 void VKRenderer::removeModel(std::string modelID) {
     if(dataIDToVertexData.count(modelID) > 0) {
+        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& instanceData : dataIDToVertexData[modelID].second) {
+            canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+            instanceData.second.destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
+            ++mapCounter;
+        }
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        ++mapCounter;
+        dataIDToVertexData[modelID].first.destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
         dataIDToVertexData.erase(modelID);
     }
 }
@@ -734,6 +752,10 @@ void VKRenderer::removeInstancesFromModel(std::string modelID, std::string insta
     if(dataIDToVertexData.count(modelID) == 0) {
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
     }
+
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+    dataIDToVertexData[modelID].second[instanceVectorID].destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
+    ++mapCounter;
 
     dataIDToVertexData[modelID].second.erase(instanceVectorID);
 }
