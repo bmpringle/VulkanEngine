@@ -3,9 +3,9 @@ import os
 import subprocess
 from executeCommand import execCmd
 
-from sys import platform
+from platform import system
 
-if platform == "linux" or platform == "darwin":
+if system() == "Linux" or system() == "Darwin":
     output, error = execCmd('git submodule update --init --recursive')
     output, error = execCmd('mkdir -p lib')
 
@@ -20,22 +20,34 @@ if platform == "linux" or platform == "darwin":
     output, error = execCmd('python3 compileDeps.py PIC=ON', cwdOverride = './StringToText/')
     output, error = execCmd('make library-POC -j8', cwdOverride = './StringToText/')
     output, error = execCmd('cp -a ./lib/. ../lib/', cwdOverride = './StringToText/')
-elif platform == "win32":
+elif system() == "Windows":
     print("unsupported at this time")
     exit()
 
-MACOS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.189.0/mac/vulkansdk-macos-1.2.189.0.dmg"
+MACOS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/mac/vulkansdk-macos-1.2.198.1.dmg"
+MACOS_DMGNAME= "vulkansdk-macos-1.2.198.1.dmg"
+LINUX_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/linux/vulkansdk-linux-x86_64-1.2.198.1.tar.gz"
+WINDOWS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/windows/VulkanSDK-1.2.198.1-Installer.exe"
 
-if platform == "darwin":
+if system() == "Darwin":
     output, error = execCmd("wget {}".format(MACOS_VULKANSDK))
-    output, error = execCmd("hdiutil attach {}".format("vulkansdk-macos-1.2.189.0.dmg"))
-    output, error = execCmd("cp -rf /Volumes/{}/ ./".format("vulkansdk-macos-1.2.189.0"))
-    output, error = execCmd("hdiutil detach /Volumes/{}/".format("vulkansdk-macos-1.2.189.0"))
-    output, error = execCmd("rm {}".format("vulkansdk-macos-1.2.189.0.dmg"))
+    output, error = execCmd("hdiutil attach {}".format(MACOS_DMGNAME))
+    output, error = execCmd("cp -rf /Volumes/{}/ ./".format(MACOS_DMGNAME.replace(".dmg", "")))
+    output, error = execCmd("hdiutil detach /Volumes/{}/".format(MACOS_DMGNAME.replace(".dmg", "")))
+    output, error = execCmd("rm {}".format(MACOS_DMGNAME))
 
-    print("Install Vulkan SDK to whatever directory you want, then in the Sconstruct file,\nset the VULKAN_HOME variable to be the path you installed the SDK to. The default is ../VulkanSDK in the Sconstruct file")
+    print("Install Vulkan SDK to ./VulkanSDKMacOS")
 
     output, error = execCmd("open InstallVulkan.app")
+elif system() == "Linx":
+    output, error = execCmd("wget {}".format(LINUX_VULKANSDK))
+    output, error = execCmd("tar -xvzf {} -C {}".format(LINUX_VULKANSDK, "./VulkanSDKLinux"))
+elif system() == "Windows":
+    output, error = execCmd("curl.exe -o WindowsInstallSDK.exe ()".format(WINDOWS_VULKANSDK))
+
+    print("Install Vulkan SDK to ./VulkanSDKWindows")
+
+    output, error = execCmd("WindowsInstallSDK.exe")
 else:
-    print("auto-install of vulkan sdk unsupported at this moment for non-darwin platforms")
+    print("auto-install of vulkan sdk unsupported at this moment for platforms other than MacOS/Linux/Windows")
     exit()

@@ -16,6 +16,8 @@
 
 #include <map>
 
+#include "InstancedRenderingModel.h"
+
 class VKRenderer {
     public:
         VKRenderer(std::shared_ptr<VulkanEngine> engine);
@@ -99,7 +101,7 @@ class VKRenderer {
 
         size_t currentFrame = 0;
 
-        std::map<std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>> dataIDToVertexData;
+        std::map<std::string, InstancedRenderingModel> dataIDToInstancedRenderingModel;
 
         std::map<std::string, VulkanVertexBuffer<OverlayVertex>> dataIDToVertexOverlayData;
 

@@ -4,6 +4,7 @@
 
 import os
 import subprocess
+from platform import system
 
 DBG = int(ARGUMENTS.get('DBG', 0))
 ARM = int(ARGUMENTS.get('ARM', 1))
@@ -19,10 +20,17 @@ CXX='clang++'
 GLFW_DIR='./glfw/'
 
 #place path to Vulkan SDK here:
-VULKAN_HOME='../VulkanSDK'
+VULKAN_HOME = ""
+if system() == "Darwin":
+    VULKAN_HOME='./VulkanSDKMacOS'
+if system() == "Linux":
+    VULKAN_HOME='./VulkanSDKLinux'
+if system() == "Windows":
+    VULKAN_HOME='./VulkanSDKWindows'
+
 
 LIBS=['pthread', 'vulkan.1', 'vulkan.1.2.182', 'libMoltenVK.dylib']
-LINK='{} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX)#-L{}'.format(CXX, '{}/macOS/lib/'.format(VULKAN_HOME))
+LINK='{} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX)
 
 GLFW_INCLUDE=os.sep.join([GLFW_DIR,'include'])
 
@@ -48,6 +56,7 @@ sharedLibBuild = env.SharedLibrary(os.sep.join(['lib', BLD, 'libVulkanEngineLib.
                     CCFLAGS=CCFLAGS,
                     LINK=LINK,
                     LIBS=LIBS)
+
 
 CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {}  -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
 

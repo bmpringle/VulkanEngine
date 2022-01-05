@@ -63,11 +63,8 @@ VKRenderer::~VKRenderer() {
 
     bool temp = true;
 
-    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
-        vertexData.second.first.destroy(vkEngine->getDevice(), &temp);
-        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
-            data.second.destroy(vkEngine->getDevice(), &temp);
-        }
+    for(std::pair<const std::string, InstancedRenderingModel>& vertexData : dataIDToInstancedRenderingModel) {
+        vertexData.second.destroy(&temp);
     }
 
     for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
@@ -123,16 +120,16 @@ void VKRenderer::recordCommandBuffers() {
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(0)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i], 0, nullptr);
 
-        for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
-            VulkanVertexBuffer<Vertex> vertexBuffer = vertexData.second.first;
+        for(std::pair<const std::string, InstancedRenderingModel>& vertexData : dataIDToInstancedRenderingModel) {
+            VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.getModel();
             VkDeviceSize offsets[] = {0};
 
-            VkBuffer buffer = vertexData.second.first.getVertexBuffer();
+            VkBuffer buffer = vertexBuffer.getVertexBuffer();
 
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
 
             if(vertexBuffer.getBufferSize() > 0) {
-                for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
+                for(std::pair<const std::string, VulkanVertexBuffer<InstanceData> >& data : vertexData.second.getInstanceSets()) {
                     VulkanVertexBuffer<InstanceData> instanceBuffer = data.second;
 
                     if(instanceBuffer.getBufferSize() > 0) {
@@ -707,57 +704,40 @@ void VKRenderer::removeOverlayVertices(std::string id) {
 }
 
 void VKRenderer::setModel(std::string modelID, std::vector<Vertex>& modelVertices) {
-    if(dataIDToVertexData.count(modelID) > 0) {
-        dataIDToVertexData[modelID].first.setVertexData(vkEngine->getDevice(), modelVertices);
+    if(dataIDToInstancedRenderingModel.count(modelID) > 0) {
+        dataIDToInstancedRenderingModel.at(modelID).setModel(modelVertices);
         return;
     }
 
-    VulkanVertexBuffer<Vertex> vertexBuffer = VulkanVertexBuffer<Vertex>();
-    vertexBuffer.setVertexData(vkEngine->getDevice(), modelVertices);
-
-    dataIDToVertexData[modelID].first = vertexBuffer;
+    dataIDToInstancedRenderingModel.insert(std::make_pair(modelID, InstancedRenderingModel(vkEngine->getDevice(), modelVertices)));
 }
 
 void VKRenderer::removeModel(std::string modelID) {
-    if(dataIDToVertexData.count(modelID) > 0) {
-        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& instanceData : dataIDToVertexData[modelID].second) {
-            canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
-            instanceData.second.destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
-            ++mapCounter;
-        }
+    if(dataIDToInstancedRenderingModel.count(modelID) > 0) {
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        dataIDToInstancedRenderingModel.at(modelID).destroy(canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
-        dataIDToVertexData[modelID].first.destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
-        dataIDToVertexData.erase(modelID);
+        
+        dataIDToInstancedRenderingModel.erase(modelID);
     }
 }
 
 void VKRenderer::addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances) {
-    if(dataIDToVertexData.count(modelID) == 0) {
+    if(dataIDToInstancedRenderingModel.count(modelID) == 0) {
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't set instances for it.");
     }
 
-    if(dataIDToVertexData[modelID].second.count(instanceVectorID) > 0) {
-        dataIDToVertexData[modelID].second[instanceVectorID].setVertexData(vkEngine->getDevice(), instances);
-        return;
-    }
-
-    VulkanVertexBuffer<InstanceData> instanceBuffer = VulkanVertexBuffer<InstanceData>();
-    instanceBuffer.setVertexData(vkEngine->getDevice(), instances);
-
-    dataIDToVertexData[modelID].second[instanceVectorID] = instanceBuffer;
+    dataIDToInstancedRenderingModel.at(modelID).addInstancesToModel(instanceVectorID, instances);
 }
 
 void VKRenderer::removeInstancesFromModel(std::string modelID, std::string instanceVectorID) {
-    if(dataIDToVertexData.count(modelID) == 0) {
+    if(dataIDToInstancedRenderingModel.count(modelID) == 0) {
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
     }
 
     canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
-    dataIDToVertexData[modelID].second[instanceVectorID].destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
+    dataIDToInstancedRenderingModel.at(modelID).removeInstancesFromModel(instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
-
-    dataIDToVertexData[modelID].second.erase(instanceVectorID);
 }
 
 void VKRenderer::setCameraNear(float n) {
@@ -771,11 +751,8 @@ void VKRenderer::setCameraFar(float f) {
 void VKRenderer::clearAllInstances() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     bool temp = true;
-    for(std::pair<const std::string, std::pair<VulkanVertexBuffer<Vertex>, std::map<std::string, VulkanVertexBuffer<InstanceData>>>>& vertexData : dataIDToVertexData) {
-        for(std::pair<const std::string, VulkanVertexBuffer<InstanceData>>& data : vertexData.second.second) {
-            data.second.destroy(vkEngine->getDevice(), &temp);
-        }
-        vertexData.second.second.clear();
+    for(std::pair<const std::string, InstancedRenderingModel>& vertexData : dataIDToInstancedRenderingModel) {
+        vertexData.second.clearInstances(&temp);
     }
 }
 

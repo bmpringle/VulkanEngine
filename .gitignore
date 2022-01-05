@@ -2,3 +2,5 @@ bin/**
 shaders/output/**
 obj/**
 lib/**
+VulkanSDK*/**
+InstallVulkan.app/**
