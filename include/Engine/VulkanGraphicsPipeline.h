@@ -42,6 +42,14 @@ class VulkanGraphicsPipeline {
         void setDescriptorSetLayoutFlags(VkDescriptorSetLayoutCreateFlags flags);
 
         void setDescriptorPoolFlags(VkDescriptorPoolCreateFlags flags);
+
+        void setPipelineCreateInfoFlags(VkPipelineCreateFlags flags);
+
+        void setPipelineBase(VkPipeline base);
+
+        void setCanHaveDerivatives(bool canBeParent);
+
+        void setPolygonType(VkPolygonMode mode);
     private:
         std::vector<char> readFile(const std::string& filename);
 
@@ -103,6 +111,14 @@ class VulkanGraphicsPipeline {
         VkDescriptorSetLayoutCreateFlags descriptorSetLayoutFlags = 0;
 
         VkDescriptorPoolCreateFlags descriptorPoolFlags = 0;
+
+        VkPipelineCreateFlags pipelineCreateFlags = 0;
+
+        VkPipeline basePipeline = VK_NULL_HANDLE;
+
+        bool canHaveDerivatives = false;
+
+        VkPolygonMode polygonType = VK_POLYGON_MODE_FILL;
 };
 
 #endif

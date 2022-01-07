@@ -38,7 +38,9 @@ class VKRenderer {
 
         void removeModel(std::string modelID);
 
-        void addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances);
+        void addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances, bool asWireframe = false);
+
+        void setInstanceSetWireframe(std::string modelID, std::string instanceVectorID, bool isWireframe);
 
         void removeInstancesFromModel(std::string modelID, std::string instanceVectorID);
 

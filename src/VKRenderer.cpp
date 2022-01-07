@@ -124,15 +124,46 @@ void VKRenderer::recordCommandBuffers() {
             VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.getModel();
             VkDeviceSize offsets[] = {0};
 
-            VkBuffer buffer = vertexBuffer.getVertexBuffer();
+            if(vertexBuffer.getBufferSize() > 0) {
+                 VkBuffer buffer = vertexBuffer.getVertexBuffer();
 
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
+
+                for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
+                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+
+                    if(instanceBuffer.getBufferSize() > 0 && !data.second.isWireframe) {
+                        VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
+
+                        vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, &instanceDataBuffer, offsets);
+
+                        vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
+                    }else {
+                        //nothing to draw
+                    }
+                }
+            }else {
+                //nothing to draw
+            }
+        }
+
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(2)->getInternalGraphicsPipeline());
+
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(2)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(0)->getDescriptorSets()[i], 0, nullptr);
+
+        for(std::pair<const std::string, InstancedRenderingModel>& vertexData : dataIDToInstancedRenderingModel) {
+            VulkanVertexBuffer<Vertex>& vertexBuffer = vertexData.second.getModel();
+            VkDeviceSize offsets[] = {0};
 
             if(vertexBuffer.getBufferSize() > 0) {
-                for(std::pair<const std::string, VulkanVertexBuffer<InstanceData> >& data : vertexData.second.getInstanceSets()) {
-                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second;
+                 VkBuffer buffer = vertexBuffer.getVertexBuffer();
 
-                    if(instanceBuffer.getBufferSize() > 0) {
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
+
+                for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
+                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+
+                    if(instanceBuffer.getBufferSize() > 0 && data.second.isWireframe) {
                         VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
 
                         vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, &instanceDataBuffer, offsets);
@@ -166,6 +197,7 @@ void VKRenderer::recordCommandBuffers() {
                 vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), 1, 0, 0);
             }
         }
+
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -447,7 +479,7 @@ void VKRenderer::updateDescriptorSets() {
         imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView(textureArrayID);
         imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
-        std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
+        std::array<VkWriteDescriptorSet, 6> descriptorWrites{};
 
         //descriptor writes for block pipeline
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -507,6 +539,23 @@ void VKRenderer::updateDescriptorSets() {
         descriptorWrites[3].descriptorType = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(1).descriptorType;
         descriptorWrites[3].descriptorCount = vkEngine->getGraphicsPipeline(1)->getDescriptorSetLayoutBinding(1).descriptorCount;
         descriptorWrites[3].pImageInfo = imageInfos.data();
+
+        //descriptor writes for wireframe pipeline
+        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4].dstSet = vkEngine->getGraphicsPipeline(2)->getDescriptorSets()[i];
+        descriptorWrites[4].dstBinding = 0;
+        descriptorWrites[4].dstArrayElement = 0;
+        descriptorWrites[4].descriptorType = vkEngine->getGraphicsPipeline(2)->getDescriptorSetLayoutBinding(0).descriptorType;
+        descriptorWrites[4].descriptorCount = vkEngine->getGraphicsPipeline(2)->getDescriptorSetLayoutBinding(0).descriptorCount;
+        descriptorWrites[4].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[5].dstSet = vkEngine->getGraphicsPipeline(2)->getDescriptorSets()[i];
+        descriptorWrites[5].dstBinding = 1;
+        descriptorWrites[5].dstArrayElement = 0;
+        descriptorWrites[5].descriptorType = vkEngine->getGraphicsPipeline(2)->getDescriptorSetLayoutBinding(1).descriptorType;
+        descriptorWrites[5].descriptorCount = vkEngine->getGraphicsPipeline(2)->getDescriptorSetLayoutBinding(1).descriptorCount;
+        descriptorWrites[5].pImageInfo = &imageInfo;
         
         vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -613,9 +662,10 @@ void VKRenderer::createGraphicsPipelines() {
     graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
 
     graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+    
+    graphicsPipelineBlocks->setCanHaveDerivatives(true);
 
     vkEngine->setGraphicsPipeline(graphicsPipelineBlocks, 0);
-
 
     std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineOverlays = std::make_shared<VulkanGraphicsPipeline>();
 
@@ -644,6 +694,27 @@ void VKRenderer::createGraphicsPipelines() {
     graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * MAX_OVERLAY_TEXTURES);
 
     vkEngine->setGraphicsPipeline(graphicsPipelineOverlays, 1);
+
+
+    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineWireframe = std::make_shared<VulkanGraphicsPipeline>();
+
+    graphicsPipelineWireframe->setVertexInputBindingDescriptions(Vertex::getBindingDescriptions());
+    graphicsPipelineWireframe->setVertexInputAttributeDescriptions(Vertex::getAttributeDescriptions());
+    graphicsPipelineWireframe->setVertexShader("shaders/output/3dvert_instanced_texArray.spv");
+    graphicsPipelineWireframe->setFragmentShader("shaders/output/3dfrag_instanced_texArray.spv");
+    graphicsPipelineWireframe->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+
+    graphicsPipelineWireframe->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
+
+    graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+
+    graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+    
+    //graphicsPipelineWireframe->setPipelineBase(graphicsPipelineBlocks->getInternalGraphicsPipeline());
+
+    graphicsPipelineWireframe->setPolygonType(VK_POLYGON_MODE_LINE);
+
+    vkEngine->setGraphicsPipeline(graphicsPipelineWireframe, 2);
 }
 
 std::pair<unsigned int, unsigned int> VKRenderer::getTextureDimensions(std::string id) {
@@ -722,12 +793,20 @@ void VKRenderer::removeModel(std::string modelID) {
     }
 }
 
-void VKRenderer::addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances) {
+void VKRenderer::addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances, bool asWireframe) {
     if(dataIDToInstancedRenderingModel.count(modelID) == 0) {
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't set instances for it.");
     }
 
-    dataIDToInstancedRenderingModel.at(modelID).addInstancesToModel(instanceVectorID, instances);
+    dataIDToInstancedRenderingModel.at(modelID).addInstancesToModel(instanceVectorID, instances, asWireframe);
+}
+
+void VKRenderer::setInstanceSetWireframe(std::string modelID, std::string instanceVectorID, bool isWireframe) {
+    if(dataIDToInstancedRenderingModel.count(modelID) == 0) {
+        throw std::runtime_error(modelID + " hasn't been set yet, so you can't its wireframe state.");
+    }
+
+    dataIDToInstancedRenderingModel.at(modelID).setIsRenderedAsWireframe(instanceVectorID, isWireframe);
 }
 
 void VKRenderer::removeInstancesFromModel(std::string modelID, std::string instanceVectorID) {

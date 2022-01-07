@@ -39,6 +39,8 @@ bool up_key_pressed = false;
 bool down_key_pressed = false;
 bool g_key_pressed = false;
 bool l_key_pressed = false;
+bool z_key_pressed = false;
+
 
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if(action == GLFW_PRESS) {
@@ -58,6 +60,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       g_key_pressed = true;
     }else if(key == GLFW_KEY_L) {
       l_key_pressed = true;
+    }else if(key == GLFW_KEY_Z) {
+      z_key_pressed = true;
     }
   }else if(action == GLFW_RELEASE) {
     if(key == GLFW_KEY_W) {
@@ -76,6 +80,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       g_key_pressed = false;
     }else if(key == GLFW_KEY_L) {
       l_key_pressed = false;
+    }else if(key == GLFW_KEY_Z) {
+      z_key_pressed = false;
     }
   }
 }
@@ -210,6 +216,8 @@ int main() {
 
   std::vector<InstanceData> instanceDataCube4;
 
+  std::vector<InstanceData> instanceDataCube5;
+
   unsigned int tex_id = renderer.getTextureID("test");
 
   for(OverlayVertex& v : texturedRectangleOverlay) {
@@ -243,6 +251,7 @@ int main() {
         instanceDataCube2.push_back(InstanceData({{-x, y, z}}));
         instanceDataCube3.push_back(InstanceData({{-x, y, -z}}));
         instanceDataCube4.push_back(InstanceData({{-x, y, -z*2}}));
+        instanceDataCube5.push_back(InstanceData({{x, y, -z*2}}));
       }
     }
   }
@@ -329,6 +338,10 @@ int main() {
       renderer.addInstancesToModel("block2", "set1", instanceDataCube3);
 
       renderer.addInstancesToModel("block2", "set2", instanceDataCube4);
+    }
+
+    if(z_key_pressed) {
+      renderer.addInstancesToModel("block1", "set2", instanceDataCube5, true);
     }
 
     renderer.recordCommandBuffers();

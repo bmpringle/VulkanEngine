@@ -32,7 +32,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -149,6 +148,8 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     depthStencil.front = {}; // Optional
     depthStencil.back = {}; // Optional
 
+    rasterizer.polygonMode = polygonType;
+
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
@@ -164,7 +165,9 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     pipelineInfo.renderPass = swapchain->getInternalRenderPass();
     pipelineInfo.subpass = 0;
 
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.flags = pipelineCreateFlags | ((basePipeline != VK_NULL_HANDLE) ? VK_PIPELINE_CREATE_DERIVATIVE_BIT : 0) | ((canHaveDerivatives) ? VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT : 0);
+
+    pipelineInfo.basePipelineHandle = basePipeline;
     pipelineInfo.basePipelineIndex = -1;
 
     if(vkCreateGraphicsPipelines(device->getInternalLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
@@ -299,4 +302,20 @@ void VulkanGraphicsPipeline::setDescriptorSetLayoutFlags(VkDescriptorSetLayoutCr
 
 void VulkanGraphicsPipeline::setDescriptorPoolFlags(VkDescriptorPoolCreateFlags flags) {
     descriptorPoolFlags = flags;
+}
+
+void VulkanGraphicsPipeline::setPipelineCreateInfoFlags(VkPipelineCreateFlags flags) {
+    pipelineCreateFlags = flags;
+}
+
+void VulkanGraphicsPipeline::setPipelineBase(VkPipeline base) {
+    basePipeline = base;
+}
+
+void VulkanGraphicsPipeline::setCanHaveDerivatives(bool canBeParent) {
+    canHaveDerivatives = canBeParent;
+}
+
+void VulkanGraphicsPipeline::setPolygonType(VkPolygonMode mode) {
+    polygonType = mode;
 }
