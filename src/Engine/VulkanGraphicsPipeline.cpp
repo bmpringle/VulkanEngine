@@ -20,7 +20,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
 
     inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     viewportState = {};
@@ -32,7 +31,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
@@ -148,7 +146,10 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     depthStencil.front = {}; // Optional
     depthStencil.back = {}; // Optional
 
+    rasterizer.lineWidth = 1.0f;//lineWidth;   
     rasterizer.polygonMode = polygonType;
+
+    inputAssembly.topology = topology;
 
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -318,4 +319,12 @@ void VulkanGraphicsPipeline::setCanHaveDerivatives(bool canBeParent) {
 
 void VulkanGraphicsPipeline::setPolygonType(VkPolygonMode mode) {
     polygonType = mode;
+}
+
+void VulkanGraphicsPipeline::setLineWidth(float width) {
+    lineWidth = width;
+}
+
+void VulkanGraphicsPipeline::setPrimitiveTopology(VkPrimitiveTopology top) {
+    topology = top;
 }

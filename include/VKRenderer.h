@@ -7,6 +7,7 @@
 
 #include "Vertex.h"
 #include "OverlayVertex.h"
+#include <WireframeVertex.h>
 
 #include "VulkanVertexBuffer.h"
 #include "VulkanUniformBuffer.h"
@@ -34,15 +35,26 @@ class VKRenderer {
 
         void renderFrame();
 
+        //for world rendering
+
         void setModel(std::string modelID, std::vector<Vertex>& modelVertices);
 
         void removeModel(std::string modelID);
 
-        void addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances, bool asWireframe = false);
-
-        void setInstanceSetWireframe(std::string modelID, std::string instanceVectorID, bool isWireframe);
+        void addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances);
 
         void removeInstancesFromModel(std::string modelID, std::string instanceVectorID);
+
+        //for wireframe rendering
+
+        void setWireframeModel(std::string modelID, std::vector<WireframeVertex>& modelVertices);
+
+        void removeWireframeModel(std::string modelID);
+
+        void addInstancesToWireframeModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances);
+
+        void removeInstancesFromWireframeModel(std::string modelID, std::string instanceVectorID);
+        
 
         void clearAllInstances();
 
@@ -88,6 +100,8 @@ class VKRenderer {
 
         static glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation);
 
+        void setWireframeTopology(VkPrimitiveTopology topology);
+
     private:
         void createGraphicsPipelines();
 
@@ -103,7 +117,9 @@ class VKRenderer {
 
         size_t currentFrame = 0;
 
-        std::map<std::string, InstancedRenderingModel> dataIDToInstancedRenderingModel;
+        std::map<std::string, InstancedRenderingModel<Vertex>> idToInstancedModels;
+
+        std::map<std::string, InstancedRenderingModel<WireframeVertex>> idToWFInstancedModels;
 
         std::map<std::string, VulkanVertexBuffer<OverlayVertex>> dataIDToVertexOverlayData;
 
@@ -138,6 +154,8 @@ class VKRenderer {
 
         float near = 0.01f;
         float far = 100.0f;
+
+        VkPrimitiveTopology wireframeTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 };
 
 #endif

@@ -50,6 +50,11 @@ class VulkanGraphicsPipeline {
         void setCanHaveDerivatives(bool canBeParent);
 
         void setPolygonType(VkPolygonMode mode);
+
+        //this function is ignored, because the wideLines device feature is so rare. As such we don't enable it, and all lines are 1.0f
+        void setLineWidth(float width);
+
+        void setPrimitiveTopology(VkPrimitiveTopology top);
     private:
         std::vector<char> readFile(const std::string& filename);
 
@@ -119,6 +124,10 @@ class VulkanGraphicsPipeline {
         bool canHaveDerivatives = false;
 
         VkPolygonMode polygonType = VK_POLYGON_MODE_FILL;
+
+        float lineWidth = 1.0;
+
+        VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 };
 
 #endif

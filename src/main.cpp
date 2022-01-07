@@ -40,7 +40,7 @@ bool down_key_pressed = false;
 bool g_key_pressed = false;
 bool l_key_pressed = false;
 bool z_key_pressed = false;
-
+bool esc_key_pressed = false;
 
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if(action == GLFW_PRESS) {
@@ -62,6 +62,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       l_key_pressed = true;
     }else if(key == GLFW_KEY_Z) {
       z_key_pressed = true;
+    }else if(key == GLFW_KEY_ESCAPE) {
+      esc_key_pressed = true;
     }
   }else if(action == GLFW_RELEASE) {
     if(key == GLFW_KEY_W) {
@@ -82,6 +84,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
       l_key_pressed = false;
     }else if(key == GLFW_KEY_Z) {
       z_key_pressed = false;
+    }else if(key == GLFW_KEY_ESCAPE) {
+      esc_key_pressed = false;
     }
   }
 }
@@ -277,6 +281,37 @@ int main() {
 
   renderer.setOverlayVertices("textOverlay2", texturedRectangleOverlay3);
 
+  std::vector<InstanceData> instanceDataCube6;
+
+  instanceDataCube6.push_back(InstanceData({{-3, 0, -3}}));
+
+  renderer.setWireframeTopology(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
+
+  std::vector<WireframeVertex> wireframe = {
+    {{0.0f, 0.0f, 0.0f}},
+    {{0.0f, 1.0f, 0.0f}},
+    {{1.0f, 1.0f, 0.0f}},
+    {{1.0f, 0.0f, 0.0f}},
+    {{0.0f, 0.0f, 0.0f}},
+
+    {{0.0f, 0.0f, 1.0f}},
+    {{0.0f, 1.0f, 1.0f}},
+    {{1.0f, 1.0f, 1.0f}},
+    {{1.0f, 0.0f, 1.0f}},
+    {{0.0f, 0.0f, 1.0f}},
+
+    {{1.0f, 0.0f, 1.0f}},
+    {{1.0f, 0.0f, 0.0f}},
+
+    {{1.0f, 1.0f, 0.0f}},
+    {{1.0f, 1.0f, 1.0f}},
+
+    {{0.0f, 1.0f, 1.0f}},
+    {{0.0f, 1.0f, 0.0f}},
+  };
+
+  renderer.setWireframeModel("wireframe1", wireframe);
+
   while(!renderer.getEngine()->getDisplay()->shouldWindowClose()) {
     renderer.getXRotation() += xDelta;
     renderer.getYRotation() -= yDelta;
@@ -341,7 +376,11 @@ int main() {
     }
 
     if(z_key_pressed) {
-      renderer.addInstancesToModel("block1", "set2", instanceDataCube5, true);
+      renderer.addInstancesToWireframeModel("wireframe1", "set1", instanceDataCube6);
+    }
+
+    if(esc_key_pressed) {
+      glfwSetWindowShouldClose(renderer.getEngine()->getDisplay()->getInternalWindow(), true);
     }
 
     renderer.recordCommandBuffers();

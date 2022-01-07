@@ -3,17 +3,18 @@
 
 #include "Engine/VulkanVertexBuffer.h"
 #include <map>
+
 #include "Vertex.h"
 
 struct InstanceSetData {
     VulkanVertexBuffer<InstanceData> data;
-    bool isWireframe = false;
 };
 
 
+template<typename VertexType>
 class InstancedRenderingModel {
     public:
-        InstancedRenderingModel(std::shared_ptr<VulkanDevice> _device, std::vector<Vertex>& _verts) : device(_device) {
+        InstancedRenderingModel(std::shared_ptr<VulkanDevice> _device, std::vector<VertexType>& _verts) : device(_device) {
             model.setVertexData(device, _verts);
         }
 
@@ -32,7 +33,7 @@ class InstancedRenderingModel {
             instanceSets.clear();
         }
 
-        VulkanVertexBuffer<Vertex>& getModel() {
+        VulkanVertexBuffer<VertexType>& getModel() {
             return model;
         }
 
@@ -40,11 +41,11 @@ class InstancedRenderingModel {
             return instanceSets;
         }
 
-        void setModel(std::vector<Vertex>& mdl) {
+        void setModel(std::vector<VertexType>& mdl) {
             model.setVertexData(device, mdl);
         }
 
-        void addInstancesToModel(std::string instanceVectorID, std::vector<InstanceData>& instances, bool wireframeInstances = false) {
+        void addInstancesToModel(std::string instanceVectorID, std::vector<InstanceData>& instances) {
             if(instanceSets.count(instanceVectorID) > 0) {
                 instanceSets[instanceVectorID].data.setVertexData(device, instances);
                 return;
@@ -54,7 +55,6 @@ class InstancedRenderingModel {
             instanceBuffer.setVertexData(device, instances);
 
             instanceSets[instanceVectorID].data = instanceBuffer;
-            instanceSets[instanceVectorID].isWireframe = wireframeInstances;
         }
 
         void removeInstancesFromModel(std::string instanceVectorID, bool* shouldBeDestroyed) {
@@ -66,13 +66,9 @@ class InstancedRenderingModel {
             return instanceSets.at(set).data;
         }
 
-        void setIsRenderedAsWireframe(std::string instanceVectorID, bool wireframe) {
-            instanceSets[instanceVectorID].isWireframe = wireframe;
-        }
-
     private:
         std::shared_ptr<VulkanDevice> device;
-        VulkanVertexBuffer<Vertex> model;
+        VulkanVertexBuffer<VertexType> model;
         std::map<std::string, InstanceSetData> instanceSets;
 };
 
