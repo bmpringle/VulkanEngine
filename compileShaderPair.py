@@ -2,7 +2,16 @@
 import os
 import subprocess
 from executeCommand import execCmd
+from platform import system
 import sys
+
+VULKAN_HOME = ""
+if system() == "Darwin":
+    VULKAN_HOME='./VulkanSDKMacOS'
+if system() == "Linux":
+    VULKAN_HOME='./VulkanSDKLinux'
+if system() == "Windows":
+    VULKAN_HOME='./VulkanSDKWindows'
 
 nextArgIsVertexOutput = False
 nextArgIsFragmentOutput = False
@@ -64,9 +73,5 @@ if(fragmentInput == ''):
 if(fragmentOutput == ''):
     print('fragmentOutput not set, exiting\nnote: fragmentOutput can be set with -fo')
 
-
-
-VulkanSDKDir = '../VulkanSDK/'
-
-output, error = execCmd(VulkanSDKDir + 'macOS/bin/glslc ' + vertexInput + ' -o ' + vertexOutput)
-output, error = execCmd(VulkanSDKDir + 'macOS/bin/glslc ' + fragmentInput + ' -o ' + fragmentOutput)
+output, error = execCmd(VULKAN_HOME + '/macOS/bin/glslc ' + vertexInput + ' -o ' + vertexOutput)
+output, error = execCmd(VULKAN_HOME + '/macOS/bin/glslc ' + fragmentInput + ' -o ' + fragmentOutput)
