@@ -817,6 +817,16 @@ void VKRenderer::removeInstancesFromModel(std::string modelID, std::string insta
     ++mapCounter;
 }
 
+void VKRenderer::removeInstancesFromModelSafe(std::string modelID, std::string instanceVectorID) {
+    if(idToInstancedModels.count(modelID) == 0) {
+        return; //if no instances, just return
+    }
+
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+    idToInstancedModels.at(modelID).removeInstancesFromModel(instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
+    ++mapCounter;
+}
+
 void VKRenderer::setCameraNear(float n) {
     near = n;
 }
