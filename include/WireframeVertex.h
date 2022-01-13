@@ -1,8 +1,13 @@
+#ifndef WIREFRAMEVERTEX_H
+#define WIREFRAMEVERTEX_H
+
 #include "Engine/VulkanInclude.h"
 
 #include <vector>
 
 #include <glm/glm.hpp>
+
+#include "Vertex.h"
 
 struct WireframeVertex {
     glm::vec3 position;
@@ -39,3 +44,5 @@ struct WireframeVertex {
         return {attrib1, attrib2};
     }
 };
+
+#endif
