@@ -819,7 +819,11 @@ void VKRenderer::removeInstancesFromModel(std::string modelID, std::string insta
 
 void VKRenderer::removeInstancesFromModelSafe(std::string modelID, std::string instanceVectorID) {
     if(idToInstancedModels.count(modelID) == 0) {
-        return; //if no instances, just return
+        throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
+    }
+
+    if(!idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID)) {
+        return;
     }
 
     canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));

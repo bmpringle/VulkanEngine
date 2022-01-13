@@ -66,6 +66,10 @@ class InstancedRenderingModel {
             return instanceSets.at(set).data;
         }
 
+        bool hasInstanceSet(std::string set) {
+            return (instanceSets.count(set) != 0);
+        }
+
     private:
         VulkanVertexBuffer<VertexType> model;
         std::map<std::string, InstanceSetData> instanceSets;
