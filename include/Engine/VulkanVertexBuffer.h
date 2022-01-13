@@ -59,16 +59,19 @@ class VulkanVertexBuffer {
         }
 
         void destroy(std::shared_ptr<VulkanDevice> device, bool* deleteOldBufferBool) {
-            vkUnmapMemory(device->getInternalLogicalDevice(), vertexBufferMemory);
+            if(vertexBufferMemory != VK_NULL_HANDLE && vertexBuffer != VK_NULL_HANDLE) {
+                vkUnmapMemory(device->getInternalLogicalDevice(), vertexBufferMemory);
 
-            if(*deleteOldBufferBool) {
-                vkDestroyBuffer(device->getInternalLogicalDevice(), vertexBuffer, nullptr);
-                vkFreeMemory(device->getInternalLogicalDevice(), vertexBufferMemory, nullptr);
+                if(*deleteOldBufferBool) {
+                    vkDestroyBuffer(device->getInternalLogicalDevice(), vertexBuffer, nullptr);
+                    vkFreeMemory(device->getInternalLogicalDevice(), vertexBufferMemory, nullptr);
+                }else {
+                    bufferDeleteThread->addObjectToDelete(vertexBuffer, deleteOldBufferBool);
+                    memoryDeleteThread->addObjectToDelete(vertexBufferMemory, deleteOldBufferBool);
+                }
             }else {
-                bufferDeleteThread->addObjectToDelete(vertexBuffer, deleteOldBufferBool);
-                memoryDeleteThread->addObjectToDelete(vertexBufferMemory, deleteOldBufferBool);
+                std::cout << "invalid vkbuffer or vkbuffermemory pointers used when trying to delete vulkanvertexbuffer" << std::endl;
             }
-            
         }
 
         VkBuffer getVertexBuffer() {
