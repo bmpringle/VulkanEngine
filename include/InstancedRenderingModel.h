@@ -14,21 +14,21 @@ struct InstanceSetData {
 template<typename VertexType>
 class InstancedRenderingModel {
     public:
-        InstancedRenderingModel(std::shared_ptr<VulkanDevice> _device, std::vector<VertexType>& _verts) : device(_device) {
-            model.setVertexData(device, _verts);
+        InstancedRenderingModel(std::shared_ptr<VulkanDevice> _device, std::vector<VertexType>& _verts) {
+            model.setVertexData(_device, _verts);
         }
 
-        void destroy(bool* shouldBeDestroyed) {
-            model.destroy(device, shouldBeDestroyed);
+        void destroy(std::shared_ptr<VulkanDevice> _device, bool* shouldBeDestroyed) {
+            model.destroy(_device, shouldBeDestroyed);
 
             for(std::pair<const std::string, InstanceSetData>& instanceData : instanceSets) {
-                instanceData.second.data.destroy(device, shouldBeDestroyed);
+                instanceData.second.data.destroy(_device, shouldBeDestroyed);
             }
         }
 
-        void clearInstances(bool* shouldBeDestroyed) {
+        void clearInstances(std::shared_ptr<VulkanDevice> _device, bool* shouldBeDestroyed) {
             for(std::pair<const std::string, InstanceSetData>& instanceData : instanceSets) {
-                instanceData.second.data.destroy(device, shouldBeDestroyed);
+                instanceData.second.data.destroy(_device, shouldBeDestroyed);
             }
             instanceSets.clear();
         }
@@ -41,24 +41,24 @@ class InstancedRenderingModel {
             return instanceSets;
         }
 
-        void setModel(std::vector<VertexType>& mdl) {
-            model.setVertexData(device, mdl);
+        void setModel(std::shared_ptr<VulkanDevice> _device, std::vector<VertexType>& mdl) {
+            model.setVertexData(_device, mdl);
         }
 
-        void addInstancesToModel(std::string instanceVectorID, std::vector<InstanceData>& instances) {
+        void addInstancesToModel(std::shared_ptr<VulkanDevice> _device, std::string instanceVectorID, std::vector<InstanceData>& instances) {
             if(instanceSets.count(instanceVectorID) > 0) {
-                instanceSets[instanceVectorID].data.setVertexData(device, instances);
+                instanceSets[instanceVectorID].data.setVertexData(_device, instances);
                 return;
             }
 
             VulkanVertexBuffer<InstanceData> instanceBuffer = VulkanVertexBuffer<InstanceData>();
-            instanceBuffer.setVertexData(device, instances);
+            instanceBuffer.setVertexData(_device, instances);
 
             instanceSets[instanceVectorID].data = instanceBuffer;
         }
 
-        void removeInstancesFromModel(std::string instanceVectorID, bool* shouldBeDestroyed) {
-            instanceSets[instanceVectorID].data.destroy(device, shouldBeDestroyed);
+        void removeInstancesFromModel(std::shared_ptr<VulkanDevice> _device, std::string instanceVectorID, bool* shouldBeDestroyed) {
+            instanceSets[instanceVectorID].data.destroy(_device, shouldBeDestroyed);
             instanceSets.erase(instanceVectorID);
         }
 
@@ -67,7 +67,6 @@ class InstancedRenderingModel {
         }
 
     private:
-        std::shared_ptr<VulkanDevice> device;
         VulkanVertexBuffer<VertexType> model;
         std::map<std::string, InstanceSetData> instanceSets;
 };

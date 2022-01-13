@@ -64,11 +64,11 @@ VKRenderer::~VKRenderer() {
     bool temp = true;
 
     for(std::pair<const std::string, InstancedRenderingModel<Vertex>>& vertexData : idToInstancedModels) {
-        vertexData.second.destroy(&temp);
+        vertexData.second.destroy(vkEngine->getDevice(), &temp);
     }
 
     for(std::pair<const std::string, InstancedRenderingModel<WireframeVertex>>& vertexData : idToWFInstancedModels) {
-        vertexData.second.destroy(&temp);
+        vertexData.second.destroy(vkEngine->getDevice(), &temp);
     }
 
     for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
@@ -782,7 +782,7 @@ void VKRenderer::removeOverlayVertices(std::string id) {
 
 void VKRenderer::setModel(std::string modelID, std::vector<Vertex>& modelVertices) {
     if(idToInstancedModels.count(modelID) > 0) {
-        idToInstancedModels.at(modelID).setModel(modelVertices);
+        idToInstancedModels.at(modelID).setModel(vkEngine->getDevice(), modelVertices);
         return;
     }
 
@@ -792,7 +792,7 @@ void VKRenderer::setModel(std::string modelID, std::vector<Vertex>& modelVertice
 void VKRenderer::removeModel(std::string modelID) {
     if(idToInstancedModels.count(modelID) > 0) {
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
-        idToInstancedModels.at(modelID).destroy(canObjectBeDestroyedMap[mapCounter].second);
+        idToInstancedModels.at(modelID).destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
         
         idToInstancedModels.erase(modelID);
@@ -804,7 +804,7 @@ void VKRenderer::addInstancesToModel(std::string modelID, std::string instanceVe
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't set instances for it.");
     }
 
-    idToInstancedModels.at(modelID).addInstancesToModel(instanceVectorID, instances);
+    idToInstancedModels.at(modelID).addInstancesToModel(vkEngine->getDevice(), instanceVectorID, instances);
 }
 
 void VKRenderer::removeInstancesFromModel(std::string modelID, std::string instanceVectorID) {
@@ -813,7 +813,7 @@ void VKRenderer::removeInstancesFromModel(std::string modelID, std::string insta
     }
 
     canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
-    idToInstancedModels.at(modelID).removeInstancesFromModel(instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
+    idToInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
 }
 
@@ -823,7 +823,7 @@ void VKRenderer::removeInstancesFromModelSafe(std::string modelID, std::string i
     }
 
     canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
-    idToInstancedModels.at(modelID).removeInstancesFromModel(instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
+    idToInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
 }
 
@@ -839,7 +839,7 @@ void VKRenderer::clearAllInstances() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     bool temp = true;
     for(std::pair<const std::string, InstancedRenderingModel<Vertex>>& vertexData : idToInstancedModels) {
-        vertexData.second.clearInstances(&temp);
+        vertexData.second.clearInstances(vkEngine->getDevice(), &temp);
     }
 }
 
@@ -862,7 +862,7 @@ void VKRenderer::setWireframeTopology(VkPrimitiveTopology topology) {
 
 void VKRenderer::setWireframeModel(std::string modelID, std::vector<WireframeVertex>& modelVertices) {
     if(idToWFInstancedModels.count(modelID) > 0) {
-        idToWFInstancedModels.at(modelID).setModel(modelVertices);
+        idToWFInstancedModels.at(modelID).setModel(vkEngine->getDevice(), modelVertices);
         return;
     }
 
@@ -872,7 +872,7 @@ void VKRenderer::setWireframeModel(std::string modelID, std::vector<WireframeVer
 void VKRenderer::removeWireframeModel(std::string modelID) {
     if(idToWFInstancedModels.count(modelID) > 0) {
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
-        idToWFInstancedModels.at(modelID).destroy(canObjectBeDestroyedMap[mapCounter].second);
+        idToWFInstancedModels.at(modelID).destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
         
         idToWFInstancedModels.erase(modelID);
@@ -884,7 +884,7 @@ void VKRenderer::addInstancesToWireframeModel(std::string modelID, std::string i
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't set instances for it.");
     }
 
-    idToWFInstancedModels.at(modelID).addInstancesToModel(instanceVectorID, instances);
+    idToWFInstancedModels.at(modelID).addInstancesToModel(vkEngine->getDevice(), instanceVectorID, instances);
 }
 
 void VKRenderer::removeInstancesFromWireframeModel(std::string modelID, std::string instanceVectorID) {
@@ -893,6 +893,6 @@ void VKRenderer::removeInstancesFromWireframeModel(std::string modelID, std::str
     }
 
     canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
-    idToWFInstancedModels.at(modelID).removeInstancesFromModel(instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
+    idToWFInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
 }
