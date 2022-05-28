@@ -92,6 +92,10 @@ class VulkanVertexBuffer {
             }   
         }
 
+        static std::pair<std::mutex*, std::mutex*> getDeleteFunctionMutexes() {
+            return std::make_pair<std::mutex*, std::mutex*>(bufferDeleteThread->getMutexPointer(), memoryDeleteThread->getMutexPointer());
+        }
+
     private:
         static bool createMemoryHandlers;
         VkBuffer vertexBuffer{nullptr};

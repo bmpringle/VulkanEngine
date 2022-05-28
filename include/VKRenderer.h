@@ -115,6 +115,10 @@ class VKRenderer {
 
         void updateUniformBuffer(uint32_t imageIndex);
 
+        void removeFrameFromDeleteRequirements(size_t frame);
+
+        std::vector<int> getCopyOfFFVWithExtraFrame();
+
         std::shared_ptr<VulkanEngine> vkEngine;
 
         size_t currentFrame = 0;
@@ -151,7 +155,10 @@ class VKRenderer {
 
         glm::vec4 clearColor = glm::vec4(0, 0, 0, 1);
 
-        std::map<int, std::pair<int, bool*> > canObjectBeDestroyedMap = std::map<int, std::pair<int, bool*> >();
+        std::vector<int> fullFrameVector; 
+
+        std::map<int, std::pair<std::vector<int>, bool*> > canObjectBeDestroyedMap = std::map<int, std::pair<std::vector<int>, bool*> >();
+        
         int mapCounter = 0;
 
         float near = 0.01f;

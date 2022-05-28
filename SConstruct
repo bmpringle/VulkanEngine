@@ -19,7 +19,6 @@ env = Environment()
 CXX='clang++'
 GLFW_DIR='./glfw/'
 
-#place path to Vulkan SDK here:
 VULKAN_HOME = ""
 if system() == "Darwin":
     VULKAN_HOME='./VulkanSDKMacOS'

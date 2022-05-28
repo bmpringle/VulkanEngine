@@ -45,10 +45,6 @@ std::vector<VkFence>& VulkanRenderSyncObjects::getInternalImagesInFlight() {
     return imagesInFlight;
 }
 
-int VulkanRenderSyncObjects::getMaxFramesInFlight() {
-    return MAX_FRAMES_IN_FLIGHT;
-}
-
 bool VulkanRenderSyncObjects::isCreated() {
     return hasBeenCreated;
 }

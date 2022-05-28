@@ -75,3 +75,5 @@ if(fragmentOutput == ''):
 
 output, error = execCmd(VULKAN_HOME + '/macOS/bin/glslc ' + vertexInput + ' -o ' + vertexOutput)
 output, error = execCmd(VULKAN_HOME + '/macOS/bin/glslc ' + fragmentInput + ' -o ' + fragmentOutput)
+
+

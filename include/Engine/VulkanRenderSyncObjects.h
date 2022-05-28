@@ -19,7 +19,9 @@ class VulkanRenderSyncObjects {
 
         std::vector<VkFence>& getInternalImagesInFlight();
 
-        int getMaxFramesInFlight();
+        constexpr static const int getMaxFramesInFlight() {
+            return MAX_FRAMES_IN_FLIGHT;
+        };
 
         bool isCreated();
 
@@ -33,7 +35,7 @@ class VulkanRenderSyncObjects {
 
         std::vector<VkFence> imagesInFlight;
 
-        int MAX_FRAMES_IN_FLIGHT = 2;
+        static const int MAX_FRAMES_IN_FLIGHT = 2;
 
         bool hasBeenCreated = false;
 };

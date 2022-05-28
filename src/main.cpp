@@ -42,6 +42,9 @@ bool l_key_pressed = false;
 bool z_key_pressed = false;
 bool esc_key_pressed = false;
 
+bool flag = false;
+bool flag1 = false;
+
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if(action == GLFW_PRESS) {
     if(key == GLFW_KEY_W) {
@@ -264,6 +267,7 @@ int main() {
   renderer.setModel("block2", cube2);
 
   renderer.addInstancesToModel("block1", "set1", instanceDataCube);
+
   renderer.addInstancesToModel("block2", "set1", instanceDataCube2);
 
   renderer.setOverlayVertices("exampleRectOverlay", texturedRectangleOverlay);
@@ -375,8 +379,18 @@ int main() {
       renderer.addInstancesToModel("block2", "set2", instanceDataCube4);
     }
 
-    if(z_key_pressed) {
-      renderer.addInstancesToWireframeModel("wireframe1", "set1", instanceDataCube6);
+    if(z_key_pressed && !flag1) {
+      if(!flag) {
+        renderer.addInstancesToModel("block1", "set1", instanceDataCube);
+        renderer.addInstancesToWireframeModel("wireframe1", "set1", instanceDataCube6);
+      }else {
+        renderer.removeInstancesFromModel("block1", "set1");
+        renderer.removeInstancesFromWireframeModel("wireframe1", "set1");
+      }
+      flag = !flag;
+      flag1 = true;
+    }else if(!z_key_pressed) {
+      flag1 = false;
     }
 
     if(esc_key_pressed) {

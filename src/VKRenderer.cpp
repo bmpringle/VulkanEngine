@@ -11,12 +11,17 @@
 #include <chrono>
 
 #include <math.h>
+#include <numeric>
 
-VKRenderer::VKRenderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine) {
+VKRenderer::VKRenderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine), fullFrameVector(VulkanRenderSyncObjects::getMaxFramesInFlight() + 1) {
+    std::iota(std::begin(fullFrameVector), std::end(fullFrameVector), 0);
+
     createUniformBuffers();
 }
 
-VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()) {
+VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrameVector(VulkanRenderSyncObjects::getMaxFramesInFlight() + 1) {
+    std::iota(std::begin(fullFrameVector), std::end(fullFrameVector), 0);
+
     std::shared_ptr<VulkanInstance> instance = std::make_shared<VulkanInstance>();
     instance->setAppName("Test App");
     instance->addValidationLayer("VK_LAYER_KHRONOS_validation");
@@ -47,7 +52,7 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()) {
 
     std::shared_ptr<TextureLoader> textureLoader = vkEngine->getTextureLoader();
 
-    canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
     textureLoader->loadTexture(vkEngine->getDevice(), "missing_texture", "assets/missing_texture.png", canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
 
@@ -256,6 +261,8 @@ void VKRenderer::renderFrame() {
         vkWaitForFences(device, 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
     }
 
+    removeFrameFromDeleteRequirements(currentFrame);
+
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 
     VkSubmitInfo submitInfo{};
@@ -295,7 +302,7 @@ void VKRenderer::renderFrame() {
 
    result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vkDisplay->getFramebufferResized()) {
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vkDisplay->getFramebufferResized()) {
         vkDisplay->setFramebufferResized(false);
         vkEngine->recreateSwapchain();
         createUniformBuffers();
@@ -305,27 +312,52 @@ void VKRenderer::renderFrame() {
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
+    //start delete-thread sync code
+
     std::mutex* accessMutex = vkEngine->getTextureLoader()->getImageDeleteThreadAccessMutex();
+    auto vertexBufferMutexes = VulkanVertexBuffer<Vertex>::getDeleteFunctionMutexes();
+    auto wireframeVertexBufferMutexes = VulkanVertexBuffer<WireframeVertex>::getDeleteFunctionMutexes();
+    auto overlayVertexBufferMutexes = VulkanVertexBuffer<OverlayVertex>::getDeleteFunctionMutexes();
 
     accessMutex->lock();
+    vertexBufferMutexes.first->lock();
+    wireframeVertexBufferMutexes.first->lock();
+    overlayVertexBufferMutexes.first->lock();
+    vertexBufferMutexes.second->lock();
+    wireframeVertexBufferMutexes.second->lock();
+    overlayVertexBufferMutexes.second->lock();
+
     for(auto iterator = canObjectBeDestroyedMap.begin(); iterator != canObjectBeDestroyedMap.end();) {
         if(iterator->second.second == nullptr) {
             std::cout << canObjectBeDestroyedMap.size() << std::endl;
             std::cout << iterator->first << std::endl;
             abort();
         }
-        if(iterator->second.first == currentFrame && *iterator->second.second == false) {
+        if(iterator->second.first.size() == 0 && *iterator->second.second == false) {
             *iterator->second.second = true;
-            iterator->second.first = -1;
+            iterator->second.first.push_back(-1);
         }
 
-        if(iterator->second.first == -1 && *iterator->second.second == false) {
-            canObjectBeDestroyedMap.erase(iterator++);
+        if(iterator->second.first.size() == 1 && *iterator->second.second == false) {
+            if(iterator->second.first.at(0) == -1) {
+                canObjectBeDestroyedMap.erase(iterator++);
+            }else {
+                ++iterator;
+            }
         }else {
             ++iterator;
         }
     }
+
     accessMutex->unlock();
+    vertexBufferMutexes.first->unlock();
+    wireframeVertexBufferMutexes.first->unlock();
+    overlayVertexBufferMutexes.first->unlock();
+    vertexBufferMutexes.second->unlock();
+    wireframeVertexBufferMutexes.second->unlock();
+    overlayVertexBufferMutexes.second->unlock();
+
+    //end delete-thread sync code
 }
 
 void VKRenderer::destroyUniformBuffers() {
@@ -597,11 +629,11 @@ void VKRenderer::addTexture(std::string id, std::string texturePath) {
 
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
         overlayTextures.push_back(id);
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
         vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }else {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
         vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }
@@ -613,11 +645,11 @@ void VKRenderer::addTextTexture(std::string id, std::string text) {
     
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
         overlayTextures.push_back(id);
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
         vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }else {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
         vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }
@@ -742,11 +774,11 @@ void VKRenderer::loadTextureArray(std::string id, std::vector<std::string> textu
     }   
 
     if(texureArrayTexturesToIDs.count(id) == 0) {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(-1, new bool(true));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
         vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }else {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
         vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }
@@ -773,7 +805,7 @@ void VKRenderer::setClearColor(glm::vec4 rgba) {
 
 void VKRenderer::removeOverlayVertices(std::string id) {
     if(dataIDToVertexOverlayData.count(id) > 0) {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
         dataIDToVertexOverlayData[id].destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
         dataIDToVertexOverlayData.erase(id);
@@ -791,7 +823,8 @@ void VKRenderer::setModel(std::string modelID, std::vector<Vertex>& modelVertice
 
 void VKRenderer::removeModel(std::string modelID) {
     if(idToInstancedModels.count(modelID) > 0) {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
+
         idToInstancedModels.at(modelID).destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
         
@@ -812,7 +845,12 @@ void VKRenderer::removeInstancesFromModel(std::string modelID, std::string insta
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
     }
 
-    canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+    if(!idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID)) {
+        throw std::runtime_error(instanceVectorID + " hasn't been set yet for model " + modelID + " so you can't remove it");
+    }
+
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
+
     idToInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
 }
@@ -826,7 +864,7 @@ void VKRenderer::removeInstancesFromModelSafe(std::string modelID, std::string i
         return;
     }
 
-    canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
     idToInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
 }
@@ -875,7 +913,7 @@ void VKRenderer::setWireframeModel(std::string modelID, std::vector<WireframeVer
 
 void VKRenderer::removeWireframeModel(std::string modelID) {
     if(idToWFInstancedModels.count(modelID) > 0) {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
         idToWFInstancedModels.at(modelID).destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
         
@@ -896,7 +934,22 @@ void VKRenderer::removeInstancesFromWireframeModel(std::string modelID, std::str
         throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
     }
 
-    canObjectBeDestroyedMap[mapCounter] = std::make_pair(currentFrame, new bool(false));
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
     idToWFInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
     ++mapCounter;
+}
+
+void VKRenderer::removeFrameFromDeleteRequirements(size_t frame) {
+    for(auto& pair : canObjectBeDestroyedMap) {
+        auto it = std::find(pair.second.first.begin(), pair.second.first.end(), frame);
+        if(it != pair.second.first.end()) {
+            pair.second.first.erase(it);
+        } 
+    }
+}
+
+std::vector<int> VKRenderer::getCopyOfFFVWithExtraFrame() {
+    std::vector<int> cpy = fullFrameVector;
+    cpy.push_back(currentFrame);
+    return cpy;
 }

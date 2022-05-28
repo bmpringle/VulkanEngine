@@ -58,7 +58,7 @@ class InstancedRenderingModel {
         }
 
         void removeInstancesFromModel(std::shared_ptr<VulkanDevice> _device, std::string instanceVectorID, bool* shouldBeDestroyed) {
-            instanceSets[instanceVectorID].data.destroy(_device, shouldBeDestroyed);
+            instanceSets.at(instanceVectorID).data.destroy(_device, shouldBeDestroyed);
             instanceSets.erase(instanceVectorID);
         }
 
