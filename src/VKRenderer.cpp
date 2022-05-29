@@ -969,3 +969,11 @@ bool VKRenderer::hasWireframeModel(std::string id) {
 
     return true;
 }
+
+bool VKRenderer::hasInstanceInWireframeModel(std::string modelID, std::string instanceVectorID) {
+    return idToWFInstancedModels.at(modelID).hasInstanceSet(instanceVectorID);
+}
+
+bool VKRenderer::hasInstanceInModel(std::string modelID, std::string instanceVectorID) {
+    return idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID);
+}

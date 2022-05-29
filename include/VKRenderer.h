@@ -47,6 +47,8 @@ class VKRenderer {
 
         void removeInstancesFromModelSafe(std::string modelID, std::string instanceVectorID);
 
+        bool hasInstanceInModel(std::string modelID, std::string instanceVectorID);
+
         //for wireframe rendering
 
         void setWireframeModel(std::string modelID, std::vector<WireframeVertex>& modelVertices);
@@ -56,6 +58,8 @@ class VKRenderer {
         void addInstancesToWireframeModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances);
 
         void removeInstancesFromWireframeModel(std::string modelID, std::string instanceVectorID);
+
+        bool hasInstanceInWireframeModel(std::string modelID, std::string instanceVectorID);
         
         void clearAllInstances();
 
