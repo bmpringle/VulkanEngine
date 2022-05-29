@@ -57,7 +57,6 @@ class VKRenderer {
 
         void removeInstancesFromWireframeModel(std::string modelID, std::string instanceVectorID);
         
-
         void clearAllInstances();
 
         void clearAllOverlays();
@@ -103,6 +102,10 @@ class VKRenderer {
         static glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation);
 
         void setWireframeTopology(VkPrimitiveTopology topology);
+
+        bool hasModel(std::string id);
+
+        bool hasWireframeModel(std::string id);
 
     private:
         void createGraphicsPipelines();

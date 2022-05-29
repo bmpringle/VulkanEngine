@@ -953,3 +953,19 @@ std::vector<int> VKRenderer::getCopyOfFFVWithExtraFrame() {
     cpy.push_back(currentFrame);
     return cpy;
 }
+
+bool VKRenderer::hasModel(std::string id) {
+    if(idToInstancedModels.count(id) == 0) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VKRenderer::hasWireframeModel(std::string id) {
+    if(idToWFInstancedModels.count(id) == 0) {
+        return false;
+    }
+
+    return true;
+}
