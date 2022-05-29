@@ -161,13 +161,23 @@ static std::vector<Vertex> cube = {
 };
 
 static std::vector<OverlayVertex> texturedRectangleOverlay {
-  {{0, 0, 0}, {0, 1, 0}, {0, 0}, 0},
-  {{75, 75, 0}, {0, 1, 0}, {1, 1}, 0},
-  {{75, 0, 0}, {0, 1, 0}, {1, 0}, 0},
+  {{0, 0, 0}, {1, 1, 1}, {0, 0}, 0},
+  {{75, 75, 0}, {1, 1, 1}, {1, 1}, 0},
+  {{75, 0, 0}, {1, 1, 1}, {1, 0}, 0},
 
-  {{0, 0, 0}, {0, 1, 0}, {0, 0}, 0},
-  {{0, 75, 0}, {0, 1, 0}, {0, 1}, 0},
-  {{75, 75, 0}, {0, 1, 0}, {1, 1}, 0},
+  {{0, 0, 0}, {1, 1, 1}, {0, 0}, 0},
+  {{0, 75, 0}, {1, 1, 1}, {0, 1}, 0},
+  {{75, 75, 0}, {1, 1, 1}, {1, 1}, 0},
+};
+
+static std::vector<OverlayVertex> untexturedRectangleOverlay {
+  {{0, -100, 0}, {1, 1, 0}, {0, 0}, 0},
+  {{75, -25, 0}, {1, 1, 0}, {0, 0}, 0},
+  {{75, -100, 0}, {1, 1, 0}, {0, 0}, 0},
+
+  {{0, -100, 0}, {1, 1, 0}, {0, 0}, 0},
+  {{0, -25, 0}, {1, 1, 0}, {0, 0}, 0},
+  {{75, -25, 0}, {1, 1, 0}, {0, 0}, 0},
 };
 
 float testChangingOverlayX = 100;
@@ -272,6 +282,12 @@ int main() {
 
   renderer.setOverlayVertices("exampleRectOverlay", texturedRectangleOverlay);
   renderer.setOverlayVertices("textOverlay", texturedRectangleOverlay2);
+
+  for(OverlayVertex& v : untexturedRectangleOverlay) {
+    v.texID = renderer.getTextureID("UNTEXTURED");
+  }
+
+  renderer.setOverlayVertices("exampleUntexturedRectOverlay", untexturedRectangleOverlay);
 
   std::vector<OverlayVertex> texturedRectangleOverlay3 = texturedRectangleOverlay2;
 

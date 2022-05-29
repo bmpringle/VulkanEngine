@@ -59,6 +59,8 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
     loadTextureArray("default", {missingTexture, missingTexture});
 
     createUniformBuffers();
+
+    addTexture("UNTEXTURED", "assets/blank_texture.png");
 }
 
 VKRenderer::~VKRenderer() {

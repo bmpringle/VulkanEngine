@@ -11,5 +11,5 @@ layout(location = 0) out vec4 outColor;
 layout(binding = 1) uniform sampler2D texSampler[];
 
 void main() {
-    outColor = texture(texSampler[texID], vec2(texCoordsFrag.x, -texCoordsFrag.y));
+    outColor = texture(texSampler[texID], vec2(texCoordsFrag.x, -texCoordsFrag.y)) * vec4(fragColor.x, fragColor.y, fragColor.z, 1);
 }

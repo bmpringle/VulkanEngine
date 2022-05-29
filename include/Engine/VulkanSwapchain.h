@@ -72,6 +72,8 @@ class VulkanSwapchain {
         std::vector<VkImage> swapChainImages;
 
         std::vector<VkImageView> swapChainImageViews;
+        
+        std::vector<std::vector<VkImageView>> optionalImageViews;
 
         std::vector<VkFramebuffer> swapChainFramebuffers;
 

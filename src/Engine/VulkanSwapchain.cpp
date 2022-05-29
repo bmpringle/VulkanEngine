@@ -265,6 +265,10 @@ void VulkanSwapchain::createFramebuffers(std::shared_ptr<VulkanDevice> device) {
             depthImageView
         };
 
+        for(std::vector<VkImageView>& v : optionalImageViews) {
+            attachments.push_back(v[i]);
+        }
+
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         createInfo.renderPass = renderPass;
