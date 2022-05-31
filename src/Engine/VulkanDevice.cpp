@@ -68,7 +68,8 @@ void VulkanDevice::createLogicalDevice(std::shared_ptr<VulkanInstance> instance)
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.fillModeNonSolid = VK_TRUE;
-
+    deviceFeatures.independentBlend = VK_TRUE;
+    
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexingFeatures {};
     indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
     indexingFeatures.runtimeDescriptorArray = VK_TRUE;

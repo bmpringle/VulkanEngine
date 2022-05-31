@@ -50,11 +50,20 @@ class VulkanGraphicsPipeline {
         void setCanHaveDerivatives(bool canBeParent);
 
         void setPolygonType(VkPolygonMode mode);
+        
+        void setSubpassIndex(int subpass);
 
         //this function is ignored, because the wideLines device feature is so rare. As such we don't enable it, and all lines are 1.0f
         void setLineWidth(float width);
 
         void setPrimitiveTopology(VkPrimitiveTopology top);
+
+        void setColorBlendAttachment(VkPipelineColorBlendAttachmentState attachment, int index);
+
+        void setCullMode(VkCullModeFlags mode);
+
+        void setDepthTestAndWrite(bool test, bool write);
+
     private:
         std::vector<char> readFile(const std::string& filename);
 
@@ -82,8 +91,6 @@ class VulkanGraphicsPipeline {
         VkPipelineRasterizationStateCreateInfo rasterizer;
 
         VkPipelineMultisampleStateCreateInfo multisampling;
-
-        VkPipelineColorBlendAttachmentState colorBlendAttachment;
 
         VkPipelineColorBlendStateCreateInfo colorBlending;
 
@@ -128,6 +135,17 @@ class VulkanGraphicsPipeline {
         float lineWidth = 1.0;
 
         VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+        int subpassIndex = 0;
+
+        float blendConstants [4] = {0, 0, 0, 0};
+
+        std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+
+        VkCullModeFlags cullMode = VK_CULL_MODE_FRONT_BIT;
+
+        bool depthTesting = true;
+        bool depthWriting = true;
 };
 
 #endif

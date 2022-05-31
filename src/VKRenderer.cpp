@@ -82,9 +82,14 @@ VKRenderer::~VKRenderer() {
         vertexData.second.destroy(vkEngine->getDevice(), &temp);
     }
 
+    for(std::pair<const std::string, InstancedRenderingModel<TransparentVertex>>& vertexData : idToTransparentInstancedModels) {
+        vertexData.second.destroy(vkEngine->getDevice(), &temp);
+    }
+
     VulkanVertexBuffer<OverlayVertex>::forceJoinDeleteThreads();
     VulkanVertexBuffer<Vertex>::forceJoinDeleteThreads();
     VulkanVertexBuffer<InstanceData>::forceJoinDeleteThreads();
+    VulkanVertexBuffer<TransparentVertex>::forceJoinDeleteThreads();
 }
 
 void VKRenderer::recordCommandBuffers() {
@@ -120,7 +125,7 @@ void VKRenderer::recordCommandBuffers() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
         
-        std::vector<VkClearValue> clearValues = {{{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{1.0, 0}}}};
+        std::vector<VkClearValue> clearValues = {{{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{1.0, 0}}}, {{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -209,6 +214,71 @@ void VKRenderer::recordCommandBuffers() {
             }
         }
 
+        vkCmdNextSubpass(commandBuffers[i], VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(3)->getInternalGraphicsPipeline());
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(3)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(3)->getDescriptorSets()[i], 0, nullptr);
+        
+        for(std::pair<const std::string, InstancedRenderingModel<TransparentVertex>>& vertexData : idToTransparentInstancedModels) {
+            VulkanVertexBuffer<TransparentVertex>& vertexBuffer = vertexData.second.getModel();
+            VkDeviceSize offsets[] = {0};
+
+            if(vertexBuffer.getBufferSize() > 0) {
+                 VkBuffer buffer = vertexBuffer.getVertexBuffer();
+
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
+
+                for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
+                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+
+                    if(instanceBuffer.getBufferSize() > 0) {
+                        VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
+
+                        vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, &instanceDataBuffer, offsets);
+
+                        vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
+                    }else {
+                        //nothing to draw
+                    }
+                }
+            }else {
+                //nothing to draw
+            }
+        }
+
+        vkCmdNextSubpass(commandBuffers[i], VK_SUBPASS_CONTENTS_INLINE);
+        
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(4)->getInternalGraphicsPipeline());
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(4)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(4)->getDescriptorSets()[i], 0, nullptr);
+        
+        //draw for 3nd subpass here
+
+        for(std::pair<const std::string, InstancedRenderingModel<TransparentVertex>>& vertexData : idToTransparentInstancedModels) {
+            VulkanVertexBuffer<TransparentVertex>& vertexBuffer = vertexData.second.getModel();
+            VkDeviceSize offsets[] = {0};
+
+            if(vertexBuffer.getBufferSize() > 0) {
+                 VkBuffer buffer = vertexBuffer.getVertexBuffer();
+
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
+
+                for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
+                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+
+                    if(instanceBuffer.getBufferSize() > 0) {
+                        VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
+
+                        vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, &instanceDataBuffer, offsets);
+
+                        vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
+                    }else {
+                        //nothing to draw
+                    }
+                }
+            }else {
+                //nothing to draw
+            }
+        }
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -517,7 +587,7 @@ void VKRenderer::updateDescriptorSets() {
         imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView(textureArrayID);
         imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
-        std::array<VkWriteDescriptorSet, 6> descriptorWrites{};
+        std::array<VkWriteDescriptorSet, 11> descriptorWrites{};
 
         //descriptor writes for block pipeline
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -594,8 +664,60 @@ void VKRenderer::updateDescriptorSets() {
         descriptorWrites[5].descriptorType = vkEngine->getGraphicsPipeline(2)->getDescriptorSetLayoutBinding(1).descriptorType;
         descriptorWrites[5].descriptorCount = vkEngine->getGraphicsPipeline(2)->getDescriptorSetLayoutBinding(1).descriptorCount;
         descriptorWrites[5].pImageInfo = &imageInfo;
+
+        //descriptor writes for transparency pipeline subpass 2
+        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[6].dstSet = vkEngine->getGraphicsPipeline(3)->getDescriptorSets()[i];
+        descriptorWrites[6].dstBinding = 0;
+        descriptorWrites[6].dstArrayElement = 0;
+        descriptorWrites[6].descriptorType = vkEngine->getGraphicsPipeline(3)->getDescriptorSetLayoutBinding(0).descriptorType;
+        descriptorWrites[6].descriptorCount = vkEngine->getGraphicsPipeline(3)->getDescriptorSetLayoutBinding(0).descriptorCount;
+        descriptorWrites[6].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[7].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[7].dstSet = vkEngine->getGraphicsPipeline(3)->getDescriptorSets()[i];
+        descriptorWrites[7].dstBinding = 1;
+        descriptorWrites[7].dstArrayElement = 0;
+        descriptorWrites[7].descriptorType = vkEngine->getGraphicsPipeline(3)->getDescriptorSetLayoutBinding(1).descriptorType;
+        descriptorWrites[7].descriptorCount = vkEngine->getGraphicsPipeline(3)->getDescriptorSetLayoutBinding(1).descriptorCount;
+        descriptorWrites[7].pImageInfo = &imageInfo;
+
+        //descriptor writes for transparency pipeline 3
+        descriptorWrites[8].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[8].dstSet = vkEngine->getGraphicsPipeline(4)->getDescriptorSets()[i];
+        descriptorWrites[8].dstBinding = 0;
+        descriptorWrites[8].dstArrayElement = 0;
+        descriptorWrites[8].descriptorType = vkEngine->getGraphicsPipeline(4)->getDescriptorSetLayoutBinding(0).descriptorType;
+        descriptorWrites[8].descriptorCount = vkEngine->getGraphicsPipeline(4)->getDescriptorSetLayoutBinding(0).descriptorCount;
+        descriptorWrites[8].pBufferInfo = &bufferInfo;
+
+        std::array<VkDescriptorImageInfo, 2> descriptors{};
+        descriptors[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        descriptors[0].imageView = vkEngine->getSwapchain()->getColorFramebufferAttachments1()[i].imageView;
+        descriptors[0].sampler = VK_NULL_HANDLE;
+
+        descriptors[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        descriptors[1].imageView = vkEngine->getSwapchain()->getColorFramebufferAttachments2()[i].imageView;
+        descriptors[1].sampler = VK_NULL_HANDLE;
+
+        descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[9].dstSet = vkEngine->getGraphicsPipeline(4)->getDescriptorSets()[i];
+        descriptorWrites[9].descriptorType = vkEngine->getGraphicsPipeline(4)->getDescriptorSetLayoutBinding(1).descriptorType;
+        descriptorWrites[9].descriptorCount = vkEngine->getGraphicsPipeline(4)->getDescriptorSetLayoutBinding(1).descriptorCount;
+        descriptorWrites[9].dstBinding = 1;
+        descriptorWrites[9].pImageInfo = &descriptors[0];
+
+        descriptorWrites[10].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[10].dstSet = vkEngine->getGraphicsPipeline(4)->getDescriptorSets()[i];
+        descriptorWrites[10].descriptorType = vkEngine->getGraphicsPipeline(4)->getDescriptorSetLayoutBinding(2).descriptorType;
+        descriptorWrites[10].descriptorCount = vkEngine->getGraphicsPipeline(4)->getDescriptorSetLayoutBinding(2).descriptorCount;
+        descriptorWrites[10].dstBinding = 2;
+        descriptorWrites[10].pImageInfo = &descriptors[1];
         
         vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    
+        //descriptor writes for the transparency 2nd subpass
+
     }
 }
 
@@ -755,6 +877,84 @@ void VKRenderer::createGraphicsPipelines() {
     graphicsPipelineWireframe->setPolygonType(VK_POLYGON_MODE_LINE);
 
     vkEngine->setGraphicsPipeline(graphicsPipelineWireframe, 2);
+
+    //transparency 2nd subpass pipeline
+
+    std::shared_ptr<VulkanGraphicsPipeline> transparencySubpassTwoPipeline = std::make_shared<VulkanGraphicsPipeline>();
+
+    transparencySubpassTwoPipeline->setVertexInputBindingDescriptions(TransparentVertex::getBindingDescriptions());
+    transparencySubpassTwoPipeline->setVertexInputAttributeDescriptions(TransparentVertex::getAttributeDescriptions());
+    transparencySubpassTwoPipeline->setVertexShader("shaders/output/3dvert_transparent_subpass2.spv");
+    transparencySubpassTwoPipeline->setFragmentShader("shaders/output/3dfrag_transparent_subpass2.spv");
+    transparencySubpassTwoPipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+
+    transparencySubpassTwoPipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+    transparencySubpassTwoPipeline->setSubpassIndex(1);
+    transparencySubpassTwoPipeline->setCullMode(VK_CULL_MODE_NONE);
+
+    VkPipelineColorBlendAttachmentState attachments[2] {};
+
+    attachments[0] = {};
+    attachments[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    attachments[0].blendEnable = VK_TRUE;
+    attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; 
+    attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE; 
+    attachments[0].colorBlendOp = VK_BLEND_OP_ADD; 
+    attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+    attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+    attachments[0].alphaBlendOp = VK_BLEND_OP_ADD; 
+
+    attachments[1] = {};
+    attachments[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    attachments[1].blendEnable = VK_FALSE;
+    attachments[1].srcColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+    attachments[1].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
+    attachments[1].colorBlendOp = VK_BLEND_OP_ADD; 
+    attachments[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
+    attachments[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
+    attachments[1].alphaBlendOp = VK_BLEND_OP_ADD; 
+
+    transparencySubpassTwoPipeline->setColorBlendAttachment(attachments[0], 0);
+    transparencySubpassTwoPipeline->setColorBlendAttachment(attachments[1], 1);
+    transparencySubpassTwoPipeline->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
+    transparencySubpassTwoPipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+
+    vkEngine->setGraphicsPipeline(transparencySubpassTwoPipeline, 3);
+
+    //transparency 3rd subpass pipeline
+
+    std::shared_ptr<VulkanGraphicsPipeline> transparencySubpassThreePipeline = std::make_shared<VulkanGraphicsPipeline>();
+
+    transparencySubpassThreePipeline->setVertexInputBindingDescriptions(TransparentVertex::getBindingDescriptions());
+    transparencySubpassThreePipeline->setVertexInputAttributeDescriptions(TransparentVertex::getAttributeDescriptions());
+    transparencySubpassThreePipeline->setVertexShader("shaders/output/3dvert_transparent_subpass3.spv");
+    transparencySubpassThreePipeline->setFragmentShader("shaders/output/3dfrag_transparent_subpass3.spv");
+    transparencySubpassThreePipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
+
+    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getInternalImages().size());
+    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getInternalImages().size());
+
+    //color attachment descriptor set layout binding
+    VkDescriptorSetLayoutBinding colorLayoutBinding{};
+    colorLayoutBinding.binding = 1;
+    colorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    colorLayoutBinding.descriptorCount = 1;
+    colorLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    colorLayoutBinding.pImmutableSamplers = nullptr;
+    transparencySubpassThreePipeline->addDescriptorSetLayoutBinding(colorLayoutBinding);
+    colorLayoutBinding.binding = 2;
+    transparencySubpassThreePipeline->addDescriptorSetLayoutBinding(colorLayoutBinding);
+    transparencySubpassThreePipeline->setSubpassIndex(2);
+
+    attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
+    attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; 
+    attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
+    attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; 
+
+    transparencySubpassThreePipeline->setColorBlendAttachment(attachments[0], 0);
+
+    vkEngine->setGraphicsPipeline(transparencySubpassThreePipeline, 4);
 }
 
 std::pair<unsigned int, unsigned int> VKRenderer::getTextureDimensions(std::string id) {
@@ -814,63 +1014,6 @@ void VKRenderer::removeOverlayVertices(std::string id) {
     }
 }
 
-void VKRenderer::setModel(std::string modelID, std::vector<Vertex>& modelVertices) {
-    if(idToInstancedModels.count(modelID) > 0) {
-        idToInstancedModels.at(modelID).setModel(vkEngine->getDevice(), modelVertices);
-        return;
-    }
-
-    idToInstancedModels.insert(std::make_pair(modelID, InstancedRenderingModel<Vertex>(vkEngine->getDevice(), modelVertices)));
-}
-
-void VKRenderer::removeModel(std::string modelID) {
-    if(idToInstancedModels.count(modelID) > 0) {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
-
-        idToInstancedModels.at(modelID).destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
-        ++mapCounter;
-        
-        idToInstancedModels.erase(modelID);
-    }
-}
-
-void VKRenderer::addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances) {
-    if(idToInstancedModels.count(modelID) == 0) {
-        throw std::runtime_error(modelID + " hasn't been set yet, so you can't set instances for it.");
-    }
-
-    idToInstancedModels.at(modelID).addInstancesToModel(vkEngine->getDevice(), instanceVectorID, instances);
-}
-
-void VKRenderer::removeInstancesFromModel(std::string modelID, std::string instanceVectorID) {
-    if(idToInstancedModels.count(modelID) == 0) {
-        throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
-    }
-
-    if(!idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID)) {
-        throw std::runtime_error(instanceVectorID + " hasn't been set yet for model " + modelID + " so you can't remove it");
-    }
-
-    canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
-
-    idToInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
-    ++mapCounter;
-}
-
-void VKRenderer::removeInstancesFromModelSafe(std::string modelID, std::string instanceVectorID) {
-    if(idToInstancedModels.count(modelID) == 0) {
-        throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
-    }
-
-    if(!idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID)) {
-        return;
-    }
-
-    canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
-    idToInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
-    ++mapCounter;
-}
-
 void VKRenderer::setCameraNear(float n) {
     near = n;
 }
@@ -883,6 +1026,10 @@ void VKRenderer::clearAllInstances() {
     vkDeviceWaitIdle(vkEngine->getDevice()->getInternalLogicalDevice());
     bool temp = true;
     for(std::pair<const std::string, InstancedRenderingModel<Vertex>>& vertexData : idToInstancedModels) {
+        vertexData.second.clearInstances(vkEngine->getDevice(), &temp);
+    }
+
+    for(std::pair<const std::string, InstancedRenderingModel<TransparentVertex>>& vertexData : idToTransparentInstancedModels) {
         vertexData.second.clearInstances(vkEngine->getDevice(), &temp);
     }
 }
@@ -904,7 +1051,7 @@ void VKRenderer::setWireframeTopology(VkPrimitiveTopology topology) {
     vkEngine->getGraphicsPipeline(2)->create(vkEngine->getDevice(), vkEngine->getSwapchain());
 }
 
-void VKRenderer::setWireframeModel(std::string modelID, std::vector<WireframeVertex>& modelVertices) {
+void VKRenderer::setWireframeModel(std::string modelID, std::vector<WireframeVertex> modelVertices) {
     if(idToWFInstancedModels.count(modelID) > 0) {
         idToWFInstancedModels.at(modelID).setModel(vkEngine->getDevice(), modelVertices);
         return;
@@ -956,14 +1103,6 @@ std::vector<int> VKRenderer::getCopyOfFFVWithExtraFrame() {
     return cpy;
 }
 
-bool VKRenderer::hasModel(std::string id) {
-    if(idToInstancedModels.count(id) == 0) {
-        return false;
-    }
-
-    return true;
-}
-
 bool VKRenderer::hasWireframeModel(std::string id) {
     if(idToWFInstancedModels.count(id) == 0) {
         return false;
@@ -976,6 +1115,108 @@ bool VKRenderer::hasInstanceInWireframeModel(std::string modelID, std::string in
     return idToWFInstancedModels.at(modelID).hasInstanceSet(instanceVectorID);
 }
 
+void VKRenderer::setModel(std::string modelID, std::vector<Vertex> modelVerticesOpaque, std::vector<TransparentVertex> modelVerticesTransparent) {
+    if(idToTransparentInstancedModels.count(modelID) > 0) {
+        idToTransparentInstancedModels.at(modelID).setModel(vkEngine->getDevice(), modelVerticesTransparent);
+    }else {
+        idToTransparentInstancedModels.insert(std::make_pair(modelID, InstancedRenderingModel<TransparentVertex>(vkEngine->getDevice(), modelVerticesTransparent)));
+    }
+
+    if(idToInstancedModels.count(modelID) > 0) {
+        idToInstancedModels.at(modelID).setModel(vkEngine->getDevice(), modelVerticesOpaque);
+    }else {
+        idToInstancedModels.insert(std::make_pair(modelID, InstancedRenderingModel<Vertex>(vkEngine->getDevice(), modelVerticesOpaque)));
+    }
+}
+
+void VKRenderer::removeModel(std::string modelID) {
+    if(idToInstancedModels.count(modelID) > 0) {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
+
+        idToInstancedModels.at(modelID).destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
+        
+        idToInstancedModels.erase(modelID);
+    }
+
+    if(idToTransparentInstancedModels.count(modelID) > 0) {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
+
+        idToTransparentInstancedModels.at(modelID).destroy(vkEngine->getDevice(), canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
+        
+        idToTransparentInstancedModels.erase(modelID);
+    }
+}
+
+void VKRenderer::addInstancesToModel(std::string modelID, std::string instanceVectorID, std::vector<InstanceData>& instances) {
+    if(idToInstancedModels.count(modelID) == 0 && idToTransparentInstancedModels.count(modelID) == 0) {
+        throw std::runtime_error(modelID + " hasn't been set yet, so you can't set instances for it.");
+    }
+
+    if(idToInstancedModels.count(modelID) > 0) {
+        idToInstancedModels.at(modelID).addInstancesToModel(vkEngine->getDevice(), instanceVectorID, instances);
+    }
+
+    if(idToTransparentInstancedModels.count(modelID) > 0) {
+        idToTransparentInstancedModels.at(modelID).addInstancesToModel(vkEngine->getDevice(), instanceVectorID, instances);
+    }
+}
+
+void VKRenderer::removeInstancesFromModel(std::string modelID, std::string instanceVectorID) {
+    if(idToInstancedModels.count(modelID) == 0 && idToTransparentInstancedModels.count(modelID) == 0) {
+        throw std::runtime_error(modelID + " hasn't been set yet, so you can't remove instances for it.");
+    }
+
+    if(idToTransparentInstancedModels.count(modelID) == 0) {
+        if(!idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID)) {
+            throw std::runtime_error(instanceVectorID + " hasn't been set yet for model " + modelID + " so you can't remove it");
+        }
+    }
+
+    if(idToInstancedModels.count(modelID) == 0) {
+        if(!idToTransparentInstancedModels.at(modelID).hasInstanceSet(instanceVectorID)) {
+            throw std::runtime_error(instanceVectorID + " hasn't been set yet for model " + modelID + " so you can't remove it");
+        }
+    }
+
+    if(idToInstancedModels.count(modelID) > 0 && idToTransparentInstancedModels.count(modelID) > 0) {
+        if(!idToTransparentInstancedModels.at(modelID).hasInstanceSet(instanceVectorID) && !idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID)) {
+            throw std::runtime_error(instanceVectorID + " hasn't been set yet for model " + modelID + " so you can't remove it");
+        }
+    }
+
+    if(idToInstancedModels.count(modelID) > 0) {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
+
+        idToInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
+    }
+
+    if(idToTransparentInstancedModels.count(modelID) > 0) {
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
+
+        idToTransparentInstancedModels.at(modelID).removeInstancesFromModel(vkEngine->getDevice(), instanceVectorID, canObjectBeDestroyedMap[mapCounter].second);
+        ++mapCounter;
+    }
+}
+
+void VKRenderer::removeInstancesFromModelSafe(std::string modelID, std::string instanceVectorID) {
+    try {
+        removeInstancesFromModel(modelID, instanceVectorID);
+    }catch(std::runtime_error ex) {
+        //this was expected to be a possibility (that's why the user ran the "safe" function, just return)
+    }
+}
+
+bool VKRenderer::hasModel(std::string id) {
+    if(idToInstancedModels.count(id) == 0 && idToTransparentInstancedModels.count(id) == 0) {
+        return false;
+    }
+
+    return true;
+}
+
 bool VKRenderer::hasInstanceInModel(std::string modelID, std::string instanceVectorID) {
-    return idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID);
+    return idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID) || idToTransparentInstancedModels.at(modelID).hasInstanceSet(instanceVectorID);
 }

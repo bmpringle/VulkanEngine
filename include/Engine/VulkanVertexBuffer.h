@@ -70,7 +70,11 @@ class VulkanVertexBuffer {
                     memoryDeleteThread->addObjectToDelete(vertexBufferMemory, deleteOldBufferBool);
                 }
             }else {
-                std::cout << "invalid vkbuffer or vkbuffermemory pointers used when trying to delete vulkanvertexbuffer" << std::endl;
+                if(vertices.size() != 0) {
+                    std::cout << "invalid vkbuffer or vkbuffermemory pointers used when trying to delete vulkanvertexbuffer" << std::endl;
+                }else {
+                    //nothing to delete b/c the handles are NULL. this is ok when vertices.size() == 0 b/c it just means that there was never any geometry set in the buffer so it was never created
+                }
             }
         }
 

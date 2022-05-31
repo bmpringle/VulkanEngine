@@ -31,7 +31,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f; 
@@ -47,6 +46,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
     multisampling.alphaToCoverageEnable = VK_FALSE; 
     multisampling.alphaToOneEnable = VK_FALSE; 
 
+    VkPipelineColorBlendAttachmentState colorBlendAttachment;
+
     colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
@@ -57,16 +58,16 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline() {
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; 
 
+    colorBlendAttachments.push_back(colorBlendAttachment);
+
     colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY; 
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f; 
-    colorBlending.blendConstants[1] = 0.0f; 
-    colorBlending.blendConstants[2] = 0.0f; 
-    colorBlending.blendConstants[3] = 0.0f; 
+    colorBlending.blendConstants[0] = blendConstants[0]; 
+    colorBlending.blendConstants[1] = blendConstants[1]; 
+    colorBlending.blendConstants[2] = blendConstants[2]; 
+    colorBlending.blendConstants[3] = blendConstants[3]; 
 
     pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -136,8 +137,8 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthTestEnable = depthTesting;
+    depthStencil.depthWriteEnable = depthWriting;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.minDepthBounds = 0.0f; // Optional
@@ -148,8 +149,12 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
 
     rasterizer.lineWidth = 1.0f;//lineWidth;   
     rasterizer.polygonMode = polygonType;
+    rasterizer.cullMode = cullMode;
 
     inputAssembly.topology = topology;
+
+    colorBlending.attachmentCount = colorBlendAttachments.size();
+    colorBlending.pAttachments = colorBlendAttachments.data();
 
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -164,7 +169,7 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages;
     pipelineInfo.renderPass = swapchain->getInternalRenderPass();
-    pipelineInfo.subpass = 0;
+    pipelineInfo.subpass = subpassIndex;
 
     pipelineInfo.flags = pipelineCreateFlags | ((basePipeline != VK_NULL_HANDLE) ? VK_PIPELINE_CREATE_DERIVATIVE_BIT : 0) | ((canHaveDerivatives) ? VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT : 0);
 
@@ -201,8 +206,9 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets.resize(swapchain->getInternalImages().size());
-    if (vkAllocateDescriptorSets(device->getInternalLogicalDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor sets!");
+    VkResult result = vkAllocateDescriptorSets(device->getInternalLogicalDevice(), &allocInfo, descriptorSets.data());
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error(std::string("failed to allocate descriptor sets!\nerror: ") + std::to_string(result));
     }
 
     vkDestroyShaderModule(device->getInternalLogicalDevice(), vertShaderModule, nullptr);
@@ -327,4 +333,25 @@ void VulkanGraphicsPipeline::setLineWidth(float width) {
 
 void VulkanGraphicsPipeline::setPrimitiveTopology(VkPrimitiveTopology top) {
     topology = top;
+}
+
+void VulkanGraphicsPipeline::setSubpassIndex(int index) {
+    subpassIndex = index;
+}
+
+void VulkanGraphicsPipeline::setColorBlendAttachment(VkPipelineColorBlendAttachmentState attachment, int index) {
+    if(colorBlendAttachments.size() <= index) {
+        colorBlendAttachments.resize(index + 1);
+    }
+
+    colorBlendAttachments.at(index) = attachment;
+}
+
+void VulkanGraphicsPipeline::setCullMode(VkCullModeFlags mode) {
+    cullMode = mode;
+}
+
+void VulkanGraphicsPipeline::setDepthTestAndWrite(bool test, bool write) {
+    depthTesting = test;
+    depthWriting = write;
 }

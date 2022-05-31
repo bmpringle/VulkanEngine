@@ -160,6 +160,56 @@ static std::vector<Vertex> cube = {
   {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f}, {1, 1, 0}},
 };
 
+static std::vector<TransparentVertex> transparent_cube = {
+  {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}, {1, 0, 0}}, //front
+  {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}, {0, 1, 0}},
+  {{0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}, {1, 1, 0}},
+
+  {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}, {1, 0, 0}},
+  {{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}, {0, 0, 0}},
+  {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}, {0, 1, 0}},   
+
+  {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}, {0, 1, 0}}, //back
+  {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}, {1, 1, 0}},
+  {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}, {0, 0, 0}},
+
+  {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}, {1, 1, 0}},  
+  {{1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}, {1, 0, 0}},
+  {{0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}, {0, 0, 0}},
+
+  {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}, {0, 0, 0}}, //left
+  {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 0.0f}, {1, 1, 0}},
+  {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 0.0f}, {1, 0, 0}},
+
+  {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}, {0, 0, 0}},
+  {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}, {0, 1, 0}},
+  {{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 0.0f}, {1, 1, 0}},
+
+  {{1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {0, 0, 0}}, //right
+  {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {0, 1, 0}},
+  {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {1, 0, 0}},
+
+  {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {0, 1, 0}},
+  {{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {1, 1, 0}},
+  {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {1, 0, 0}},
+  
+  {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.0f}, {0, 0, 0}}, //top
+  {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 0.0f}, {0, 1, 0}},
+  {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.0f}, {1, 0, 0}},
+
+  {{1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 0.0f}, {0, 1, 0}},
+  {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 0.0f}, {1, 1, 0}},
+  {{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.0f}, {1, 0, 0}},
+
+  {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f, 0.0f}, {0, 0, 0}}, //bottom
+  {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f, 0.0f}, {1, 1, 0}},
+  {{1.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f, 0.0f}, {1, 0, 0}},
+
+  {{0.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.5f, 0.0f}, {0, 0, 0}},
+  {{0.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f, 0.0f}, {0, 1, 0}},
+  {{1.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.5f, 0.0f}, {1, 1, 0}},
+};
+
 static std::vector<OverlayVertex> texturedRectangleOverlay {
   {{0, 0, 0}, {1, 1, 1}, {0, 0}, 0},
   {{75, 75, 0}, {1, 1, 1}, {1, 1}, 0},
@@ -208,7 +258,7 @@ int main() {
   renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\nafter lots of descriptors!");
 
-  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png"});
+  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass.png"});
   renderer.setCurrentTextureArray("game-textures");
 
   //setup callbacks
@@ -276,9 +326,23 @@ int main() {
   renderer.setModel("block1", cube);
   renderer.setModel("block2", cube2);
 
+  tex_id = renderer.getTextureArrayID("game-textures", "assets/glass.png");
+
+  for(TransparentVertex& v : transparent_cube) {
+    v.texCoord[2] = tex_id;
+  }
+
+  renderer.setModel("translucentcube1", {/*opaque vertices*/}, transparent_cube);
+
+  std::vector<InstanceData> translucentData = {InstanceData({{-1, 0, -1}})};
+
+  renderer.addInstancesToModel("translucentcube1", "set1", translucentData);
+
   renderer.addInstancesToModel("block1", "set1", instanceDataCube);
 
   renderer.addInstancesToModel("block2", "set1", instanceDataCube2);
+
+  
 
   renderer.setOverlayVertices("exampleRectOverlay", texturedRectangleOverlay);
   renderer.setOverlayVertices("textOverlay", texturedRectangleOverlay2);
@@ -304,6 +368,7 @@ int main() {
   std::vector<InstanceData> instanceDataCube6;
 
   instanceDataCube6.push_back(InstanceData({{-3, 0, -3}}));
+  instanceDataCube6.push_back(InstanceData({{-1, 0, -1}}));
 
   renderer.setWireframeTopology(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
 

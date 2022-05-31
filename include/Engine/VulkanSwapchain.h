@@ -3,6 +3,7 @@
 
 #include "VulkanInclude.h"
 #include "VulkanDevice.h"
+#include "FramebufferAttachment.h"
 
 class VulkanSwapchain {
 
@@ -35,13 +36,14 @@ class VulkanSwapchain {
 
         std::vector<VkCommandBuffer>& getInternalCommandBuffers();
 
-        VkImage& getInternalDepthImage();
-
-        VkImageView& getInternalDepthImageView();
-
         VkRenderPass& getInternalRenderPass();
 
-        VkFormat getInternalDepthImageFormat();
+        FramebufferAttachment& getDepthFramebufferAttachment();
+
+        std::vector<FramebufferAttachment>& getColorFramebufferAttachments1();
+
+        std::vector<FramebufferAttachment>& getColorFramebufferAttachments2();
+
     private:
         void createSwapchainAndImages(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
@@ -72,20 +74,15 @@ class VulkanSwapchain {
         std::vector<VkImage> swapChainImages;
 
         std::vector<VkImageView> swapChainImageViews;
-        
-        std::vector<std::vector<VkImageView>> optionalImageViews;
 
         std::vector<VkFramebuffer> swapChainFramebuffers;
 
         std::vector<VkCommandBuffer> commandBuffers;
 
-        VkImage depthImage;
+        std::vector<FramebufferAttachment> colorAttachments1;
+        std::vector<FramebufferAttachment> colorAttachments2;
 
-        VkFormat depthFormat;
-
-        VkDeviceMemory depthImageMemory;
-
-        VkImageView depthImageView;
+        FramebufferAttachment depthAttachment;
 
         VkRenderPass renderPass;
         

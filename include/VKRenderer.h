@@ -7,7 +7,8 @@
 
 #include "Vertex.h"
 #include "OverlayVertex.h"
-#include <WireframeVertex.h>
+#include "WireframeVertex.h"
+#include "TransparentVertex.h"
 
 #include "VulkanVertexBuffer.h"
 #include "VulkanUniformBuffer.h"
@@ -35,9 +36,15 @@ class VKRenderer {
 
         void renderFrame();
 
-        //for world rendering
+        //general rendering/settings
 
-        void setModel(std::string modelID, std::vector<Vertex>& modelVertices);
+        void clearAllInstances();
+
+        void setClearColor(glm::vec4 rgba);
+
+        //for 3d rendering (opaque / transparent)
+
+        void setModel(std::string modelID, std::vector<Vertex> modelVerticesOpaque = {}, std::vector<TransparentVertex> modelVerticesTransparent = {});
 
         void removeModel(std::string modelID);
 
@@ -49,9 +56,11 @@ class VKRenderer {
 
         bool hasInstanceInModel(std::string modelID, std::string instanceVectorID);
 
+        bool hasModel(std::string id);
+
         //for wireframe rendering
 
-        void setWireframeModel(std::string modelID, std::vector<WireframeVertex>& modelVertices);
+        void setWireframeModel(std::string modelID, std::vector<WireframeVertex> modelVertices);
 
         void removeWireframeModel(std::string modelID);
 
@@ -60,8 +69,12 @@ class VKRenderer {
         void removeInstancesFromWireframeModel(std::string modelID, std::string instanceVectorID);
 
         bool hasInstanceInWireframeModel(std::string modelID, std::string instanceVectorID);
-        
-        void clearAllInstances();
+
+        void setWireframeTopology(VkPrimitiveTopology topology);
+
+        bool hasWireframeModel(std::string id);
+
+        //for overlay rendering
 
         void clearAllOverlays();
 
@@ -69,13 +82,23 @@ class VKRenderer {
 
         void removeOverlayVertices(std::string id);
 
+        void setOverlayBounds(float x, float y, float z);
+
+        //get rotation values
+
         float& getXRotation();
 
         float& getYRotation();
 
+        //get camera position
+
         glm::vec3& getCameraPosition();
 
+        //get internal engine (lower level)
+
         std::shared_ptr<VulkanEngine> getEngine();
+
+        //for managing overlay textures
 
         void addTexture(std::string id, std::string texturePath);
         
@@ -85,31 +108,25 @@ class VKRenderer {
 
         unsigned int getTextureID(std::string id);
 
-        unsigned int getTextureArrayID(std::string arrayID, std::string textureID);
-
         std::pair<unsigned int, unsigned int> getTextureDimensions(std::string id);
 
-        std::pair<unsigned int, unsigned int> getTextureArrayDimensions(std::string id);
+        //for managing array textures (3d world textures)
 
         void loadTextureArray(std::string id, std::vector<std::string> textures);
 
         void setCurrentTextureArray(std::string id);
 
-        void setOverlayBounds(float x, float y, float z);
+        std::pair<unsigned int, unsigned int> getTextureArrayDimensions(std::string id);
 
-        void setClearColor(glm::vec4 rgba);
+        unsigned int getTextureArrayID(std::string arrayID, std::string textureID);
+
+        //static math functions
 
         static glm::mat3x3 calculateXRotationMatrix(double xRotation);
 
         static glm::mat3x3 calculateYRotationMatrix(double xRotation);
 
         static glm::mat4x4 createViewMatrix(glm::vec3 camera, float xRotation, float yRotation);
-
-        void setWireframeTopology(VkPrimitiveTopology topology);
-
-        bool hasModel(std::string id);
-
-        bool hasWireframeModel(std::string id);
 
     private:
         void createGraphicsPipelines();
@@ -133,6 +150,8 @@ class VKRenderer {
         std::map<std::string, InstancedRenderingModel<Vertex>> idToInstancedModels;
 
         std::map<std::string, InstancedRenderingModel<WireframeVertex>> idToWFInstancedModels;
+
+        std::map<std::string, InstancedRenderingModel<TransparentVertex>> idToTransparentInstancedModels;
 
         std::map<std::string, VulkanVertexBuffer<OverlayVertex>> dataIDToVertexOverlayData;
 
