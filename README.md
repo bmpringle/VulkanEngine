@@ -10,7 +10,7 @@ ___
     2. Run the python script compileDeps.py in the project root directory
     3. Run the compileShaders.sh shell script
     4. Run scons -j8, command line options are:
-        - DBG -- turns off optimizations and puts the executable in ./bin/dbg/tstGame
+        - DBG -- turns off optimizations and places the executable at ./bin/dbg/tstGame, otherwise the executable is at ./bin/rel/tstGame
         - ARM -- no-op (only compile for arm right now)
         - WARN -- turns of -Werror
         - TEST - no-op
