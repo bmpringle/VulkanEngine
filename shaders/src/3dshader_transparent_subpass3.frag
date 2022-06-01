@@ -8,5 +8,6 @@ layout(location = 0) out vec4 outColor;
 void main() {
     vec4 accum = subpassLoad(accumInput).rgba;
     float r = subpassLoad(revealageInput).r;
+
     outColor = vec4(accum.rgb / clamp(accum.a, 1e-4, 5e4), 1 - r);
 }

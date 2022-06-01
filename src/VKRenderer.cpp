@@ -194,23 +194,34 @@ void VKRenderer::recordCommandBuffers() {
             }
         }
 
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getInternalGraphicsPipeline());
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(5)->getInternalGraphicsPipeline());
 
-        VkClearRect clearRect = {{{0, 0}, swapChainExtent}, 0, 1};
-        VkClearAttachment clearAttachment = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, clearValues.at(1)};
-        VkClearAttachment clearAttachments[2] = {clearAttachment, clearAttachment};
-        vkCmdClearAttachments(commandBuffers[i], 2, &clearAttachments[0], 1, &clearRect);
-        
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
-        for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
-            VulkanVertexBuffer<OverlayVertex> vertexBuffer = vertexData.second;
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(5)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(5)->getDescriptorSets()[i], 0, nullptr);
+
+        for(std::pair<const std::string, InstancedRenderingModel<TransparentVertex>>& vertexData : idToTransparentInstancedModels) {
+            VulkanVertexBuffer<TransparentVertex>& vertexBuffer = vertexData.second.getModel();
+            VkDeviceSize offsets[] = {0};
 
             if(vertexBuffer.getBufferSize() > 0) {
-                VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer()};
-                VkDeviceSize offsets[] = {0};
-                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+                 VkBuffer buffer = vertexBuffer.getVertexBuffer();
 
-                vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), 1, 0, 0);
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
+
+                for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
+                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+
+                    if(instanceBuffer.getBufferSize() > 0) {
+                        VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
+
+                        vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, &instanceDataBuffer, offsets);
+
+                        vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
+                    }else {
+                        //nothing to draw
+                    }
+                }
+            }else {
+                //nothing to draw
             }
         }
 
@@ -279,6 +290,31 @@ void VKRenderer::recordCommandBuffers() {
                 //nothing to draw
             }
         }
+
+        vkCmdNextSubpass(commandBuffers[i], VK_SUBPASS_CONTENTS_INLINE);
+
+        //draw for 4th subpass here
+
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getInternalGraphicsPipeline());
+
+        VkClearRect clearRect = {{{0, 0}, swapChainExtent}, 0, 1};
+        VkClearAttachment clearAttachment = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, clearValues.at(1)};
+        VkClearAttachment clearAttachments[2] = {clearAttachment, clearAttachment};
+        vkCmdClearAttachments(commandBuffers[i], 2, &clearAttachments[0], 1, &clearRect);
+        
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
+        for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
+            VulkanVertexBuffer<OverlayVertex> vertexBuffer = vertexData.second;
+
+            if(vertexBuffer.getBufferSize() > 0) {
+                VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer()};
+                VkDeviceSize offsets[] = {0};
+                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+                vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), 1, 0, 0);
+            }
+        }
+        
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -587,7 +623,7 @@ void VKRenderer::updateDescriptorSets() {
         imageInfo.imageView = vkEngine->getTextureLoader()->getTextureArrayImageView(textureArrayID);
         imageInfo.sampler = vkEngine->getTextureLoader()->getTextureSampler();
 
-        std::array<VkWriteDescriptorSet, 11> descriptorWrites{};
+        std::array<VkWriteDescriptorSet, 13> descriptorWrites{};
 
         //descriptor writes for block pipeline
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -682,7 +718,7 @@ void VKRenderer::updateDescriptorSets() {
         descriptorWrites[7].descriptorCount = vkEngine->getGraphicsPipeline(3)->getDescriptorSetLayoutBinding(1).descriptorCount;
         descriptorWrites[7].pImageInfo = &imageInfo;
 
-        //descriptor writes for transparency pipeline 3
+        //descriptor writes for transparency pipeline subpass 3
         descriptorWrites[8].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[8].dstSet = vkEngine->getGraphicsPipeline(4)->getDescriptorSets()[i];
         descriptorWrites[8].dstBinding = 0;
@@ -713,11 +749,25 @@ void VKRenderer::updateDescriptorSets() {
         descriptorWrites[10].descriptorCount = vkEngine->getGraphicsPipeline(4)->getDescriptorSetLayoutBinding(2).descriptorCount;
         descriptorWrites[10].dstBinding = 2;
         descriptorWrites[10].pImageInfo = &descriptors[1];
-        
-        vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     
-        //descriptor writes for the transparency 2nd subpass
+        //descriptor writes for opaque transparency pipeline
+        descriptorWrites[11].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[11].dstSet = vkEngine->getGraphicsPipeline(5)->getDescriptorSets()[i];
+        descriptorWrites[11].dstBinding = 0;
+        descriptorWrites[11].dstArrayElement = 0;
+        descriptorWrites[11].descriptorType = vkEngine->getGraphicsPipeline(5)->getDescriptorSetLayoutBinding(0).descriptorType;
+        descriptorWrites[11].descriptorCount = vkEngine->getGraphicsPipeline(5)->getDescriptorSetLayoutBinding(0).descriptorCount;
+        descriptorWrites[11].pBufferInfo = &bufferInfo;
 
+        descriptorWrites[12].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[12].dstSet = vkEngine->getGraphicsPipeline(5)->getDescriptorSets()[i];
+        descriptorWrites[12].dstBinding = 1;
+        descriptorWrites[12].dstArrayElement = 0;
+        descriptorWrites[12].descriptorType = vkEngine->getGraphicsPipeline(5)->getDescriptorSetLayoutBinding(1).descriptorType;
+        descriptorWrites[12].descriptorCount = vkEngine->getGraphicsPipeline(5)->getDescriptorSetLayoutBinding(1).descriptorCount;
+        descriptorWrites[12].pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(vkEngine->getDevice()->getInternalLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
 
@@ -853,6 +903,8 @@ void VKRenderer::createGraphicsPipelines() {
 
     graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * MAX_OVERLAY_TEXTURES);
 
+    graphicsPipelineOverlays->setSubpassIndex(3);
+
     vkEngine->setGraphicsPipeline(graphicsPipelineOverlays, 1);
 
 
@@ -869,10 +921,6 @@ void VKRenderer::createGraphicsPipelines() {
     graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
 
     graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
-    
-    //graphicsPipelineWireframe->setPipelineBase(graphicsPipelineBlocks->getInternalGraphicsPipeline());
-
-    //graphicsPipelineWireframe->setLineWidth(2.0f);
 
     graphicsPipelineWireframe->setPolygonType(VK_POLYGON_MODE_LINE);
 
@@ -891,6 +939,7 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassTwoPipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
     transparencySubpassTwoPipeline->setSubpassIndex(1);
     transparencySubpassTwoPipeline->setCullMode(VK_CULL_MODE_NONE);
+    transparencySubpassTwoPipeline->setDepthTestAndWrite(true, false);
 
     VkPipelineColorBlendAttachmentState attachments[2] {};
 
@@ -955,6 +1004,16 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassThreePipeline->setColorBlendAttachment(attachments[0], 0);
 
     vkEngine->setGraphicsPipeline(transparencySubpassThreePipeline, 4);
+
+    std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineTransparentOpaque = std::make_shared<VulkanGraphicsPipeline>(*graphicsPipelineBlocks);
+
+    graphicsPipelineTransparentOpaque->setVertexInputBindingDescriptions(TransparentVertex::getBindingDescriptions());
+    graphicsPipelineTransparentOpaque->setVertexInputAttributeDescriptions(TransparentVertex::getAttributeDescriptions());
+    graphicsPipelineTransparentOpaque->setVertexShader("shaders/output/3dvert_transparent_subpass1.spv");
+    graphicsPipelineTransparentOpaque->setFragmentShader("shaders/output/3dfrag_transparent_subpass1.spv");
+    graphicsPipelineTransparentOpaque->setCullMode(VK_CULL_MODE_NONE);
+
+    vkEngine->setGraphicsPipeline(graphicsPipelineTransparentOpaque, 5);
 }
 
 std::pair<unsigned int, unsigned int> VKRenderer::getTextureDimensions(std::string id) {

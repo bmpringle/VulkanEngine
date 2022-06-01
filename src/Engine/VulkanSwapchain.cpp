@@ -170,7 +170,7 @@ void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstanc
     depthAttachmentDescription.format = depthAttachment.format;
     depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -239,6 +239,7 @@ void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstanc
     secondSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     secondSubpass.colorAttachmentCount = secondSubpassAttachments.size();
     secondSubpass.pColorAttachments = secondSubpassAttachments.data();
+    secondSubpass.pDepthStencilAttachment = &depthAttachmentRef;
     
     std::vector<VkAttachmentReference> thirdSubpassAttachments = {colorAttachment1InputRef, colorAttachment2InputRef};
     VkSubpassDescription thirdSubpass {};
@@ -249,9 +250,48 @@ void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstanc
     thirdSubpass.pColorAttachments = &swapchainAttachmentRef;
     thirdSubpass.pDepthStencilAttachment = &depthAttachmentRef;
 
+    VkSubpassDescription fourthSubpass = firstSubpass;
+
     //subpass dependencies
-    VkSubpassDependency subpassDependencies[3] {};
+    VkSubpassDependency subpassDependencies[4] {};
+
     subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpassDependencies[0].dstSubpass = 0;
+
+    subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+    subpassDependencies[0].srcAccessMask = 0;
+    subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    subpassDependencies[1].srcSubpass = 0;
+    subpassDependencies[1].dstSubpass = 1;
+
+    subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+    subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    subpassDependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    subpassDependencies[2].srcSubpass = 1;
+    subpassDependencies[2].dstSubpass = 2;
+
+    subpassDependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependencies[2].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    subpassDependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpassDependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    subpassDependencies[3].srcSubpass = 2;
+    subpassDependencies[3].dstSubpass = 3;
+
+    subpassDependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpassDependencies[3].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+    subpassDependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpassDependencies[3].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    /*subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     subpassDependencies[0].dstSubpass = 0;
 
     subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -276,18 +316,18 @@ void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstanc
     subpassDependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     subpassDependencies[2].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    subpassDependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;*/
 
     //render pass info
     std::array<VkAttachmentDescription, 4> attachments = {swapchainAttachmentDescription, depthAttachmentDescription, colorAttachment1Description, colorAttachment2Description};
-    std::array<VkSubpassDescription, 3> subpassDescriptions = {firstSubpass, secondSubpass, thirdSubpass};
+    std::array<VkSubpassDescription, 4> subpassDescriptions = {firstSubpass, secondSubpass, thirdSubpass, fourthSubpass};
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = subpassDescriptions.size();
     renderPassInfo.pSubpasses = subpassDescriptions.data();
-    renderPassInfo.dependencyCount = 3;
+    renderPassInfo.dependencyCount = 4;
     renderPassInfo.pDependencies = subpassDependencies;
 
     if(vkCreateRenderPass(vkDevice->getInternalLogicalDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
