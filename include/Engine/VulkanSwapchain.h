@@ -4,6 +4,8 @@
 #include "VulkanInclude.h"
 #include "VulkanDevice.h"
 #include "FramebufferAttachment.h"
+#include "FramebufferAttachmentInfo.h"
+#include <map>
 
 class VulkanSwapchain {
 
@@ -44,6 +46,10 @@ class VulkanSwapchain {
 
         std::vector<FramebufferAttachment>& getColorFramebufferAttachments2();
 
+        std::vector<FramebufferAttachment>& getFramebufferAttachment(std::string attachmentID);
+
+        void addFramebufferAttachmentInfo(FramebufferAttachmentInfo info);
+
     private:
         void createSwapchainAndImages(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
@@ -56,6 +62,8 @@ class VulkanSwapchain {
         void createCommandBuffers(std::shared_ptr<VulkanDevice> device);
 
         void createDepthResources(std::shared_ptr<VulkanDevice> device);
+
+        void createUserDefinedAttachments(std::shared_ptr<VulkanDevice> device);
         
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, std::shared_ptr<VulkanDisplay> vkDisplay);
 
@@ -93,6 +101,11 @@ class VulkanSwapchain {
         VkFormat preferredSurfaceFormat = VK_FORMAT_B8G8R8A8_SRGB;
 
         VkColorSpaceKHR preferredColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+
+        std::vector<FramebufferAttachmentInfo> userDefinedFramebufferInfo;
+        std::map<std::string, std::vector<FramebufferAttachment>> framebufferAttachments;
+
+        int swapchainImageCount = 0;
 };
 
 #endif

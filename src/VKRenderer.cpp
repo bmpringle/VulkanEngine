@@ -42,6 +42,29 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
 
     std::shared_ptr<VulkanSwapchain> swapchain = std::make_shared<VulkanSwapchain>();
 
+    FramebufferAttachmentInfo attachmentInfos[3];
+    attachmentInfos[0].name = "depthBuffer";
+    attachmentInfos[0].formatCandidates = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
+    attachmentInfos[0].formatFeatures = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    attachmentInfos[0].usageBits = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    attachmentInfos[0].imageAspectBits = VK_IMAGE_ASPECT_DEPTH_BIT;
+    attachmentInfos[1].name = "accumBuffer";
+    attachmentInfos[1].count = -1;
+    attachmentInfos[1].formatCandidates = {VK_FORMAT_R16G16B16A16_SFLOAT};
+    attachmentInfos[1].formatFeatures = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    attachmentInfos[1].usageBits = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    attachmentInfos[1].imageAspectBits = VK_IMAGE_ASPECT_COLOR_BIT;
+    attachmentInfos[2].name = "revealageBuffer";
+    attachmentInfos[2].count = -1;
+    attachmentInfos[2].formatCandidates = {VK_FORMAT_R16_SFLOAT};
+    attachmentInfos[2].formatFeatures = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    attachmentInfos[2].usageBits = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    attachmentInfos[2].imageAspectBits = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    swapchain->addFramebufferAttachmentInfo(attachmentInfos[0]);
+    swapchain->addFramebufferAttachmentInfo(attachmentInfos[1]);
+    swapchain->addFramebufferAttachmentInfo(attachmentInfos[2]);
+
     vkEngine->setSwapchain(swapchain);
 
     std::shared_ptr<VulkanRenderSyncObjects> syncObjects = std::make_shared<VulkanRenderSyncObjects>();

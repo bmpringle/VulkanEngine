@@ -39,6 +39,16 @@ void VulkanSwapchain::destroySwapchain(std::shared_ptr<VulkanDevice> device) {
         vkFreeMemory(device->getInternalLogicalDevice(), colorAttachment2.memory, nullptr);
     }
 
+    for(auto attachmentVector : framebufferAttachments) {
+        for(auto attachment : attachmentVector.second) {
+            vkDestroyImageView(device->getInternalLogicalDevice(), attachment.imageView, nullptr);
+
+            vkDestroyImage(device->getInternalLogicalDevice(), attachment.image, nullptr);
+
+            vkFreeMemory(device->getInternalLogicalDevice(), attachment.memory, nullptr);
+        }
+    }
+
     vkDestroyImageView(device->getInternalLogicalDevice(), depthAttachment.imageView, nullptr);
 
     vkDestroyImage(device->getInternalLogicalDevice(), depthAttachment.image, nullptr);
@@ -52,6 +62,7 @@ void VulkanSwapchain::create(std::shared_ptr<VulkanInstance> vkInstance, std::sh
     createSwapchainAndImages(vkInstance, vkDisplay, vkDevice);
     createImageViews(vkInstance, vkDisplay, vkDevice);
     createDepthResources(vkDevice);
+    createUserDefinedAttachments(vkDevice);
     createRenderpass(vkInstance, vkDisplay, vkDevice);
     createFramebuffers(vkDevice);
     createCommandBuffers(vkDevice);
@@ -114,6 +125,7 @@ void VulkanSwapchain::createSwapchainAndImages(std::shared_ptr<VulkanInstance> v
 
     vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
+    swapchainImageCount = imageCount;
     colorAttachments1.resize(imageCount);
     colorAttachments2.resize(imageCount);
     vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, swapChainImages.data());
@@ -290,33 +302,6 @@ void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstanc
 
     subpassDependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     subpassDependencies[3].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    /*subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    subpassDependencies[0].dstSubpass = 0;
-
-    subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[0].srcAccessMask = 0;
-
-    subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    subpassDependencies[1].srcSubpass = 0;
-    subpassDependencies[1].dstSubpass = 1;
-
-    subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    subpassDependencies[2].srcSubpass = 1;
-    subpassDependencies[2].dstSubpass = 2;
-
-    subpassDependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    subpassDependencies[2].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;*/
 
     //render pass info
     std::array<VkAttachmentDescription, 4> attachments = {swapchainAttachmentDescription, depthAttachmentDescription, colorAttachment1Description, colorAttachment2Description};
@@ -533,4 +518,35 @@ std::vector<FramebufferAttachment>& VulkanSwapchain::getColorFramebufferAttachme
 
 std::vector<FramebufferAttachment>& VulkanSwapchain::getColorFramebufferAttachments2() {
     return colorAttachments2;
+}
+
+void VulkanSwapchain::createUserDefinedAttachments(std::shared_ptr<VulkanDevice> device) {
+    for(FramebufferAttachmentInfo& info : userDefinedFramebufferInfo) {
+        std::vector<FramebufferAttachment> attachmentVector;
+        int sizeOfVector = (info.count != -1) ? info.count : swapchainImageCount;
+        for(int c = 0; c < sizeOfVector; ++c) {
+            FramebufferAttachment attachment;
+
+            attachment.format = findSupportedFormat(info.formatCandidates, info.imageTiling, info.formatFeatures, device);
+            VulkanEngine::createImage(swapChainExtent.width, swapChainExtent.height, 1, attachment.format, info.imageTiling, info.usageBits, info.memoryPropertyBits, attachment.image, attachment.memory, device);
+            attachment.imageView = createImageView(attachment.image, attachment.format, info.imageAspectBits, device);
+
+            attachmentVector.push_back(attachment);
+        }
+
+        if(framebufferAttachments.count(info.name) == 0) {
+            framebufferAttachments[info.name] = attachmentVector;
+        }else {
+            throw std::runtime_error("You can't use the same name for more than one framebuffer attachment!"); 
+            //I don't allow mutability b/c I'm really not sure if that would work or cause a ton of bugs, and given the usage of this function it just isn't necessary
+        }
+    }
+}
+
+std::vector<FramebufferAttachment>& VulkanSwapchain::getFramebufferAttachment(std::string attachmentID) {
+    return framebufferAttachments[attachmentID];
+}
+
+void VulkanSwapchain::addFramebufferAttachmentInfo(FramebufferAttachmentInfo info) {
+    userDefinedFramebufferInfo.push_back(info);
 }
