@@ -18,6 +18,7 @@ ___
         - ARM -- no-op (only compile for arm right now)
         - WARN -- turns of -Werror
         - TEST - no-op
+        - VALIDATION_LAYERS - turns on Vulkan's Validation Layers
 ### Linux
 ___
 -todo
