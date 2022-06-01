@@ -5,6 +5,10 @@ ___
 ___
 #### Dependencies (the ones that need to be manually installed):
     python@3.X
+    wget
+    cmake
+    make
+    git
 #### Build Steps:
     1. Clone this repository
     2. Run the python script compileDeps.py in the project root directory
