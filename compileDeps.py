@@ -24,6 +24,8 @@ elif system() == "Windows":
     print("unsupported at this time")
     exit()
 
+output, error = execCmd('mkdir -p shaders/output')
+
 MACOS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/mac/vulkansdk-macos-1.2.198.1.dmg"
 MACOS_DMGNAME= "vulkansdk-macos-1.2.198.1.dmg"
 LINUX_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/linux/vulkansdk-linux-x86_64-1.2.198.1.tar.gz"
