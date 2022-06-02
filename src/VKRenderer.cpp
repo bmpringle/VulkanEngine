@@ -1152,6 +1152,7 @@ void VKRenderer::createGraphicsPipelines() {
     attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; 
 
     transparencySubpassThreePipeline->setColorBlendAttachment(attachments[0], 0);
+    transparencySubpassThreePipeline->setDepthTestAndWrite(true, false);
 
     vkEngine->setGraphicsPipeline(transparencySubpassThreePipeline, 4);
 

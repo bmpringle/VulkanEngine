@@ -334,7 +334,11 @@ int main() {
 
   renderer.setModel("translucentcube1", {/*opaque vertices*/}, transparent_cube);
 
-  std::vector<InstanceData> translucentData = {InstanceData({{-1, 0, -2}})};
+  std::vector<InstanceData> translucentData = {
+    InstanceData({{-1, 0, -2}}), InstanceData({{-1, 0, -3}}), InstanceData({{-1, 0, -4}}), InstanceData({{-1, 0, -5}}),
+    InstanceData({{-2, 0, -2}}), InstanceData({{-2, 0, -3}}), InstanceData({{-2, 0, -4}}), InstanceData({{-2, 0, -5}}),
+    InstanceData({{-3, 0, -2}}), InstanceData({{-3, 0, -3}}), InstanceData({{-3, 0, -4}}), InstanceData({{-3, 0, -5}})
+  };
 
   renderer.addInstancesToModel("translucentcube1", "set1", translucentData);
 
