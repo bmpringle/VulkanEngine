@@ -7,6 +7,7 @@ import subprocess
 from platform import system
 
 DBG = int(ARGUMENTS.get('DBG', 0))
+LIB_DBG = int(ARGUMENTS.get('LIB_DBG', 0))
 ARM = int(ARGUMENTS.get('ARM', 1))
 WARN = int(ARGUMENTS.get('WARN', 0))
 

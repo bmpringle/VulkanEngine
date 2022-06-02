@@ -296,7 +296,7 @@ void VKRenderer::recordCommandBuffers() {
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
 
                 for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
-                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+                    VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second.data;
 
                     if(instanceBuffer.getBufferSize() > 0) {
                         VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
@@ -327,7 +327,7 @@ void VKRenderer::recordCommandBuffers() {
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
 
                 for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
-                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+                    VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second.data;
 
                     if(instanceBuffer.getBufferSize() > 0) {
                         VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
@@ -358,7 +358,7 @@ void VKRenderer::recordCommandBuffers() {
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
 
                 for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
-                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+                    VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second.data;
 
                     if(instanceBuffer.getBufferSize() > 0) {
                         VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
@@ -390,7 +390,7 @@ void VKRenderer::recordCommandBuffers() {
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
 
                 for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
-                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+                    VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second.data;
 
                     if(instanceBuffer.getBufferSize() > 0) {
                         VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
@@ -424,7 +424,7 @@ void VKRenderer::recordCommandBuffers() {
                 vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
 
                 for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
-                    VulkanVertexBuffer<InstanceData> instanceBuffer = data.second.data;
+                    VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second.data;
 
                     if(instanceBuffer.getBufferSize() > 0) {
                         VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
@@ -454,7 +454,7 @@ void VKRenderer::recordCommandBuffers() {
         
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(1)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(1)->getDescriptorSets()[i], 0, nullptr);
         for(std::pair<const std::string, VulkanVertexBuffer<OverlayVertex>>& vertexData : dataIDToVertexOverlayData) {
-            VulkanVertexBuffer<OverlayVertex> vertexBuffer = vertexData.second;
+            VulkanVertexBuffer<OverlayVertex>& vertexBuffer = vertexData.second;
 
             if(vertexBuffer.getBufferSize() > 0) {
                 VkBuffer vertexBuffers[] = {vertexBuffer.getVertexBuffer()};

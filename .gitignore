@@ -4,3 +4,4 @@ obj/**
 lib/**
 VulkanSDK*/**
 InstallVulkan.app/**
+traces/**
