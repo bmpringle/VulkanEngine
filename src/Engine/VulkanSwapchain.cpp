@@ -19,41 +19,20 @@ void VulkanSwapchain::destroySwapchain(std::shared_ptr<VulkanDevice> device) {
 
     vkDestroyRenderPass(device->getInternalLogicalDevice(), renderPass, nullptr);
 
-    for(auto imageView : swapChainImageViews) {
-        vkDestroyImageView(device->getInternalLogicalDevice(), imageView, nullptr);
-    }
-
-    for(auto colorAttachment1 : colorAttachments1) {
-        vkDestroyImageView(device->getInternalLogicalDevice(), colorAttachment1.imageView, nullptr);
-
-        vkDestroyImage(device->getInternalLogicalDevice(), colorAttachment1.image, nullptr);
-
-        vkFreeMemory(device->getInternalLogicalDevice(), colorAttachment1.memory, nullptr);
-    }
-
-    for(auto colorAttachment2 : colorAttachments2) {
-        vkDestroyImageView(device->getInternalLogicalDevice(), colorAttachment2.imageView, nullptr);
-
-        vkDestroyImage(device->getInternalLogicalDevice(), colorAttachment2.image, nullptr);
-
-        vkFreeMemory(device->getInternalLogicalDevice(), colorAttachment2.memory, nullptr);
-    }
+    bool SWAPCHAIN_ATTACHMENT = true;
 
     for(auto attachmentVector : framebufferAttachments) {
-        for(auto attachment : attachmentVector.second) {
+        for(auto attachment : attachmentVector) {
             vkDestroyImageView(device->getInternalLogicalDevice(), attachment.imageView, nullptr);
 
-            vkDestroyImage(device->getInternalLogicalDevice(), attachment.image, nullptr);
+            if(!SWAPCHAIN_ATTACHMENT) { //don't destroy the first attachment here b/c it's the swapchain, and should be destroyed automatically
+                vkDestroyImage(device->getInternalLogicalDevice(), attachment.image, nullptr);
 
-            vkFreeMemory(device->getInternalLogicalDevice(), attachment.memory, nullptr);
+                vkFreeMemory(device->getInternalLogicalDevice(), attachment.memory, nullptr);
+            }
         }
+        SWAPCHAIN_ATTACHMENT = false;
     }
-
-    vkDestroyImageView(device->getInternalLogicalDevice(), depthAttachment.imageView, nullptr);
-
-    vkDestroyImage(device->getInternalLogicalDevice(), depthAttachment.image, nullptr);
-
-    vkFreeMemory(device->getInternalLogicalDevice(), depthAttachment.memory, nullptr);
 
     vkDestroySwapchainKHR(device->getInternalLogicalDevice(), swapchain, nullptr);
 }
@@ -61,7 +40,6 @@ void VulkanSwapchain::destroySwapchain(std::shared_ptr<VulkanDevice> device) {
 void VulkanSwapchain::create(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice) {
     createSwapchainAndImages(vkInstance, vkDisplay, vkDevice);
     createImageViews(vkInstance, vkDisplay, vkDevice);
-    createDepthResources(vkDevice);
     createUserDefinedAttachments(vkDevice);
     createRenderpass(vkInstance, vkDisplay, vkDevice);
     createFramebuffers(vkDevice);
@@ -75,8 +53,6 @@ void VulkanSwapchain::createSwapchainAndImages(std::shared_ptr<VulkanInstance> v
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, vkDisplay);
-
-    swapChainImageFormat = surfaceFormat.format;
 
     swapChainExtent = extent;
 
@@ -124,196 +100,56 @@ void VulkanSwapchain::createSwapchainAndImages(std::shared_ptr<VulkanInstance> v
     }
 
     vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, nullptr);
-    swapChainImages.resize(imageCount);
+    framebufferAttachments.resize(1);
+    framebufferAttachments[0].resize(imageCount);
     swapchainImageCount = imageCount;
-    colorAttachments1.resize(imageCount);
-    colorAttachments2.resize(imageCount);
-    vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, swapChainImages.data());
 
-    for (uint32_t i = 0; i < colorAttachments1.size(); i++) {
-        colorAttachments1[i].format = findSupportedFormat(
-        {VK_FORMAT_R16G16B16A16_SFLOAT},
-        VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, vkDevice);
+    std::vector<VkImage> swapImages;
+    swapImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(vkDevice->getInternalLogicalDevice(), swapchain, &imageCount, swapImages.data());
 
-        VulkanEngine::createImage(swapChainExtent.width, swapChainExtent.height, 1, colorAttachments1[i].format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachments1[i].image, colorAttachments1[i].memory, vkDevice);
-
-        colorAttachments2[i].format = findSupportedFormat(
-        {VK_FORMAT_R16_SFLOAT},
-        VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, vkDevice);
-
-        VulkanEngine::createImage(swapChainExtent.width, swapChainExtent.height, 1, colorAttachments2[i].format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachments2[i].image, colorAttachments2[i].memory, vkDevice);
+    for(int i = 0; i < imageCount; ++i) {
+        framebufferAttachments[0][i].image = swapImages[i];
+        framebufferAttachments[0][i].format = surfaceFormat.format;
     }
 }
 
 void VulkanSwapchain::createImageViews(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice) {
-    swapChainImageViews.resize(swapChainImages.size());
-
-    for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-        swapChainImageViews[i] = VulkanEngine::createImageView(swapChainImages[i], swapChainImageFormat, vkDevice, VK_IMAGE_VIEW_TYPE_2D, 1);
-        colorAttachments1[i].imageView = VulkanEngine::createImageView(colorAttachments1[i].image, colorAttachments1[i].format, vkDevice, VK_IMAGE_VIEW_TYPE_2D, 1);
-        colorAttachments2[i].imageView = VulkanEngine::createImageView(colorAttachments2[i].image, colorAttachments2[i].format, vkDevice, VK_IMAGE_VIEW_TYPE_2D, 1);
+    for (uint32_t i = 0; i < swapchainImageCount; i++) {
+        framebufferAttachments[0][i].imageView = VulkanEngine::createImageView(framebufferAttachments[0][i].image, framebufferAttachments[0][i].format, vkDevice, VK_IMAGE_VIEW_TYPE_2D, 1);
     }
 }
 
 void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice) {
+    std::vector<VkAttachmentDescription> attachmentDescriptions;
 
-    //swapchain attachment description/reference
+    for(auto info : attachmentDescriptionInfos) {
+        VkAttachmentDescription desc;
+        desc.format = getFramebufferAttachment(info.attachmentIndex)[0].format;
+        desc.samples = info.samples;
 
-    VkAttachmentDescription swapchainAttachmentDescription{};
-    swapchainAttachmentDescription.format = swapChainImageFormat;
-    swapchainAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+        desc.loadOp = info.loadOp;
+        desc.storeOp = info.storeOp;
 
-    swapchainAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    swapchainAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        desc.stencilLoadOp = info.stencilLoadOp;
+        desc.stencilStoreOp = info.stencilStoreOp;
 
-    swapchainAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    swapchainAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        desc.initialLayout = info.initialLayout;
+        desc.finalLayout = info.finalLayout;
 
-    swapchainAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    swapchainAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentReference swapchainAttachmentRef{};
-    swapchainAttachmentRef.attachment = 0;
-    swapchainAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    //depth attachment description/reference
-
-    VkAttachmentDescription depthAttachmentDescription{};
-    depthAttachmentDescription.format = depthAttachment.format;
-    depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depthAttachmentRef{};
-    depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    //color attachment 1 description/reference
+        attachmentDescriptions.push_back(desc);
+        desc.flags = 0;
+    }
     
-    VkAttachmentDescription colorAttachment1Description{};
-    colorAttachment1Description.format = colorAttachments1[0].format;
-    colorAttachment1Description.samples = VK_SAMPLE_COUNT_1_BIT;
-
-    colorAttachment1Description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment1Description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-    colorAttachment1Description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment1Description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-    colorAttachment1Description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment1Description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference colorAttachment1Ref{};
-    colorAttachment1Ref.attachment = 2;
-    colorAttachment1Ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference colorAttachment1InputRef{};
-    colorAttachment1InputRef.attachment = 2;
-    colorAttachment1InputRef.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    //color attachment 2 description/reference
-    
-    VkAttachmentDescription colorAttachment2Description{};
-    colorAttachment2Description.format = colorAttachments2[0].format;
-    colorAttachment2Description.samples = VK_SAMPLE_COUNT_1_BIT;
-
-    colorAttachment2Description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment2Description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-    colorAttachment2Description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment2Description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-    colorAttachment2Description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment2Description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference colorAttachment2Ref{};
-    colorAttachment2Ref.attachment = 3;
-    colorAttachment2Ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference colorAttachment2InputRef{};
-    colorAttachment2InputRef.attachment = 3;
-    colorAttachment2InputRef.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    //subpass descriptions
-    VkSubpassDescription firstSubpass {};
-    firstSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    firstSubpass.colorAttachmentCount = 1;
-    firstSubpass.pColorAttachments = &swapchainAttachmentRef;
-    firstSubpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-    std::vector<VkAttachmentReference> secondSubpassAttachments = {colorAttachment1Ref, colorAttachment2Ref};
-    VkSubpassDescription secondSubpass {};
-    secondSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    secondSubpass.colorAttachmentCount = secondSubpassAttachments.size();
-    secondSubpass.pColorAttachments = secondSubpassAttachments.data();
-    secondSubpass.pDepthStencilAttachment = &depthAttachmentRef;
-    
-    std::vector<VkAttachmentReference> thirdSubpassAttachments = {colorAttachment1InputRef, colorAttachment2InputRef};
-    VkSubpassDescription thirdSubpass {};
-    thirdSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    thirdSubpass.inputAttachmentCount = thirdSubpassAttachments.size();
-    thirdSubpass.pInputAttachments = thirdSubpassAttachments.data();
-    thirdSubpass.colorAttachmentCount = 1;
-    thirdSubpass.pColorAttachments = &swapchainAttachmentRef;
-    thirdSubpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-    VkSubpassDescription fourthSubpass = firstSubpass;
-
-    //subpass dependencies
-    VkSubpassDependency subpassDependencies[4] {};
-
-    subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    subpassDependencies[0].dstSubpass = 0;
-
-    subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-
-    subpassDependencies[0].srcAccessMask = 0;
-    subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    subpassDependencies[1].srcSubpass = 0;
-    subpassDependencies[1].dstSubpass = 1;
-
-    subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-
-    subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    subpassDependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    subpassDependencies[2].srcSubpass = 1;
-    subpassDependencies[2].dstSubpass = 2;
-
-    subpassDependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpassDependencies[2].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    subpassDependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    subpassDependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    subpassDependencies[3].srcSubpass = 2;
-    subpassDependencies[3].dstSubpass = 3;
-
-    subpassDependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencies[3].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-
-    subpassDependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    subpassDependencies[3].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
     //render pass info
-    std::array<VkAttachmentDescription, 4> attachments = {swapchainAttachmentDescription, depthAttachmentDescription, colorAttachment1Description, colorAttachment2Description};
-    std::array<VkSubpassDescription, 4> subpassDescriptions = {firstSubpass, secondSubpass, thirdSubpass, fourthSubpass};
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
+    renderPassInfo.pAttachments = attachmentDescriptions.data();
     renderPassInfo.subpassCount = subpassDescriptions.size();
     renderPassInfo.pSubpasses = subpassDescriptions.data();
-    renderPassInfo.dependencyCount = 4;
-    renderPassInfo.pDependencies = subpassDependencies;
+    renderPassInfo.dependencyCount = subpassDependencies.size();
+    renderPassInfo.pDependencies = subpassDependencies.data();
 
     if(vkCreateRenderPass(vkDevice->getInternalLogicalDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
@@ -379,20 +215,12 @@ VkSwapchainKHR& VulkanSwapchain::getInternalSwapchain() {
     return swapchain;
 }
 
-VkFormat& VulkanSwapchain::getInternalSwapchainFormat() {
-    return swapChainImageFormat;
+std::vector<FramebufferAttachment>& VulkanSwapchain::getSwapchainAttachment() {
+    return framebufferAttachments[0];
 }
 
 VkExtent2D& VulkanSwapchain::getInternalExtent2D() {
     return swapChainExtent;
-}
-
-std::vector<VkImage>& VulkanSwapchain::getInternalImages() {
-    return swapChainImages;
-}
-
-std::vector<VkImageView>& VulkanSwapchain::getInternalImageViews() {
-    return swapChainImageViews;
 }
 
 VkRenderPass& VulkanSwapchain::getInternalRenderPass() {
@@ -400,15 +228,10 @@ VkRenderPass& VulkanSwapchain::getInternalRenderPass() {
 }
 
 void VulkanSwapchain::createFramebuffers(std::shared_ptr<VulkanDevice> device) {
-    swapChainFramebuffers.resize(swapChainImageViews.size());
+    swapChainFramebuffers.resize(swapchainImageCount);
 
-    for(size_t i = 0; i < swapChainImageViews.size(); ++i) {
-        std::vector<VkImageView> attachments = {
-            swapChainImageViews[i],
-            depthAttachment.imageView,
-            colorAttachments1[i].imageView,
-            colorAttachments2[i].imageView
-        };
+    for(size_t i = 0; i < swapchainImageCount; ++i) {
+        std::vector<VkImageView> attachments = getAttachmentViewsInOrder(i);
 
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -430,7 +253,7 @@ std::vector<VkFramebuffer>& VulkanSwapchain::getInternalFramebuffers() {
 }
 
 void VulkanSwapchain::createCommandBuffers(std::shared_ptr<VulkanDevice> device) {
-    commandBuffers.resize(swapChainFramebuffers.size());
+    commandBuffers.resize(swapchainImageCount);
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -499,31 +322,10 @@ VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags a
     return imageView;
 }
 
-void VulkanSwapchain::createDepthResources(std::shared_ptr<VulkanDevice> device) {
-    depthAttachment.format = findSupportedFormat(
-        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-        VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, device);
-
-    VulkanEngine::createImage(swapChainExtent.width, swapChainExtent.height, 1, depthAttachment.format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthAttachment.image, depthAttachment.memory, device);
-    depthAttachment.imageView = createImageView(depthAttachment.image, depthAttachment.format, VK_IMAGE_ASPECT_DEPTH_BIT, device);
-}
-
-FramebufferAttachment& VulkanSwapchain::getDepthFramebufferAttachment() {
-    return depthAttachment;
-}
-
-std::vector<FramebufferAttachment>& VulkanSwapchain::getColorFramebufferAttachments1() {
-    return colorAttachments1;
-}
-
-std::vector<FramebufferAttachment>& VulkanSwapchain::getColorFramebufferAttachments2() {
-    return colorAttachments2;
-}
-
 void VulkanSwapchain::createUserDefinedAttachments(std::shared_ptr<VulkanDevice> device) {
     for(FramebufferAttachmentInfo& info : userDefinedFramebufferInfo) {
         std::vector<FramebufferAttachment> attachmentVector;
-        int sizeOfVector = (info.count != -1) ? info.count : swapchainImageCount;
+        int sizeOfVector = (info.count != SWAPCHAIN_COUNT) ? 1 : swapchainImageCount;
         for(int c = 0; c < sizeOfVector; ++c) {
             FramebufferAttachment attachment;
 
@@ -534,8 +336,9 @@ void VulkanSwapchain::createUserDefinedAttachments(std::shared_ptr<VulkanDevice>
             attachmentVector.push_back(attachment);
         }
 
-        if(framebufferAttachments.count(info.name) == 0) {
-            framebufferAttachments[info.name] = attachmentVector;
+        if(framebufferAttachments.size() <= info.index) {
+            framebufferAttachments.resize(info.index + 1);
+            framebufferAttachments.at(info.index) = attachmentVector;
         }else {
             throw std::runtime_error("You can't use the same name for more than one framebuffer attachment!"); 
             //I don't allow mutability b/c I'm really not sure if that would work or cause a ton of bugs, and given the usage of this function it just isn't necessary
@@ -543,10 +346,44 @@ void VulkanSwapchain::createUserDefinedAttachments(std::shared_ptr<VulkanDevice>
     }
 }
 
-std::vector<FramebufferAttachment>& VulkanSwapchain::getFramebufferAttachment(std::string attachmentID) {
-    return framebufferAttachments[attachmentID];
+std::vector<FramebufferAttachment>& VulkanSwapchain::getFramebufferAttachment(int index) {
+    return framebufferAttachments.at(index);
 }
 
 void VulkanSwapchain::addFramebufferAttachmentInfo(FramebufferAttachmentInfo info) {
     userDefinedFramebufferInfo.push_back(info);
+}
+
+const int VulkanSwapchain::getSwapchainAttachmentIndex() const {
+    return 0;
+}
+
+std::vector<VkImageView> VulkanSwapchain::getAttachmentViewsInOrder(int index) {
+    std::vector<VkImageView> views;
+
+    for(auto attachment : framebufferAttachments) {
+        if(attachment.size() == 1) {
+            views.push_back(attachment.at(0).imageView);
+        }else {
+            views.push_back(attachment.at(index).imageView);
+        }
+    }
+
+    return views;
+}
+
+int VulkanSwapchain::getSwapchainImageCount() {
+    return swapchainImageCount;
+}
+
+void VulkanSwapchain::addAttachmentDescription(AttachmentDescriptionInfo desc) {
+    attachmentDescriptionInfos.push_back(desc);
+}
+
+void VulkanSwapchain::addSubpassDescription(VkSubpassDescription desc) {
+    subpassDescriptions.push_back(desc);
+}
+
+void VulkanSwapchain::addSubpassDependency(VkSubpassDependency dependency) {
+    subpassDependencies.push_back(dependency);
 }

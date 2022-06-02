@@ -43,19 +43,19 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
     std::shared_ptr<VulkanSwapchain> swapchain = std::make_shared<VulkanSwapchain>();
 
     FramebufferAttachmentInfo attachmentInfos[3];
-    attachmentInfos[0].name = "depthBuffer";
+    attachmentInfos[0].index = 1;
     attachmentInfos[0].formatCandidates = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
     attachmentInfos[0].formatFeatures = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
     attachmentInfos[0].usageBits = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     attachmentInfos[0].imageAspectBits = VK_IMAGE_ASPECT_DEPTH_BIT;
-    attachmentInfos[1].name = "accumBuffer";
-    attachmentInfos[1].count = -1;
+    attachmentInfos[1].index = 2;
+    attachmentInfos[1].count = SWAPCHAIN_COUNT;
     attachmentInfos[1].formatCandidates = {VK_FORMAT_R16G16B16A16_SFLOAT};
     attachmentInfos[1].formatFeatures = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
     attachmentInfos[1].usageBits = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     attachmentInfos[1].imageAspectBits = VK_IMAGE_ASPECT_COLOR_BIT;
-    attachmentInfos[2].name = "revealageBuffer";
-    attachmentInfos[2].count = -1;
+    attachmentInfos[2].index = 3;
+    attachmentInfos[2].count = SWAPCHAIN_COUNT;
     attachmentInfos[2].formatCandidates = {VK_FORMAT_R16_SFLOAT};
     attachmentInfos[2].formatFeatures = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
     attachmentInfos[2].usageBits = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -64,6 +64,133 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
     swapchain->addFramebufferAttachmentInfo(attachmentInfos[0]);
     swapchain->addFramebufferAttachmentInfo(attachmentInfos[1]);
     swapchain->addFramebufferAttachmentInfo(attachmentInfos[2]);
+
+    //swapchain attachment description/reference
+    AttachmentDescriptionInfo swapchainAttachmentInfo;
+    swapchainAttachmentInfo.attachmentIndex = 0;
+    swapchainAttachmentInfo.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference swapchainAttachmentRef{};
+    swapchainAttachmentRef.attachment = 0;
+    swapchainAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    //depth attachment description/reference
+
+    AttachmentDescriptionInfo depthAttachmentInfo;
+    depthAttachmentInfo.attachmentIndex = 1;
+    depthAttachmentInfo.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef{};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    //color attachment 1 description/reference
+
+    AttachmentDescriptionInfo accumAttachmentInfo;
+    accumAttachmentInfo.attachmentIndex = 2;
+    accumAttachmentInfo.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference accumAttachmentRef{};
+    accumAttachmentRef.attachment = 2;
+    accumAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference accumAttachmentInputRef{};
+    accumAttachmentInputRef.attachment = 2;
+    accumAttachmentInputRef.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    //color attachment 2 description/reference
+    
+    AttachmentDescriptionInfo revealageAttachmentInfo;
+    revealageAttachmentInfo.attachmentIndex = 3;
+    revealageAttachmentInfo.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference revealageAttachmentRef{};
+    revealageAttachmentRef.attachment = 3;
+    revealageAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference revealageAttachmentInputRef{};
+    revealageAttachmentInputRef.attachment = 3;
+    revealageAttachmentInputRef.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    //subpass descriptions
+    VkSubpassDescription firstSubpass {};
+    firstSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    firstSubpass.colorAttachmentCount = 1;
+    firstSubpass.pColorAttachments = &swapchainAttachmentRef;
+    firstSubpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    std::vector<VkAttachmentReference> secondSubpassAttachments = {accumAttachmentRef, revealageAttachmentRef};
+    VkSubpassDescription secondSubpass {};
+    secondSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    secondSubpass.colorAttachmentCount = secondSubpassAttachments.size();
+    secondSubpass.pColorAttachments = secondSubpassAttachments.data();
+    secondSubpass.pDepthStencilAttachment = &depthAttachmentRef;
+    
+    std::vector<VkAttachmentReference> thirdSubpassAttachments = {accumAttachmentInputRef, revealageAttachmentInputRef};
+    VkSubpassDescription thirdSubpass {};
+    thirdSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    thirdSubpass.inputAttachmentCount = thirdSubpassAttachments.size();
+    thirdSubpass.pInputAttachments = thirdSubpassAttachments.data();
+    thirdSubpass.colorAttachmentCount = 1;
+    thirdSubpass.pColorAttachments = &swapchainAttachmentRef;
+    thirdSubpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    VkSubpassDescription fourthSubpass = firstSubpass;
+
+    //subpass dependencies
+    VkSubpassDependency subpassDependencies[4] {};
+
+    subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpassDependencies[0].dstSubpass = 0;
+
+    subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+    subpassDependencies[0].srcAccessMask = 0;
+    subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    subpassDependencies[1].srcSubpass = 0;
+    subpassDependencies[1].dstSubpass = 1;
+
+    subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+    subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    subpassDependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    subpassDependencies[2].srcSubpass = 1;
+    subpassDependencies[2].dstSubpass = 2;
+
+    subpassDependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependencies[2].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    subpassDependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpassDependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    subpassDependencies[3].srcSubpass = 2;
+    subpassDependencies[3].dstSubpass = 3;
+
+    subpassDependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpassDependencies[3].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+    subpassDependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpassDependencies[3].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    swapchain->addAttachmentDescription(swapchainAttachmentInfo);
+    swapchain->addAttachmentDescription(depthAttachmentInfo);
+    swapchain->addAttachmentDescription(accumAttachmentInfo);
+    swapchain->addAttachmentDescription(revealageAttachmentInfo);
+
+    swapchain->addSubpassDescription(firstSubpass);
+    swapchain->addSubpassDescription(secondSubpass);
+    swapchain->addSubpassDescription(thirdSubpass);
+    swapchain->addSubpassDescription(fourthSubpass);
+
+    swapchain->addSubpassDependency(subpassDependencies[0]);
+    swapchain->addSubpassDependency(subpassDependencies[1]);
+    swapchain->addSubpassDependency(subpassDependencies[2]);
+    swapchain->addSubpassDependency(subpassDependencies[3]);
 
     vkEngine->setSwapchain(swapchain);
 
@@ -506,8 +633,8 @@ void VKRenderer::createUniformBuffers() {
         destroyUniformBuffers();
     }
 
-    blockUniformBuffers.resize(vkEngine->getSwapchain()->getInternalImages().size());
-    overlayUniformBuffers.resize(vkEngine->getSwapchain()->getInternalImages().size());
+    blockUniformBuffers.resize(vkEngine->getSwapchain()->getSwapchainImageCount());
+    overlayUniformBuffers.resize(vkEngine->getSwapchain()->getSwapchainImageCount());
 
 
     for (size_t i = 0; i < blockUniformBuffers.size(); i++) {
@@ -635,7 +762,7 @@ void VKRenderer::updateDescriptorSets() {
         createGraphicsPipelines();
     }
 
-    for (size_t i = 0; i < vkEngine->getSwapchain()->getInternalImages().size(); i++) {
+    for (size_t i = 0; i < vkEngine->getSwapchain()->getSwapchainImageCount(); i++) {
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = blockUniformBuffers.at(i).getUniformBuffer();
         bufferInfo.offset = 0;
@@ -752,11 +879,11 @@ void VKRenderer::updateDescriptorSets() {
 
         std::array<VkDescriptorImageInfo, 2> descriptors{};
         descriptors[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        descriptors[0].imageView = vkEngine->getSwapchain()->getColorFramebufferAttachments1()[i].imageView;
+        descriptors[0].imageView = vkEngine->getSwapchain()->getFramebufferAttachment(2)[i].imageView;
         descriptors[0].sampler = VK_NULL_HANDLE;
 
         descriptors[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        descriptors[1].imageView = vkEngine->getSwapchain()->getColorFramebufferAttachments2()[i].imageView;
+        descriptors[1].imageView = vkEngine->getSwapchain()->getFramebufferAttachment(3)[i].imageView;
         descriptors[1].sampler = VK_NULL_HANDLE;
 
         descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -892,9 +1019,9 @@ void VKRenderer::createGraphicsPipelines() {
 
     graphicsPipelineBlocks->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
 
-    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getSwapchainImageCount());
 
-    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+    graphicsPipelineBlocks->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getSwapchainImageCount());
     
     graphicsPipelineBlocks->setCanHaveDerivatives(true);
 
@@ -922,9 +1049,9 @@ void VKRenderer::createGraphicsPipelines() {
 
     graphicsPipelineOverlays->addDescriptorSetLayoutBinding(arrayOfTexturesLayoutBinding);
 
-    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getSwapchainImageCount());
 
-    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size() * MAX_OVERLAY_TEXTURES);
+    graphicsPipelineOverlays->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getSwapchainImageCount() * MAX_OVERLAY_TEXTURES);
 
     graphicsPipelineOverlays->setSubpassIndex(3);
 
@@ -941,9 +1068,9 @@ void VKRenderer::createGraphicsPipelines() {
 
     graphicsPipelineWireframe->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
 
-    graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+    graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getSwapchainImageCount());
 
-    graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+    graphicsPipelineWireframe->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getSwapchainImageCount());
 
     graphicsPipelineWireframe->setPolygonType(VK_POLYGON_MODE_LINE);
 
@@ -959,7 +1086,7 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassTwoPipeline->setFragmentShader("shaders/output/3dfrag_transparent_subpass2.spv");
     transparencySubpassTwoPipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
 
-    transparencySubpassTwoPipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
+    transparencySubpassTwoPipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getSwapchainImageCount());
     transparencySubpassTwoPipeline->setSubpassIndex(1);
     transparencySubpassTwoPipeline->setCullMode(VK_CULL_MODE_NONE);
     transparencySubpassTwoPipeline->setDepthTestAndWrite(true, false);
@@ -989,7 +1116,7 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassTwoPipeline->setColorBlendAttachment(attachments[0], 0);
     transparencySubpassTwoPipeline->setColorBlendAttachment(attachments[1], 1);
     transparencySubpassTwoPipeline->addDescriptorSetLayoutBinding(textureArrayLayoutBinding);
-    transparencySubpassTwoPipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getInternalImages().size());
+    transparencySubpassTwoPipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->getSwapchainImageCount());
 
     vkEngine->setGraphicsPipeline(transparencySubpassTwoPipeline, 3);
 
@@ -1003,9 +1130,9 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassThreePipeline->setFragmentShader("shaders/output/3dfrag_transparent_subpass3.spv");
     transparencySubpassThreePipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
 
-    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getInternalImages().size());
-    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getInternalImages().size());
-    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getInternalImages().size());
+    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getSwapchainImageCount());
+    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
+    transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
 
     //color attachment descriptor set layout binding
     VkDescriptorSetLayoutBinding colorLayoutBinding{};

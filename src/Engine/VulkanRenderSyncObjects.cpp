@@ -8,7 +8,7 @@ void VulkanRenderSyncObjects::create(std::shared_ptr<VulkanDevice> device, std::
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    imagesInFlight.resize(swapchain->getInternalImages().size(), VK_NULL_HANDLE);
+    imagesInFlight.resize(swapchain->getSwapchainImageCount(), VK_NULL_HANDLE);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;

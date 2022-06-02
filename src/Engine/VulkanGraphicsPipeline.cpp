@@ -191,21 +191,21 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
 
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = static_cast<uint32_t>(swapchain->getInternalImages().size());
+    poolInfo.maxSets = static_cast<uint32_t>(swapchain->getSwapchainImageCount());
     poolInfo.flags = descriptorPoolFlags;
 
     if (vkCreateDescriptorPool(device->getInternalLogicalDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
 
-    std::vector<VkDescriptorSetLayout> layouts(swapchain->getInternalImages().size(), descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(swapchain->getSwapchainImageCount(), descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchain->getInternalImages().size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchain->getSwapchainImageCount());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets.resize(swapchain->getInternalImages().size());
+    descriptorSets.resize(swapchain->getSwapchainImageCount());
     VkResult result = vkAllocateDescriptorSets(device->getInternalLogicalDevice(), &allocInfo, descriptorSets.data());
     if (result != VK_SUCCESS) {
         throw std::runtime_error(std::string("failed to allocate descriptor sets!\nerror: ") + std::to_string(result));

@@ -6,6 +6,7 @@
 #include "FramebufferAttachment.h"
 #include "FramebufferAttachmentInfo.h"
 #include <map>
+#include "AttachmentDescriptionInfo.h"
 
 class VulkanSwapchain {
 
@@ -26,13 +27,7 @@ class VulkanSwapchain {
 
         VkSwapchainKHR& getInternalSwapchain();
 
-        VkFormat& getInternalSwapchainFormat();
-
         VkExtent2D& getInternalExtent2D();
-
-        std::vector<VkImage>& getInternalImages();
-
-        std::vector<VkImageView>& getInternalImageViews();
 
         std::vector<VkFramebuffer>& getInternalFramebuffers();
 
@@ -40,17 +35,25 @@ class VulkanSwapchain {
 
         VkRenderPass& getInternalRenderPass();
 
-        FramebufferAttachment& getDepthFramebufferAttachment();
-
-        std::vector<FramebufferAttachment>& getColorFramebufferAttachments1();
-
-        std::vector<FramebufferAttachment>& getColorFramebufferAttachments2();
-
-        std::vector<FramebufferAttachment>& getFramebufferAttachment(std::string attachmentID);
+        std::vector<FramebufferAttachment>& getFramebufferAttachment(int index);
 
         void addFramebufferAttachmentInfo(FramebufferAttachmentInfo info);
 
+        const int getSwapchainAttachmentIndex() const;
+
+        std::vector<FramebufferAttachment>& getSwapchainAttachment();
+
+        int getSwapchainImageCount();
+
+        void addAttachmentDescription(AttachmentDescriptionInfo desc);
+
+        void addSubpassDescription(VkSubpassDescription desc);
+
+        void addSubpassDependency(VkSubpassDependency dependency);
+
     private:
+        std::vector<VkImageView> getAttachmentViewsInOrder(int index);
+
         void createSwapchainAndImages(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
 
         void createImageViews(std::shared_ptr<VulkanInstance> vkInstance, std::shared_ptr<VulkanDisplay> vkDisplay, std::shared_ptr<VulkanDevice> vkDevice);
@@ -60,8 +63,6 @@ class VulkanSwapchain {
         void createFramebuffers(std::shared_ptr<VulkanDevice> device);
 
         void createCommandBuffers(std::shared_ptr<VulkanDevice> device);
-
-        void createDepthResources(std::shared_ptr<VulkanDevice> device);
 
         void createUserDefinedAttachments(std::shared_ptr<VulkanDevice> device);
         
@@ -75,22 +76,11 @@ class VulkanSwapchain {
 
         VkSwapchainKHR swapchain;
 
-        VkFormat swapChainImageFormat;
-
         VkExtent2D swapChainExtent;
-
-        std::vector<VkImage> swapChainImages;
-
-        std::vector<VkImageView> swapChainImageViews;
 
         std::vector<VkFramebuffer> swapChainFramebuffers;
 
         std::vector<VkCommandBuffer> commandBuffers;
-
-        std::vector<FramebufferAttachment> colorAttachments1;
-        std::vector<FramebufferAttachment> colorAttachments2;
-
-        FramebufferAttachment depthAttachment;
 
         VkRenderPass renderPass;
         
@@ -103,9 +93,13 @@ class VulkanSwapchain {
         VkColorSpaceKHR preferredColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
         std::vector<FramebufferAttachmentInfo> userDefinedFramebufferInfo;
-        std::map<std::string, std::vector<FramebufferAttachment>> framebufferAttachments;
+        std::vector<std::vector<FramebufferAttachment>> framebufferAttachments;
 
         int swapchainImageCount = 0;
+
+        std::vector<AttachmentDescriptionInfo> attachmentDescriptionInfos;
+        std::vector<VkSubpassDescription> subpassDescriptions;
+        std::vector<VkSubpassDependency> subpassDependencies;
 };
 
 #endif
