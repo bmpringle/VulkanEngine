@@ -292,17 +292,31 @@ void TextureLoader::copyBufferToImageInLayers(VkBuffer buffer, VkImage image, ui
     VulkanEngine::endSingleTimeCommands(commandBuffer, device);
 }
 
-void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, bool* deleteOldTextureBool) {
+void expandBitmapChannels(TextBitmap* bitmap, glm::vec3 textColor) {
+    std::vector<unsigned char> expandedBitmap;
+    for(unsigned char c : bitmap->bitmap) {
+        expandedBitmap.push_back(textColor[0]);
+        expandedBitmap.push_back(textColor[1]);
+        expandedBitmap.push_back(textColor[2]);
+        expandedBitmap.push_back(c);
+    }
+    bitmap->bitmap = expandedBitmap;
+    bitmap->stride = bitmap->stride;
+    bitmap->rows = bitmap->rows;
+}
+
+void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, glm::vec3 textColor, bool* deleteOldTextureBool) {
     VkImage oldImage = texturePathToImage[textureID];
     VkImageView oldImageView = texturePathToImageView[textureID];
     VkDeviceMemory oldDeviceMemory = texturePathToDeviceMemory[textureID];
 
     TextBitmap bitmap = unitypeConverter.getTextFromString(text);
+    expandBitmapChannels(&bitmap, textColor);
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    VkDeviceSize imageSize = bitmap.rows * bitmap.stride;
+    VkDeviceSize imageSize = 4 * bitmap.rows * bitmap.stride;
 
     VulkanEngine::createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory, device);
 
@@ -314,12 +328,12 @@ void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std:
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
 
-    VulkanEngine::createImage(bitmap.stride, bitmap.rows, 1, VK_FORMAT_R8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory, device);
+    VulkanEngine::createImage(bitmap.stride, bitmap.rows, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory, device);
 
-    VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, 1);
+    VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, 1);
     VulkanEngine::copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(bitmap.stride), static_cast<uint32_t>(bitmap.rows), device);
-
-    VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device, 1);
+    
+    VulkanEngine::transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device, 1);
 
     vkDestroyBuffer(device->getInternalLogicalDevice(), stagingBuffer, nullptr);
     vkFreeMemory(device->getInternalLogicalDevice(), stagingBufferMemory, nullptr);
@@ -329,7 +343,7 @@ void TextureLoader::loadTextToTexture(std::shared_ptr<VulkanDevice> device, std:
 
     texturePathToImageDimensions[textureID] = std::make_pair(bitmap.stride, bitmap.rows);
 
-    createTextureImageView(device, textureID, VK_FORMAT_R8_SRGB);
+    createTextureImageView(device, textureID, VK_FORMAT_R8G8B8A8_SRGB);
 
     if(texturePathToImage.count(textureID) > 0) {
         imageViewDeleteThread->addObjectToDelete(oldImageView, deleteOldTextureBool);

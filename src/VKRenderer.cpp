@@ -965,16 +965,16 @@ void VKRenderer::addTexture(std::string id, std::string texturePath) {
     updateDescriptorSets();
 }
 
-void VKRenderer::addTextTexture(std::string id, std::string text) {
+void VKRenderer::addTextTexture(std::string id, std::string text, glm::vec3 color) {
     
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
         overlayTextures.push_back(id);
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
-        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
+        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, color, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }else {
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
-        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, canObjectBeDestroyedMap[mapCounter].second);
+        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, color, canObjectBeDestroyedMap[mapCounter].second);
         ++mapCounter;
     }
     

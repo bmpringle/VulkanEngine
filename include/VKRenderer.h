@@ -102,7 +102,7 @@ class VKRenderer {
 
         void addTexture(std::string id, std::string texturePath);
         
-        void addTextTexture(std::string id, std::string text);
+        void addTextTexture(std::string id, std::string text, glm::vec3 color = glm::vec3(255, 0, 0));
 
         void removeTexture(std::string id);
 

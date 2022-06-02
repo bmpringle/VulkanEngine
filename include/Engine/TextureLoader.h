@@ -17,6 +17,11 @@
 
 #include "DeleteThread/DeleteThread.h"
 
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+
 class TextureLoader {
     public:
         TextureLoader();
@@ -38,7 +43,7 @@ class TextureLoader {
 
         void loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, bool* deleteOldTextureBool);
 
-        void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, bool* deleteOldTextureBool);
+        void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, glm::vec3 textColor, bool* deleteOldTextureBool);
 
         void copyBufferToImageInLayers(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::shared_ptr<VulkanDevice> device, int numberOfLayers);
 
