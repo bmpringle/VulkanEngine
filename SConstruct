@@ -10,7 +10,7 @@ DBG = int(ARGUMENTS.get('DBG', 0))
 LIB_DBG = int(ARGUMENTS.get('LIB_DBG', 0))
 ARM = int(ARGUMENTS.get('ARM', 1))
 WARN = int(ARGUMENTS.get('WARN', 0))
-
+SANITIZE_MEM = int(ARGUMENTS.get('SANITIZE_MEM', 0))
 TEST = int(ARGUMENTS.get('TEST', 0))
 
 VALIDATION_LAYERS = int(ARGUMENTS.get('VALIDATION_LAYERS', 0))
@@ -30,7 +30,7 @@ if system() == "Windows":
 
 
 LIBS=['pthread', 'vulkan.1', 'vulkan.1.2.182', 'libMoltenVK.dylib']
-LINK='{} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX)
+LINK='{} {} -framework OpenGL -framework Cocoa -framework IOKit'.format(CXX, '-fsanitize=address' if SANITIZE_MEM == 1 else '')
 
 GLFW_INCLUDE=os.sep.join([GLFW_DIR,'include'])
 
@@ -42,7 +42,7 @@ OPT = 0 if DBG == 1 else 3
 
 env.Append(CPPPATH = ['include']) 
 
-CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -fPIC -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
+CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -fPIC -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} {}'.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '', '-fsanitize=address' if SANITIZE_MEM == 1 else '')
 
 LIBSSTATIC = Glob(os.sep.join(['lib', '*.a']))
 
