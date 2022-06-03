@@ -7,6 +7,7 @@
 #include "FramebufferAttachmentInfo.h"
 #include <map>
 #include "AttachmentDescriptionInfo.h"
+#include "SubpassInfo.h"
 
 class VulkanSwapchain {
 
@@ -47,7 +48,7 @@ class VulkanSwapchain {
 
         void addAttachmentDescription(AttachmentDescriptionInfo desc);
 
-        void addSubpassDescription(VkSubpassDescription desc);
+        void addSubpassDescription(std::shared_ptr<SubpassInfo> desc);
 
         void addSubpassDependency(VkSubpassDependency dependency);
 
@@ -98,7 +99,7 @@ class VulkanSwapchain {
         int swapchainImageCount = 0;
 
         std::vector<AttachmentDescriptionInfo> attachmentDescriptionInfos;
-        std::vector<VkSubpassDescription> subpassDescriptions;
+        std::vector<std::shared_ptr<SubpassInfo>> subpassDescriptionInfos;
         std::vector<VkSubpassDependency> subpassDependencies;
 };
 

@@ -113,30 +113,26 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
     revealageAttachmentInputRef.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     //subpass descriptions
-    VkSubpassDescription firstSubpass {};
-    firstSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    std::shared_ptr<SubpassInfo> firstSubpassInfo = std::make_shared<SubpassInfo>();
+    firstSubpassInfo->colorAttachments = {swapchainAttachmentRef};
+    firstSubpassInfo->depthAttachment = depthAttachmentRef;
+    firstSubpassInfo->populateDescription();
 
-    firstSubpass.colorAttachmentCount = 1;
-    firstSubpass.pColorAttachments = &swapchainAttachmentRef;
-    firstSubpass.pDepthStencilAttachment = &depthAttachmentRef;
+    std::shared_ptr<SubpassInfo> secondSubpassInfo = std::make_shared<SubpassInfo>();
+    secondSubpassInfo->colorAttachments = {accumAttachmentRef, revealageAttachmentRef};
+    secondSubpassInfo->depthAttachment = depthAttachmentRef;
+    secondSubpassInfo->populateDescription();
 
-    std::vector<VkAttachmentReference> secondSubpassAttachments = {accumAttachmentRef, revealageAttachmentRef};
-    VkSubpassDescription secondSubpass {};
-    secondSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    secondSubpass.colorAttachmentCount = secondSubpassAttachments.size();
-    secondSubpass.pColorAttachments = secondSubpassAttachments.data();
-    secondSubpass.pDepthStencilAttachment = &depthAttachmentRef;
-    
-    std::vector<VkAttachmentReference> thirdSubpassAttachments = {accumAttachmentInputRef, revealageAttachmentInputRef};
-    VkSubpassDescription thirdSubpass {};
-    thirdSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    thirdSubpass.inputAttachmentCount = thirdSubpassAttachments.size();
-    thirdSubpass.pInputAttachments = thirdSubpassAttachments.data();
-    thirdSubpass.colorAttachmentCount = 1;
-    thirdSubpass.pColorAttachments = &swapchainAttachmentRef;
-    thirdSubpass.pDepthStencilAttachment = &depthAttachmentRef;
+    std::shared_ptr<SubpassInfo> thirdSubpassInfo = std::make_shared<SubpassInfo>();
+    thirdSubpassInfo->inputAttachments = {accumAttachmentInputRef, revealageAttachmentInputRef};
+    thirdSubpassInfo->colorAttachments = {swapchainAttachmentRef};
+    thirdSubpassInfo->depthAttachment = depthAttachmentRef;
+    thirdSubpassInfo->populateDescription();
 
-    VkSubpassDescription fourthSubpass = firstSubpass;
+    std::shared_ptr<SubpassInfo> fourthSubpassInfo = std::make_shared<SubpassInfo>();
+    fourthSubpassInfo->colorAttachments = {swapchainAttachmentRef};
+    fourthSubpassInfo->depthAttachment = depthAttachmentRef;
+    fourthSubpassInfo->populateDescription();
 
     //subpass dependencies
     VkSubpassDependency subpassDependencies[4] {};
@@ -182,10 +178,10 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
     swapchain->addAttachmentDescription(accumAttachmentInfo);
     swapchain->addAttachmentDescription(revealageAttachmentInfo);
 
-    swapchain->addSubpassDescription(firstSubpass);
-    swapchain->addSubpassDescription(secondSubpass);
-    swapchain->addSubpassDescription(thirdSubpass);
-    swapchain->addSubpassDescription(fourthSubpass);
+    swapchain->addSubpassDescription(firstSubpassInfo);
+    swapchain->addSubpassDescription(secondSubpassInfo);
+    swapchain->addSubpassDescription(thirdSubpassInfo);
+    swapchain->addSubpassDescription(fourthSubpassInfo);
 
     swapchain->addSubpassDependency(subpassDependencies[0]);
     swapchain->addSubpassDependency(subpassDependencies[1]);

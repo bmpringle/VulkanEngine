@@ -140,7 +140,13 @@ void VulkanSwapchain::createRenderpass(std::shared_ptr<VulkanInstance> vkInstanc
         attachmentDescriptions.push_back(desc);
         desc.flags = 0;
     }
-    
+
+    std::vector<VkSubpassDescription> subpassDescriptions;
+
+    for(auto info : subpassDescriptionInfos) { 
+        subpassDescriptions.push_back(info->desc);
+    }
+
     //render pass info
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -380,8 +386,8 @@ void VulkanSwapchain::addAttachmentDescription(AttachmentDescriptionInfo desc) {
     attachmentDescriptionInfos.push_back(desc);
 }
 
-void VulkanSwapchain::addSubpassDescription(VkSubpassDescription desc) {
-    subpassDescriptions.push_back(desc);
+void VulkanSwapchain::addSubpassDescription(std::shared_ptr<SubpassInfo> desc) {
+    subpassDescriptionInfos.push_back(desc);
 }
 
 void VulkanSwapchain::addSubpassDependency(VkSubpassDependency dependency) {
