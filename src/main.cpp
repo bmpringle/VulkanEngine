@@ -10,89 +10,6 @@
 
 #include <glm/gtx/string_cast.hpp>
 
-//-1 means it hasn't been set yet
-double previousMouseX = -1;
-double previousMouseY = -1;
-
-float sensitivity = 0.1;
-
-float xDelta = 0;
-float yDelta = 0;
-
-void glfwMouseCallback(GLFWwindow* window, double mouseX, double mouseY) {
-  if(previousMouseX != -1) {
-    xDelta = (previousMouseX - mouseX) * sensitivity;
-  }
-  previousMouseX = mouseX;
-
-  if(previousMouseY != -1) {
-    yDelta = (previousMouseY - mouseY) * sensitivity;
-  }
-  previousMouseY = mouseY;
-}
-
-bool w_pressed = false;
-bool a_pressed = false;
-bool s_pressed = false;
-bool d_pressed = false;
-bool up_key_pressed = false;
-bool down_key_pressed = false;
-bool g_key_pressed = false;
-bool l_key_pressed = false;
-bool z_key_pressed = false;
-bool esc_key_pressed = false;
-
-bool flag = false;
-bool flag1 = false;
-
-void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-  if(action == GLFW_PRESS) {
-    if(key == GLFW_KEY_W) {
-      w_pressed = true;
-    }else if(key == GLFW_KEY_A) {
-      a_pressed = true;
-    }else if(key == GLFW_KEY_S) {
-      s_pressed = true;
-    }else if(key == GLFW_KEY_D) {
-      d_pressed = true;
-    }else if(key == GLFW_KEY_UP) {
-      up_key_pressed = true;
-    }else if(key == GLFW_KEY_DOWN) {
-      down_key_pressed = true;
-    }else if(key == GLFW_KEY_G) {
-      g_key_pressed = true;
-    }else if(key == GLFW_KEY_L) {
-      l_key_pressed = true;
-    }else if(key == GLFW_KEY_Z) {
-      z_key_pressed = true;
-    }else if(key == GLFW_KEY_ESCAPE) {
-      esc_key_pressed = true;
-    }
-  }else if(action == GLFW_RELEASE) {
-    if(key == GLFW_KEY_W) {
-      w_pressed = false;
-    }else if(key == GLFW_KEY_A) {
-      a_pressed = false;
-    }else if(key == GLFW_KEY_S) {
-      s_pressed = false;
-    }else if(key == GLFW_KEY_D) {
-      d_pressed = false;
-    }else if(key == GLFW_KEY_UP) {
-      up_key_pressed = false;
-    }else if(key == GLFW_KEY_DOWN) {
-      down_key_pressed = false;
-    }else if(key == GLFW_KEY_G) {
-      g_key_pressed = false;
-    }else if(key == GLFW_KEY_L) {
-      l_key_pressed = false;
-    }else if(key == GLFW_KEY_Z) {
-      z_key_pressed = false;
-    }else if(key == GLFW_KEY_ESCAPE) {
-      esc_key_pressed = false;
-    }
-  }
-}
-
 static std::vector<Vertex> triangle = {
     {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
     {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -236,7 +153,98 @@ float testChangingOverlayY = 100;
 glm::vec4 testChangingClearColor = glm::vec4(0, 0, 0, 1);
 
 int main() {
+  //define variables
+  double previousMouseX = -1; //-1 means it hasn't been set yet
+  double previousMouseY = -1; //-1 means it hasn't been set yet
+
+  float sensitivity = 0.1;
+
+  float xDelta = 0;
+  float yDelta = 0;
+
+  bool w_pressed = false;
+  bool a_pressed = false;
+  bool s_pressed = false;
+  bool d_pressed = false;
+  bool up_key_pressed = false;
+  bool down_key_pressed = false;
+  bool g_key_pressed = false;
+  bool l_key_pressed = false;
+  bool z_key_pressed = false;
+  bool esc_key_pressed = false;
+
+  bool flag = false;
+  bool flag1 = false;
+
+  //init renderer
   VKRenderer renderer = VKRenderer();
+
+  //setup input callbacks
+  std::function<void(GLFWwindow*, double, double)> mouseCallback = [&](GLFWwindow* window, double mouseX, double mouseY) {
+    if(previousMouseX != -1) {
+      xDelta = (previousMouseX - mouseX) * sensitivity;
+    }
+    previousMouseX = mouseX;
+
+    if(previousMouseY != -1) {
+      yDelta = (previousMouseY - mouseY) * sensitivity;
+    }
+    previousMouseY = mouseY;
+  };
+
+  renderer.getEngine()->getDisplay()->setCursorPosCallback(mouseCallback);
+
+  std::function<void(GLFWwindow*, int, int, int, int)> keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if(action == GLFW_PRESS) {
+      if(key == GLFW_KEY_W) {
+        w_pressed = true;
+      }else if(key == GLFW_KEY_A) {
+        a_pressed = true;
+      }else if(key == GLFW_KEY_S) {
+        s_pressed = true;
+      }else if(key == GLFW_KEY_D) {
+        d_pressed = true;
+      }else if(key == GLFW_KEY_UP) {
+        up_key_pressed = true;
+      }else if(key == GLFW_KEY_DOWN) {
+        down_key_pressed = true;
+      }else if(key == GLFW_KEY_G) {
+        g_key_pressed = true;
+      }else if(key == GLFW_KEY_L) {
+        l_key_pressed = true;
+      }else if(key == GLFW_KEY_Z) {
+        z_key_pressed = true;
+      }else if(key == GLFW_KEY_ESCAPE) {
+        esc_key_pressed = true;
+      }
+    }else if(action == GLFW_RELEASE) {
+      if(key == GLFW_KEY_W) {
+        w_pressed = false;
+      }else if(key == GLFW_KEY_A) {
+        a_pressed = false;
+      }else if(key == GLFW_KEY_S) {
+        s_pressed = false;
+      }else if(key == GLFW_KEY_D) {
+        d_pressed = false;
+      }else if(key == GLFW_KEY_UP) {
+        up_key_pressed = false;
+      }else if(key == GLFW_KEY_DOWN) {
+        down_key_pressed = false;
+      }else if(key == GLFW_KEY_G) {
+        g_key_pressed = false;
+      }else if(key == GLFW_KEY_L) {
+        l_key_pressed = false;
+      }else if(key == GLFW_KEY_Z) {
+        z_key_pressed = false;
+      }else if(key == GLFW_KEY_ESCAPE) {
+        esc_key_pressed = false;
+      }
+    }
+  };
+
+  renderer.getEngine()->getDisplay()->setKeyCallback(keyCallback);
+
+  //setup rendering
 
   renderer.addTexture("test", "assets/test.jpg");
   renderer.addTexture("cube-cube", "assets/cube-cube.png");
@@ -260,10 +268,6 @@ int main() {
 
   renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass.png"});
   renderer.setCurrentTextureArray("game-textures");
-
-  //setup callbacks
-  glfwSetCursorPosCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwMouseCallback);
-  glfwSetKeyCallback(renderer.getEngine()->getDisplay()->getInternalWindow(), glfwKeyCallback);
 
   std::vector<Vertex> cube2 = cube;
 

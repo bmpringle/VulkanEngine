@@ -23,6 +23,26 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
     display->setFramebufferResized(true);
 }
 
+static void cursorPosCallback(GLFWwindow* window, double x, double y) {
+    auto display = reinterpret_cast<VulkanDisplay*>(glfwGetWindowUserPointer(window));
+    display->handleCursorPosCallback(window, x, y);
+}
+
+static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    auto display = reinterpret_cast<VulkanDisplay*>(glfwGetWindowUserPointer(window));
+    display->handleKeyCallback(window, key, scancode, action, mods);
+}
+
+static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    auto display = reinterpret_cast<VulkanDisplay*>(glfwGetWindowUserPointer(window));
+    display->handleMouseButtonCallback(window, button, action, mods);
+}
+
+static void scrollCallback(GLFWwindow* window, double x, double y) {
+    auto display = reinterpret_cast<VulkanDisplay*>(glfwGetWindowUserPointer(window));
+    display->handleScrollCallback(window, x, y);
+}
+
 void VulkanDisplay::create(std::shared_ptr<VulkanInstance> instance) {
     window = glfwCreateWindow(width, height, windowName.data(), monitor, nullptr);
 
@@ -30,6 +50,10 @@ void VulkanDisplay::create(std::shared_ptr<VulkanInstance> instance) {
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    glfwSetKeyCallback(window, keyCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetCursorPosCallback(window, cursorPosCallback);
+    glfwSetScrollCallback(window, scrollCallback);
 
     if(glfwCreateWindowSurface(instance->getInternalInstance(), window, nullptr, &surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
@@ -63,4 +87,36 @@ void VulkanDisplay::setFramebufferResized(bool resized) {
 
 bool VulkanDisplay::getFramebufferResized() {
     return framebufferResized;
+}
+
+void VulkanDisplay::setKeyCallback(std::function<void(GLFWwindow*, int, int, int, int)> callback) {
+    keyCallbackFunc = callback;
+}
+
+void VulkanDisplay::setCursorPosCallback(std::function<void(GLFWwindow*, double, double)> callback) {
+    cursorPosCallbackFunc = callback;
+}
+
+void VulkanDisplay::setMouseButtonCallback(std::function<void(GLFWwindow*, int, int, int)> callback) {
+    mouseButtonCallbackFunc = callback;
+}
+
+void VulkanDisplay::setScrollCallback(std::function<void(GLFWwindow*, double, double)> callback) {
+    scrollCallbackFunc = callback;
+}
+
+void VulkanDisplay::handleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    keyCallbackFunc(window, key, scancode, action, mods);
+}
+
+void VulkanDisplay::handleCursorPosCallback(GLFWwindow* window, double x, double y) {
+    cursorPosCallbackFunc(window, x, y);
+}
+
+void VulkanDisplay::handleMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    mouseButtonCallbackFunc(window, button, action, mods);
+}
+
+void VulkanDisplay::handleScrollCallback(GLFWwindow* window, double x, double y) {
+    scrollCallbackFunc(window, x, y);
 }

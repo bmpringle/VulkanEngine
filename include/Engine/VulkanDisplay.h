@@ -4,6 +4,7 @@
 #include "VulkanInclude.h"
 #include "VulkanInstance.h"
 #include <string>
+#include <functional>
 
 class VulkanDisplay {
     public:
@@ -29,6 +30,22 @@ class VulkanDisplay {
 
         bool getFramebufferResized();
 
+        void setKeyCallback(std::function<void(GLFWwindow*, int, int, int, int)> callback);
+
+        void setCursorPosCallback(std::function<void(GLFWwindow*, double, double)> callback);
+
+        void setMouseButtonCallback(std::function<void(GLFWwindow*, int, int, int)> callback);
+
+        void setScrollCallback(std::function<void(GLFWwindow*, double, double)> callback);
+
+        void handleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+        void handleCursorPosCallback(GLFWwindow* window, double x, double y);
+
+        void handleMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+
+        void handleScrollCallback(GLFWwindow* window, double x, double y);
+
     private:
         GLFWwindow* window;
         VkSurfaceKHR surface;
@@ -43,6 +60,22 @@ class VulkanDisplay {
         unsigned int height = 600;
 
         bool framebufferResized = false;
+
+        std::function<void(GLFWwindow*, int, int, int, int)> keyCallbackFunc = [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+        };
+
+        std::function<void(GLFWwindow*, double, double)> cursorPosCallbackFunc = [](GLFWwindow* window, double x, double y) {
+
+        };
+
+        std::function<void(GLFWwindow*, int, int, int)> mouseButtonCallbackFunc = [](GLFWwindow* window, int button, int action, int mods) {
+
+        };
+
+        std::function<void(GLFWwindow*, double, double)> scrollCallbackFunc = [](GLFWwindow* window, double x, double y) {
+
+        };
 };
 
 #endif
