@@ -1129,6 +1129,7 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, swapchain->getSwapchainImageCount());
     transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
     transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
+    transparencySubpassThreePipeline->setCullMode(VK_CULL_MODE_NONE);
 
     //color attachment descriptor set layout binding
     VkDescriptorSetLayoutBinding colorLayoutBinding{};
@@ -1151,6 +1152,8 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassThreePipeline->setDepthTestAndWrite(true, false);
 
     vkEngine->setGraphicsPipeline(transparencySubpassThreePipeline, 4);
+
+    //transparency 1st subpass pipeline
 
     std::shared_ptr<VulkanGraphicsPipeline> graphicsPipelineTransparentOpaque = std::make_shared<VulkanGraphicsPipeline>(*graphicsPipelineBlocks);
 
