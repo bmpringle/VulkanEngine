@@ -266,7 +266,7 @@ int main() {
   renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\nafter lots of descriptors!");
 
-  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass.png"});
+  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass.png", "assets/water.png"});
   renderer.setCurrentTextureArray("game-textures");
 
   std::vector<Vertex> cube2 = cube;
@@ -338,13 +338,33 @@ int main() {
 
   renderer.setModel("translucentcube1", {/*opaque vertices*/}, transparent_cube);
 
+  tex_id = renderer.getTextureArrayID("game-textures", "assets/water.png");
+
+  for(TransparentVertex& v : transparent_cube) {
+    v.texCoord[2] = tex_id;
+  }
+
+  renderer.setModel("translucentcube2", {/*opaque vertices*/}, transparent_cube);
+
   std::vector<InstanceData> translucentData = {
     InstanceData({{-1, 0, -2}}), InstanceData({{-1, 0, -3}}), InstanceData({{-1, 0, -4}}), InstanceData({{-1, 0, -5}}),
     InstanceData({{-2, 0, -2}}), InstanceData({{-2, 0, -3}}), InstanceData({{-2, 0, -4}}), InstanceData({{-2, 0, -5}}),
     InstanceData({{-3, 0, -2}}), InstanceData({{-3, 0, -3}}), InstanceData({{-3, 0, -4}}), InstanceData({{-3, 0, -5}})
   };
 
+  std::vector<InstanceData> translucentData2;
+
+  for(int i = 0; i < 10; ++i) {
+    for(int j = 0; j < 10; ++j) {
+      for(int k = 0; k < 10; ++k) {
+        translucentData2.push_back(InstanceData({{-10 - i, 5 - j, -10 - k}}));
+      }
+    }
+  }
+
   renderer.addInstancesToModel("translucentcube1", "set1", translucentData);
+
+  renderer.addInstancesToModel("translucentcube2", "set1", translucentData2);
 
   renderer.addInstancesToModel("block1", "set1", instanceDataCube);
 
