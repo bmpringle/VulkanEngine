@@ -42,6 +42,8 @@ class VKRenderer {
 
         void setClearColor(glm::vec4 rgba);
 
+        void setScreenTint(glm::vec3 tint);
+
         //for 3d rendering (opaque / transparent)
 
         void setModel(std::string modelID, std::vector<Vertex> modelVerticesOpaque = {}, std::vector<TransparentVertex> modelVerticesTransparent = {});
@@ -191,6 +193,8 @@ class VKRenderer {
         float far = 100.0f;
 
         VkPrimitiveTopology wireframeTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+        glm::vec3 screenTint = glm::vec3(1, 1, 1);
 };
 
 #endif

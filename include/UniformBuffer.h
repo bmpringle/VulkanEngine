@@ -9,7 +9,8 @@ struct UniformBuffer {
     alignas(16) glm::mat4x4 modelMatrix;
     alignas(16) glm::mat4x4 viewMatrix;
     alignas(16) glm::mat4x4 projectionMatrix;
-
+    alignas(16) glm::vec3 tint;
+    
     static VkDescriptorSetLayoutBinding getDescriptorSetLayout() {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;

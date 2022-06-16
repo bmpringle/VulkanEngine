@@ -729,6 +729,7 @@ void VKRenderer::updateUniformBuffer(uint32_t imageIndex) {
     }
 
     ubo.viewMatrix = createViewMatrix(camera, xRotation, yRotation);
+    ubo.tint = screenTint;
 
     /*glm::vec3 direction;
     direction.x = cos(glm::radians(xRotation)) * cos(glm::radians(yRotation));
@@ -1430,4 +1431,8 @@ bool VKRenderer::hasModel(std::string id) {
 
 bool VKRenderer::hasInstanceInModel(std::string modelID, std::string instanceVectorID) {
     return idToInstancedModels.at(modelID).hasInstanceSet(instanceVectorID) || idToTransparentInstancedModels.at(modelID).hasInstanceSet(instanceVectorID);
+}
+
+void VKRenderer::setScreenTint(glm::vec3 tint) {
+    screenTint = tint;
 }

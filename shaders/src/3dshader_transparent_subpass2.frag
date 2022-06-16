@@ -9,7 +9,7 @@ layout(location = 1) out float revealage;
 layout(binding = 1) uniform sampler2DArray texSampler;
 
 void main() {
-    vec4 texColor = texture(texSampler, vec3(fragTexCoord.x, 1-fragTexCoord.y, fragTexCoord.z));
+    vec4 texColor = texture(texSampler, vec3(fragTexCoord.x, 1-fragTexCoord.y, fragTexCoord.z)) * fragColor;
 
     if(texColor.a == 1) {
         discard;
