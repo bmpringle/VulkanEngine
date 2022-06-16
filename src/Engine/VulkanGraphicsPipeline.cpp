@@ -139,7 +139,7 @@ void VulkanGraphicsPipeline::create(std::shared_ptr<VulkanDevice> device, std::s
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = depthTesting;
     depthStencil.depthWriteEnable = depthWriting;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthCompareOp = depthCompareOperation;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.minDepthBounds = 0.0f; // Optional
     depthStencil.maxDepthBounds = 1.0f; // Optional
@@ -354,4 +354,8 @@ void VulkanGraphicsPipeline::setCullMode(VkCullModeFlags mode) {
 void VulkanGraphicsPipeline::setDepthTestAndWrite(bool test, bool write) {
     depthTesting = test;
     depthWriting = write;
+}
+
+void VulkanGraphicsPipeline::setDepthCompareOP(VkCompareOp op) {
+    depthCompareOperation = op;
 }

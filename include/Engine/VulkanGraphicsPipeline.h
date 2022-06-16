@@ -64,6 +64,8 @@ class VulkanGraphicsPipeline {
 
         void setDepthTestAndWrite(bool test, bool write);
 
+        void setDepthCompareOP(VkCompareOp op);
+
     private:
         std::vector<char> readFile(const std::string& filename);
 
@@ -143,6 +145,8 @@ class VulkanGraphicsPipeline {
         std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
 
         VkCullModeFlags cullMode = VK_CULL_MODE_FRONT_BIT;
+
+        VkCompareOp depthCompareOperation = VK_COMPARE_OP_LESS;
 
         bool depthTesting = true;
         bool depthWriting = true;

@@ -1086,6 +1086,7 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassTwoPipeline->setSubpassIndex(1);
     transparencySubpassTwoPipeline->setCullMode(VK_CULL_MODE_NONE);
     transparencySubpassTwoPipeline->setDepthTestAndWrite(true, false);
+    transparencySubpassTwoPipeline->setDepthCompareOP(VK_COMPARE_OP_LESS_OR_EQUAL); //in a depth tie, transparent pixels should be blended
 
     VkPipelineColorBlendAttachmentState attachments[2] {};
 
@@ -1130,6 +1131,7 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
     transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
     transparencySubpassThreePipeline->setCullMode(VK_CULL_MODE_NONE);
+    transparencySubpassThreePipeline->setDepthCompareOP(VK_COMPARE_OP_LESS_OR_EQUAL); //in a depth tie, transparent pixels should be blended
 
     //color attachment descriptor set layout binding
     VkDescriptorSetLayoutBinding colorLayoutBinding{};
