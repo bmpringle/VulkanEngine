@@ -198,9 +198,19 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
 
     std::shared_ptr<TextureLoader> textureLoader = vkEngine->getTextureLoader();
 
+    std::array<bool*, 3> deleteBooleans = std::array<bool*, 3>();
     canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
-    textureLoader->loadTexture(vkEngine->getDevice(), "missing_texture", "assets/missing_texture.png", canObjectBeDestroyedMap[mapCounter].second);
+    deleteBooleans[0] = canObjectBeDestroyedMap[mapCounter].second;
     ++mapCounter;
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+    deleteBooleans[1] = canObjectBeDestroyedMap[mapCounter].second;
+    ++mapCounter;
+    canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+    deleteBooleans[2] = canObjectBeDestroyedMap[mapCounter].second;
+    ++mapCounter;
+
+    textureLoader->loadTexture(vkEngine->getDevice(), "missing_texture", "assets/missing_texture.png", deleteBooleans);
+    
 
     loadTextureArray("default", {missingTexture, missingTexture});
 
@@ -568,12 +578,15 @@ void VKRenderer::renderFrame() {
 
     //start delete-thread sync code
 
-    std::mutex* accessMutex = vkEngine->getTextureLoader()->getImageDeleteThreadAccessMutex();
+    auto textureAccessMutexes = vkEngine->getTextureLoader()->getDeleteThreadAccessMutexes();
+    
     auto vertexBufferMutexes = VulkanVertexBuffer<Vertex>::getDeleteFunctionMutexes();
     auto wireframeVertexBufferMutexes = VulkanVertexBuffer<WireframeVertex>::getDeleteFunctionMutexes();
     auto overlayVertexBufferMutexes = VulkanVertexBuffer<OverlayVertex>::getDeleteFunctionMutexes();
 
-    accessMutex->lock();
+    std::get<0>(textureAccessMutexes)->lock();
+    std::get<1>(textureAccessMutexes)->lock();
+    std::get<2>(textureAccessMutexes)->lock();
     vertexBufferMutexes.first->lock();
     wireframeVertexBufferMutexes.first->lock();
     overlayVertexBufferMutexes.first->lock();
@@ -603,7 +616,9 @@ void VKRenderer::renderFrame() {
         }
     }
 
-    accessMutex->unlock();
+    std::get<0>(textureAccessMutexes)->unlock();
+    std::get<1>(textureAccessMutexes)->unlock();
+    std::get<2>(textureAccessMutexes)->unlock();
     vertexBufferMutexes.first->unlock();
     wireframeVertexBufferMutexes.first->unlock();
     overlayVertexBufferMutexes.first->unlock();
@@ -950,13 +965,32 @@ void VKRenderer::addTexture(std::string id, std::string texturePath) {
 
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
         overlayTextures.push_back(id);
+        
+        std::array<bool*, 3> deleteBooleans = std::array<bool*, 3>();
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
-        vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, canObjectBeDestroyedMap[mapCounter].second);
+        deleteBooleans[0] = canObjectBeDestroyedMap[mapCounter].second;
         ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+        deleteBooleans[1] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+        deleteBooleans[2] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+
+        vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, deleteBooleans);
     }else {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
-        vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, canObjectBeDestroyedMap[mapCounter].second);
+        std::array<bool*, 3> deleteBooleans = std::array<bool*, 3>();
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[0] = canObjectBeDestroyedMap[mapCounter].second;
         ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[1] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[2] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+
+        vkEngine->getTextureLoader()->loadTexture(vkEngine->getDevice(), id, texturePath, deleteBooleans);
     }
 
     updateDescriptorSets();
@@ -966,13 +1000,32 @@ void VKRenderer::addTextTexture(std::string id, std::string text, glm::vec3 colo
     
     if(std::find(overlayTextures.begin(), overlayTextures.end(), id) == overlayTextures.end()) {
         overlayTextures.push_back(id);
+        
+        std::array<bool*, 3> deleteBooleans = std::array<bool*, 3>();
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
-        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, color, canObjectBeDestroyedMap[mapCounter].second);
+        deleteBooleans[0] = canObjectBeDestroyedMap[mapCounter].second;
         ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+        deleteBooleans[1] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+        deleteBooleans[2] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+
+        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, color, deleteBooleans);
     }else {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
-        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, color, canObjectBeDestroyedMap[mapCounter].second);
+        std::array<bool*, 3> deleteBooleans = std::array<bool*, 3>();
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[0] = canObjectBeDestroyedMap[mapCounter].second;
         ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[1] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[2] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+
+        vkEngine->getTextureLoader()->loadTextToTexture(vkEngine->getDevice(), id, text, color, deleteBooleans);
     }
     
     updateDescriptorSets();
@@ -1188,13 +1241,31 @@ void VKRenderer::loadTextureArray(std::string id, std::vector<std::string> textu
     }   
 
     if(texureArrayTexturesToIDs.count(id) == 0) {
+        std::array<bool*, 3> deleteBooleans = std::array<bool*, 3>();
         canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
-        vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, canObjectBeDestroyedMap[mapCounter].second);
+        deleteBooleans[0] = canObjectBeDestroyedMap[mapCounter].second;
         ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+        deleteBooleans[1] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(true));
+        deleteBooleans[2] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+
+        vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, deleteBooleans);
     }else {
-        canObjectBeDestroyedMap[mapCounter] = std::make_pair(getCopyOfFFVWithExtraFrame(), new bool(false));
-        vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, canObjectBeDestroyedMap[mapCounter].second);
+        std::array<bool*, 3> deleteBooleans = std::array<bool*, 3>();
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[0] = canObjectBeDestroyedMap[mapCounter].second;
         ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[1] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+        canObjectBeDestroyedMap[mapCounter] = std::make_pair(std::vector<int>(), new bool(false));
+        deleteBooleans[2] = canObjectBeDestroyedMap[mapCounter].second;
+        ++mapCounter;
+
+        vkEngine->getTextureLoader()->loadTextureArray(vkEngine->getDevice(), textures, id, deleteBooleans);
     }
 
     texureArrayTexturesToIDs[id] = texturesToIDs;

@@ -17,6 +17,7 @@
 
 #include "DeleteThread/DeleteThread.h"
 
+#include <tuple>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -39,22 +40,22 @@ class TextureLoader {
 
         VkSampler getTextureSampler();
 
-        void loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName, bool* deleteOldTextureBool);
+        void loadTextureArray(std::shared_ptr<VulkanDevice> device, std::vector<std::string> texturePaths, std::string arrayName, std::array<bool*, 3> deleteOldTextureBool);
 
-        void loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, bool* deleteOldTextureBool);
+        void loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, std::array<bool*, 3> deleteOldTextureBool);
 
-        void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, glm::vec3 textColor, bool* deleteOldTextureBool);
+        void loadTextToTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string text, glm::vec3 textColor, std::array<bool*, 3> deleteOldTextureBool);
 
         void copyBufferToImageInLayers(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::shared_ptr<VulkanDevice> device, int numberOfLayers);
 
-        std::mutex* getImageDeleteThreadAccessMutex();
+        std::tuple<std::mutex*, std::mutex*, std::mutex*> getDeleteThreadAccessMutexes();
 
         std::pair<unsigned int, unsigned int> getTextureDimensions(std::string id);
 
         std::pair<unsigned int, unsigned int> getTextureArrayDimensions(std::string id);
 
     private:
-        void createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, bool* deleteOldTextureBool);
+        void createTextureImage(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, std::array<bool*, 3> deleteOldTextureBool);
 
         void createTextureImageView(std::shared_ptr<VulkanDevice> device, std::string textureID, VkFormat format);
 
