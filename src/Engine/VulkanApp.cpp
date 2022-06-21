@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <set>
+#include <algorithm>
 
 VulkanApp::VulkanApp() : validationLayers({
     "VK_LAYER_KHRONOS_validation", //standard khronos validation

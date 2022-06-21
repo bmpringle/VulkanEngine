@@ -20,6 +20,8 @@ if system() == "Linux" or system() == "Darwin":
     output, error = execCmd('python3 compileDeps.py PIC=ON', cwdOverride = './StringToText/')
     output, error = execCmd('make library-POC -j8', cwdOverride = './StringToText/')
     output, error = execCmd('cp -a ./lib/. ../lib/', cwdOverride = './StringToText/')
+
+    output, error = execCmd('pip install scons-compiledb')
 elif system() == "Windows":
     print("unsupported at this time")
     exit()
@@ -41,7 +43,7 @@ if system() == "Darwin":
     print("Install Vulkan SDK to ./VulkanSDKMacOS")
 
     output, error = execCmd("open InstallVulkan.app")
-elif system() == "Linx":
+elif system() == "Linux":
     output, error = execCmd("wget {}".format(LINUX_VULKANSDK))
     output, error = execCmd("tar -xvzf {} -C {}".format(LINUX_VULKANSDK, "./VulkanSDKLinux"))
 elif system() == "Windows":
@@ -52,4 +54,5 @@ elif system() == "Windows":
     output, error = execCmd("WindowsInstallSDK.exe")
 else:
     print("auto-install of vulkan sdk unsupported at this moment for platforms other than MacOS/Linux/Windows")
+    print("\tyour system is: " + system())
     exit()

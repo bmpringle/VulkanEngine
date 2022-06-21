@@ -10,6 +10,8 @@
 #include <vector>
 #include <set>
 
+#include <memory>
+
 class VulkanDevice {
     public:
         VulkanDevice();

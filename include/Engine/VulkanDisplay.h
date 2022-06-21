@@ -6,6 +6,8 @@
 #include <string>
 #include <functional>
 
+#include <memory>
+
 class VulkanDisplay {
     public:
         VulkanDisplay();
