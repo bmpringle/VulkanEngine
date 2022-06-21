@@ -26,10 +26,10 @@ elif system() == "Windows":
 
 output, error = execCmd('mkdir -p shaders/output')
 
-MACOS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/mac/vulkansdk-macos-1.2.198.1.dmg"
-MACOS_DMGNAME= "vulkansdk-macos-1.2.198.1.dmg"
-LINUX_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/linux/vulkansdk-linux-x86_64-1.2.198.1.tar.gz"
-WINDOWS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.2.198.1/windows/VulkanSDK-1.2.198.1-Installer.exe"
+MACOS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.3.216.0/mac/vulkansdk-macos-1.3.216.0.dmg"
+MACOS_DMGNAME= "vulkansdk-macos-1.3.216.0.dmg"
+LINUX_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.3.216.0/linux/vulkansdk-linux-x86_64-1.3.216.0.tar.gz"
+WINDOWS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.3.216.0/windows/VulkanSDK-1.3.216.0-Installer.exe"
 
 if system() == "Darwin":
     output, error = execCmd("wget {}".format(MACOS_VULKANSDK))
