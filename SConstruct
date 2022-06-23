@@ -36,7 +36,7 @@ MVK_INCLUDE='.'
 
 if system() == 'Darwin':
     LIBS = [['pthread', 'vulkan', 'libMoltenVK.dylib']]
-    LINK = '{} {} -framework OpenGL -framework Cocoa -framework IOKit -L {}'.format(CXX, '-fsanitize=address' if SANITIZE_MEM == 1 else '', os.sep.join([VULKAN_HOME, 'lib']))
+    LINK = '{} {} -framework OpenGL -framework Cocoa -framework IOKit -L {}'.format(CXX, '-fsanitize=address' if SANITIZE_MEM == 1 else '', os.sep.join([VULKAN_HOME, 'macOS/lib']))
     VULKAN_INCLUDE=os.sep.join([VULKAN_HOME, 'macOS/include'])
     MVK_INCLUDE=os.sep.join([VULKAN_HOME, 'MoltenVK/include'])
 elif system() == 'Linux':
@@ -72,7 +72,7 @@ CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -Wal
 LIBS = ['VulkanEngineLib']
 
 if system() == 'Darwin':
-    LINK='{} -framework OpenGL -framework Cocoa -framework IOKit -L {} -L {}'.format(CXX, './lib/{}/'.format(BLD), os.sep.join([VULKAN_HOME, 'lib']))
+    LINK='{} -framework OpenGL -framework Cocoa -framework IOKit -L {} -L {}'.format(CXX, './lib/{}/'.format(BLD), os.sep.join([VULKAN_HOME, 'macOS/lib']))
 elif system() == 'Linux':
     LINK='{} -L {} -L {}'.format(CXX, './lib/{}/'.format(BLD), os.sep.join([VULKAN_HOME, 'lib']))
 

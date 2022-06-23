@@ -1,14 +1,19 @@
 # Vulkan Engine
 ## Build
-___
-### MacOS
-___
 #### Dependencies (the ones that need to be manually installed):
     python@3.X
+    scons-compiledb 
+        - installed using pip, which should be installed automatically with python
+        - pip install scons-compiledb should install it
+        - on some devices python is python3 and pip is pip3
     wget
     cmake
     make
     git
+___
+### MacOS and Linux
+___
+    
 #### Build Steps:
     1. Clone this repository
     2. Run the python script compileDeps.py in the project root directory
@@ -22,9 +27,7 @@ ___
         - TEST - no-op
         - VALIDATION_LAYERS - turns on Vulkan's Validation Layers
         - SANITIZE_MEM - turns on the address sanitizer
-### Linux
-___
--todo
+        
 ### Windows
 ___
 -todo
