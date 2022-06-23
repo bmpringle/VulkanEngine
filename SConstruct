@@ -13,7 +13,7 @@ TEST = int(ARGUMENTS.get('TEST', 0))
 
 VALIDATION_LAYERS = int(ARGUMENTS.get('VALIDATION_LAYERS', 0))
 
-env = Environment()
+env = Environment(RPATH = './lib/rel/' if DBG == 0 else './lib/dbg/')
 
 scons_compiledb.enable(env);
 
@@ -31,8 +31,8 @@ if system() == "Windows":
 
 LIBS= []
 LINK=''
-VULKAN_INCLUDE=''
-MVK_INCLUDE=''
+VULKAN_INCLUDE='.'
+MVK_INCLUDE='.'
 
 if system() == 'Darwin':
     LIBS = [['pthread', 'vulkan', 'libMoltenVK.dylib']]
@@ -51,7 +51,7 @@ OPT = 0 if DBG == 1 else 3
 
 env.Append(CPPPATH = ['include']) 
 
-CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -fPIC -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} {}'.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '', '-fsanitize=address' if SANITIZE_MEM == 1 else '')
+CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -fPIC -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} {}'.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, './StringToText/include/', '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '', '-fsanitize=address' if SANITIZE_MEM == 1 else '')
 
 LIBSSTATIC = Glob(os.sep.join(['lib', '*.a']))
 
@@ -67,7 +67,7 @@ sharedLibBuild = env.SharedLibrary(os.sep.join(['lib', BLD, 'libVulkanEngineLib'
                     LIBS=LIBS)
 
 
-CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {}  -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
+CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, './StringToText/include/', '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
 
 LIBS = ['VulkanEngineLib']
 

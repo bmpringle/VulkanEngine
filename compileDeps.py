@@ -18,8 +18,8 @@ if system() == "Linux" or system() == "Darwin":
         #cmake needed for glfw
 
     output, error = execCmd('python3 compileDeps.py PIC=ON', cwdOverride = './StringToText/')
-    output, error = execCmd('make library-POC -j8', cwdOverride = './StringToText/')
-    output, error = execCmd('cp -a ./lib/. ../lib/', cwdOverride = './StringToText/')
+    output, error = execCmd('scons -j8 PIC=1', cwdOverride = './StringToText/')
+    output, error = execCmd('cp -a ./bin/libStringToText.a ../lib/', cwdOverride = './StringToText/')
 
     output, error = execCmd('pip install scons-compiledb')
 elif system() == "Windows":
@@ -31,6 +31,7 @@ output, error = execCmd('mkdir -p shaders/output')
 MACOS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.3.216.0/mac/vulkansdk-macos-1.3.216.0.dmg"
 MACOS_DMGNAME= "vulkansdk-macos-1.3.216.0.dmg"
 LINUX_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.3.216.0/linux/vulkansdk-linux-x86_64-1.3.216.0.tar.gz"
+LINUX_TARNAME = "vulkansdk-linux-x86_64-1.3.216.0.tar.gz"
 WINDOWS_VULKANSDK = "https://sdk.lunarg.com/sdk/download/1.3.216.0/windows/VulkanSDK-1.3.216.0-Installer.exe"
 
 if system() == "Darwin":
@@ -45,7 +46,9 @@ if system() == "Darwin":
     output, error = execCmd("open InstallVulkan.app")
 elif system() == "Linux":
     output, error = execCmd("wget {}".format(LINUX_VULKANSDK))
-    output, error = execCmd("tar -xvzf {} -C {}".format(LINUX_VULKANSDK, "./VulkanSDKLinux"))
+    output, error = execCmd("mkdir -p ./VulkanSDKLinux")
+    output, error = execCmd("tar -xvzf {} -C {} --strip-components 1".format(LINUX_TARNAME, "./VulkanSDKLinux"))
+    output, error = execCmd("rm {}".format(LINUX_TARNAME))
 elif system() == "Windows":
     output, error = execCmd("curl.exe -o WindowsInstallSDK.exe ()".format(WINDOWS_VULKANSDK))
 

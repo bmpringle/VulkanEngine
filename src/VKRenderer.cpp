@@ -24,7 +24,10 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
 
     std::shared_ptr<VulkanInstance> instance = std::make_shared<VulkanInstance>();
     instance->setAppName("Test App");
+
+    #ifdef VALIDATION_LAYERS
     instance->addValidationLayer("VK_LAYER_KHRONOS_validation");
+    #endif
 
     std::shared_ptr<VulkanDisplay> display = std::make_shared<VulkanDisplay>();
     display->setInitialWindowDimensions(1000, 800);

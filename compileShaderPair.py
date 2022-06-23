@@ -5,13 +5,13 @@ from executeCommand import execCmd
 from platform import system
 import sys
 
-VULKAN_HOME = ""
+GLSLC_PATH = ""
 if system() == "Darwin":
-    VULKAN_HOME='./VulkanSDKMacOS'
+    GLSLC_PATH='./VulkanSDKMacOS/macOS/bin/glslc'
 if system() == "Linux":
-    VULKAN_HOME='./VulkanSDKLinux'
+    GLSLC_PATH='./VulkanSDKLinux/x86_64/bin/glslc'
 if system() == "Windows":
-    VULKAN_HOME='./VulkanSDKWindows'
+    GLSLC_PATH='./VulkanSDKWindows/'
 
 nextArgIsVertexOutput = False
 nextArgIsFragmentOutput = False
@@ -73,7 +73,7 @@ if(fragmentInput == ''):
 if(fragmentOutput == ''):
     print('fragmentOutput not set, exiting\nnote: fragmentOutput can be set with -fo')
 
-output, error = execCmd(VULKAN_HOME + '/macOS/bin/glslc ' + vertexInput + ' -o ' + vertexOutput)
-output, error = execCmd(VULKAN_HOME + '/macOS/bin/glslc ' + fragmentInput + ' -o ' + fragmentOutput)
+output, error = execCmd(GLSLC_PATH + ' ' + vertexInput + ' -o ' + vertexOutput)
+output, error = execCmd(GLSLC_PATH + ' ' + fragmentInput + ' -o ' + fragmentOutput)
 
 
