@@ -59,7 +59,7 @@ VariantDir(os.sep.join(['obj', BLD]), "src", duplicate=0)
 
 env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 
-sharedLibBuild = env.SharedLibrary(os.sep.join(['lib', BLD, 'libVulkanEngineLib' + distutils.ccompiler.new_compiler().shared_lib_extension]),
+sharedLibBuild = env.SharedLibrary(os.sep.join(['lib', BLD, 'libVulkanEngineLib' + (".dylib" if system() == "Darwin" else ".so" if system() == "Linux" else ".dll")]),
                     source=[Glob('{}/VKRenderer.cpp'.format(os.sep.join(['obj', BLD]))), Glob('{}/Engine/*.cpp'.format(os.sep.join(['obj', BLD]))), LIBSSTATIC],
                     CXX=CXX,
                     CCFLAGS=CCFLAGS,
