@@ -605,10 +605,10 @@ void VKRenderer::renderFrame() {
             if(iterator->second.first.at(0) == -1) {
                 iterator = canObjectBeDestroyedMap.erase(iterator);
             }else {
-                ++iterator;
+                std::advance(iterator, 1);
             }
         }else {
-            ++iterator;
+            std::advance(iterator, 1);
         }
     }
 
