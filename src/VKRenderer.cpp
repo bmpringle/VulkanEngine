@@ -230,8 +230,15 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
 
     addTexture("UNTEXTURED", "assets/blank_texture.png");
 
+    VulkanVertexBuffer<OverlayVertex>::createMemoryHandler(device);
+    VulkanVertexBuffer<Vertex>::createMemoryHandler(device);
+    VulkanVertexBuffer<InstanceData>::createMemoryHandler(device);
+    VulkanVertexBuffer<TransparentVertex>::createMemoryHandler(device);
+    VulkanVertexBuffer<CompositeVertex>::createMemoryHandler(device);
+    
     //populate composite buffer
     compositeBuffer.setVertexData(vkEngine->getDevice(), compositeBufferVertices);
+    
 }
 
 VKRenderer::~VKRenderer() {
@@ -261,6 +268,7 @@ VKRenderer::~VKRenderer() {
     VulkanVertexBuffer<Vertex>::forceJoinDeleteThreads();
     VulkanVertexBuffer<InstanceData>::forceJoinDeleteThreads();
     VulkanVertexBuffer<TransparentVertex>::forceJoinDeleteThreads();
+    VulkanVertexBuffer<CompositeVertex>::forceJoinDeleteThreads();
 }
 
 void VKRenderer::recordCommandBuffers() {
@@ -557,7 +565,7 @@ void VKRenderer::renderFrame() {
 
     presentInfo.pResults = nullptr; // Optional
 
-   result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
     if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vkDisplay->getFramebufferResized()) {
         vkDisplay->setFramebufferResized(false);
@@ -1370,10 +1378,12 @@ void VKRenderer::removeInstancesFromWireframeModel(std::string modelID, std::str
 
 void VKRenderer::removeFrameFromDeleteRequirements(size_t frame) {
     for(auto& pair : canObjectBeDestroyedMap) {
-        auto it = std::find(pair.second.first.begin(), pair.second.first.end(), frame);
-        if(it != pair.second.first.end()) {
-            pair.second.first.erase(it);
-        } 
+        if(pair.second.first.size() > 0) {
+            auto it = std::find(pair.second.first.begin(), pair.second.first.end(), frame);
+            if(it != pair.second.first.end()) {
+                pair.second.first.erase(it);
+            } 
+        }
     }
 }
 

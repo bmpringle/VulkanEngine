@@ -16,6 +16,18 @@ class VulkanVertexBuffer {
 
         ~VulkanVertexBuffer() = default;
 
+        static void createMemoryHandler(std::shared_ptr<VulkanDevice> device) {
+            if(createMemoryHandlers) {
+                bufferDeleteFunction = std::bind(&VulkanVertexBuffer::vkBufferDelete, device, std::placeholders::_1);
+                bufferDeleteThread = std::make_shared<DeleteThread<VkBuffer>>(bufferDeleteFunction);
+
+                memoryFreeFunction = std::bind(&VulkanVertexBuffer::vkMemoryDelete, device, std::placeholders::_1);
+                memoryDeleteThread = std::make_shared<DeleteThread<VkDeviceMemory>>(memoryFreeFunction);
+
+                createMemoryHandlers = false;
+            }
+        }
+
         void create(std::shared_ptr<VulkanDevice> device) {
             if(createMemoryHandlers) {
                 bufferDeleteFunction = std::bind(&VulkanVertexBuffer::vkBufferDelete, device, std::placeholders::_1);
