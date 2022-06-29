@@ -603,7 +603,7 @@ void VKRenderer::renderFrame() {
 
         if(iterator->second.first.size() == 1 && *iterator->second.second == false) {
             if(iterator->second.first.at(0) == -1) {
-                canObjectBeDestroyedMap.erase(iterator++);
+                iterator = canObjectBeDestroyedMap.erase(iterator);
             }else {
                 ++iterator;
             }
