@@ -266,7 +266,7 @@ int main() {
   renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\nafter lots of descriptors!");
 
-  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass.png", "assets/water.png"});
+  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass-new.png", "assets/water.png"});
   renderer.setCurrentTextureArray("game-textures");
 
   std::vector<Vertex> cube2 = cube;
@@ -330,7 +330,7 @@ int main() {
   renderer.setModel("block1", cube);
   renderer.setModel("block2", cube2);
 
-  tex_id = renderer.getTextureArrayID("game-textures", "assets/glass.png");
+  tex_id = renderer.getTextureArrayID("game-textures", "assets/glass-new.png");
 
   for(TransparentVertex& v : transparent_cube) {
     v.texCoord[2] = tex_id;

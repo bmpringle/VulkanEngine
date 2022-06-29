@@ -9,6 +9,7 @@
 #include "OverlayVertex.h"
 #include "WireframeVertex.h"
 #include "TransparentVertex.h"
+#include "CompositeVertex.h"
 
 #include "VulkanVertexBuffer.h"
 #include "VulkanUniformBuffer.h"
@@ -163,6 +164,8 @@ class VKRenderer {
 
         std::map<std::string, std::map<std::string, unsigned int> > texureArrayTexturesToIDs;
 
+        VulkanVertexBuffer<CompositeVertex> compositeBuffer;
+
         //in degrees
         float xRotation = 0;
         float yRotation = 0;
@@ -195,6 +198,8 @@ class VKRenderer {
         VkPrimitiveTopology wireframeTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
         glm::vec3 screenTint = glm::vec3(1, 1, 1);
+
+        const static std::vector<CompositeVertex> compositeBufferVertices;
 };
 
 #endif

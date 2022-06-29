@@ -7,12 +7,8 @@ layout(binding = 0) uniform UniformBuffer {
     vec3 tint;
 } ubo;
 
-layout(location = 0) in vec3 modelPosition;
-layout(location = 1) in vec4 color;
-layout(location = 2) in vec3 inTexCoord;
-layout(location = 3) in vec3 worldPosition;
+layout(location = 0) in vec2 pos;
 
 void main() {
-    vec3 position = modelPosition + worldPosition;
-    gl_Position = ubo.projectionMatrix * ubo.viewMatrix * ubo.modelMatrix * vec4(-position.x, -position.y, -position.z, 1.0);
+    gl_Position = vec4(pos.xy, 0, 1);
 }

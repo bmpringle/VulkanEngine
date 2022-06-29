@@ -13,6 +13,15 @@
 #include <math.h>
 #include <numeric>
 
+const std::vector<CompositeVertex> VKRenderer::compositeBufferVertices = {
+    {{-1, -1}},
+    {{-1, 1}},
+    {{1, -1}},
+    {{1, -1}},
+    {{-1, 1}},
+    {{1, 1}},
+};
+
 VKRenderer::VKRenderer(std::shared_ptr<VulkanEngine> engine) : vkEngine(engine), fullFrameVector(VulkanRenderSyncObjects::getMaxFramesInFlight() + 1) {
     std::iota(std::begin(fullFrameVector), std::end(fullFrameVector), 0);
 
@@ -220,6 +229,9 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
     createUniformBuffers();
 
     addTexture("UNTEXTURED", "assets/blank_texture.png");
+
+    //populate composite buffer
+    compositeBuffer.setVertexData(vkEngine->getDevice(), compositeBufferVertices);
 }
 
 VKRenderer::~VKRenderer() {
@@ -284,7 +296,7 @@ void VKRenderer::recordCommandBuffers() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
         
-        std::vector<VkClearValue> clearValues = {{{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{1.0, 0}}}, {{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}};
+        std::vector<VkClearValue> clearValues = {{{{clearColor.x, clearColor.y, clearColor.z, clearColor.w}}}, {{{1.0, 0}}}, {{{0, 0, 0, 0}}}, {{{1.0}}}};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -422,33 +434,11 @@ void VKRenderer::recordCommandBuffers() {
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkEngine->getGraphicsPipeline(4)->getPipelineLayout(), 0, 1, &vkEngine->getGraphicsPipeline(4)->getDescriptorSets()[i], 0, nullptr);
         
         //draw for 3nd subpass here
+        VkBuffer compositeVertexBuffer = compositeBuffer.getVertexBuffer();
+        VkDeviceSize offsets[] = {0};
 
-        for(std::pair<const std::string, InstancedRenderingModel<TransparentVertex>>& vertexData : idToTransparentInstancedModels) {
-            VulkanVertexBuffer<TransparentVertex>& vertexBuffer = vertexData.second.getModel();
-            VkDeviceSize offsets[] = {0};
-
-            if(vertexBuffer.getBufferSize() > 0) {
-                 VkBuffer buffer = vertexBuffer.getVertexBuffer();
-
-                vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &buffer, offsets);
-
-                for(std::pair<const std::string, InstanceSetData>& data : vertexData.second.getInstanceSets()) {
-                    VulkanVertexBuffer<InstanceData>& instanceBuffer = data.second.data;
-
-                    if(instanceBuffer.getBufferSize() > 0) {
-                        VkBuffer instanceDataBuffer = instanceBuffer.getVertexBuffer();
-
-                        vkCmdBindVertexBuffers(commandBuffers[i], 1, 1, &instanceDataBuffer, offsets);
-
-                        vkCmdDraw(commandBuffers[i], vertexBuffer.getBufferSize(), instanceBuffer.getBufferSize(), 0, 0);
-                    }else {
-                        //nothing to draw
-                    }
-                }
-            }else {
-                //nothing to draw
-            }
-        }
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &compositeVertexBuffer, offsets);
+        vkCmdDraw(commandBuffers[i], compositeBuffer.getBufferSize(), 1, 0, 0);
 
         vkCmdNextSubpass(commandBuffers[i], VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1158,13 +1148,13 @@ void VKRenderer::createGraphicsPipelines() {
     attachments[0].alphaBlendOp = VK_BLEND_OP_ADD; 
 
     attachments[1] = {};
-    attachments[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    attachments[1].blendEnable = VK_FALSE;
+    attachments[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT;
+    attachments[1].blendEnable = VK_TRUE;
     attachments[1].srcColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
-    attachments[1].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
+    attachments[1].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR; 
     attachments[1].colorBlendOp = VK_BLEND_OP_ADD; 
     attachments[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
-    attachments[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
+    attachments[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR; 
     attachments[1].alphaBlendOp = VK_BLEND_OP_ADD; 
 
     transparencySubpassTwoPipeline->setColorBlendAttachment(attachments[0], 0);
@@ -1178,8 +1168,8 @@ void VKRenderer::createGraphicsPipelines() {
 
     std::shared_ptr<VulkanGraphicsPipeline> transparencySubpassThreePipeline = std::make_shared<VulkanGraphicsPipeline>();
 
-    transparencySubpassThreePipeline->setVertexInputBindingDescriptions(TransparentVertex::getBindingDescriptions());
-    transparencySubpassThreePipeline->setVertexInputAttributeDescriptions(TransparentVertex::getAttributeDescriptions());
+    transparencySubpassThreePipeline->setVertexInputBindingDescriptions(CompositeVertex::getBindingDescriptions());
+    transparencySubpassThreePipeline->setVertexInputAttributeDescriptions(CompositeVertex::getAttributeDescriptions());
     transparencySubpassThreePipeline->setVertexShader("shaders/output/3dvert_transparent_subpass3.spv");
     transparencySubpassThreePipeline->setFragmentShader("shaders/output/3dfrag_transparent_subpass3.spv");
     transparencySubpassThreePipeline->addDescriptorSetLayoutBinding(UniformBuffer::getDescriptorSetLayout());
@@ -1188,7 +1178,6 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
     transparencySubpassThreePipeline->setDescriptorPoolData(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, swapchain->getSwapchainImageCount());
     transparencySubpassThreePipeline->setCullMode(VK_CULL_MODE_NONE);
-    transparencySubpassThreePipeline->setDepthCompareOP(VK_COMPARE_OP_LESS_OR_EQUAL); //in a depth tie, transparent pixels should be blended
 
     //color attachment descriptor set layout binding
     VkDescriptorSetLayoutBinding colorLayoutBinding{};
@@ -1202,13 +1191,13 @@ void VKRenderer::createGraphicsPipelines() {
     transparencySubpassThreePipeline->addDescriptorSetLayoutBinding(colorLayoutBinding);
     transparencySubpassThreePipeline->setSubpassIndex(2);
 
-    attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
-    attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; 
-    attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
-    attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; 
+    attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; 
+    attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
+    attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; 
+    attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; 
 
     transparencySubpassThreePipeline->setColorBlendAttachment(attachments[0], 0);
-    transparencySubpassThreePipeline->setDepthTestAndWrite(true, false);
+    transparencySubpassThreePipeline->setDepthTestAndWrite(false, false);
 
     vkEngine->setGraphicsPipeline(transparencySubpassThreePipeline, 4);
 
