@@ -576,6 +576,7 @@ void VKRenderer::renderFrame() {
     auto vertexBufferMutexes = VulkanVertexBuffer<Vertex>::getDeleteFunctionMutexes();
     auto wireframeVertexBufferMutexes = VulkanVertexBuffer<WireframeVertex>::getDeleteFunctionMutexes();
     auto overlayVertexBufferMutexes = VulkanVertexBuffer<OverlayVertex>::getDeleteFunctionMutexes();
+    auto compositeVertexBufferMutexes = VulkanVertexBuffer<CompositeVertex>::getDeleteFunctionMutexes();
 
     std::get<0>(textureAccessMutexes)->lock();
     std::get<1>(textureAccessMutexes)->lock();
@@ -586,6 +587,8 @@ void VKRenderer::renderFrame() {
     vertexBufferMutexes.second->lock();
     wireframeVertexBufferMutexes.second->lock();
     overlayVertexBufferMutexes.second->lock();
+    compositeVertexBufferMutexes.first->lock();
+    compositeVertexBufferMutexes.second->lock();
 
     for(auto iterator = canObjectBeDestroyedMap.begin(); iterator != canObjectBeDestroyedMap.end();) {
         if(iterator->second.second == nullptr) {
@@ -618,6 +621,8 @@ void VKRenderer::renderFrame() {
     vertexBufferMutexes.second->unlock();
     wireframeVertexBufferMutexes.second->unlock();
     overlayVertexBufferMutexes.second->unlock();
+    compositeVertexBufferMutexes.first->unlock();
+    compositeVertexBufferMutexes.second->unlock();
 
     //end delete-thread sync code
 }
