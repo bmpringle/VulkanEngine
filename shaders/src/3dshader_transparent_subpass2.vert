@@ -18,6 +18,6 @@ layout(location = 1) out vec3 outTexCoord;
 void main() {
     vec3 position = modelPosition + worldPosition;
     gl_Position = ubo.projectionMatrix * ubo.viewMatrix * ubo.modelMatrix * vec4(-position.x, -position.y, -position.z, 1.0);
-    fragColor = color;
+    fragColor = color * vec4(ubo.tint.xyz, 1);
     outTexCoord = inTexCoord;
 }
