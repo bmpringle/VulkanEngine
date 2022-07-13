@@ -27,6 +27,7 @@ ___
         - TEST - no-op
         - VALIDATION_LAYERS - turns on Vulkan's Validation Layers
         - SANITIZE_MEM - turns on the address sanitizer
+    5. Before running any code built with this engine, run the setupEnvironment script to in order to properly set up ENV variables
         
 ### Windows
 ___

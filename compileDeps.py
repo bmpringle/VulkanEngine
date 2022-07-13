@@ -44,11 +44,16 @@ if system() == "Darwin":
     print("Install Vulkan SDK to ./VulkanSDKMacOS")
 
     output, error = execCmd("open InstallVulkan.app")
+    
+    output, error = execCmd("source setup-env.sh", "./VulkanSDKMacOS")
+
 elif system() == "Linux":
     output, error = execCmd("wget {}".format(LINUX_VULKANSDK))
     output, error = execCmd("mkdir -p ./VulkanSDKLinux")
     output, error = execCmd("tar -xvzf {} -C {} --strip-components 1".format(LINUX_TARNAME, "./VulkanSDKLinux"))
     output, error = execCmd("rm {}".format(LINUX_TARNAME))
+
+    output, error = execCmd("source setup-env.sh", "./VulkanSDKLinux")
 elif system() == "Windows":
     output, error = execCmd("curl.exe -o WindowsInstallSDK.exe ()".format(WINDOWS_VULKANSDK))
 
@@ -59,3 +64,4 @@ else:
     print("auto-install of vulkan sdk unsupported at this moment for platforms other than MacOS/Linux/Windows")
     print("\tyour system is: " + system())
     exit()
+    
