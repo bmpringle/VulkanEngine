@@ -9,6 +9,8 @@
 class VulkanInstance {
 
     public:
+        VulkanInstance();
+
         //get all supported instance extensions
         std::vector<VkExtensionProperties> getAllSupportedExtensions();
 

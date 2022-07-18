@@ -1,7 +1,7 @@
 #include "VulkanEngine.h"
 
 VulkanEngine::VulkanEngine() : textureLoader(std::make_shared<TextureLoader>()) {
-
+    
 }
 
 VulkanEngine::~VulkanEngine() {

@@ -6,6 +6,17 @@
 #include <MoltenVK/vk_mvk_moltenvk.h>
 #endif
 
+#ifdef RELEASE
+static int DUMMY_VARIABLE = []() {
+    setenv("VK_ICD_FILENAMES", "./MoltenVK_icd.json", 1);
+    return 0;
+}();
+#endif
+
+VulkanInstance::VulkanInstance() {
+
+}
+
 void VulkanInstance::addValidationLayer(const char* layer) {
     validationLayers.push_back(layer);
 }
@@ -102,6 +113,10 @@ void VulkanInstance::create() {
 
     //get extensions required by glfw to render with vulkan
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+    if(glfwExtensionCount == 0) {
+        throw std::runtime_error("an error occured while getting instance extensions from glfw");
+    }
 
     std::vector<const char*> extensionsVector = instanceExtensions;
     

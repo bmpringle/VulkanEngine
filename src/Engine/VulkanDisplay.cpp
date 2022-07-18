@@ -55,8 +55,9 @@ void VulkanDisplay::create(std::shared_ptr<VulkanInstance> instance) {
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetScrollCallback(window, scrollCallback);
 
-    if(glfwCreateWindowSurface(instance->getInternalInstance(), window, nullptr, &surface) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
+    VkResult result = glfwCreateWindowSurface(instance->getInternalInstance(), window, nullptr, &surface);
+    if(result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create window surface! error code " + std::to_string(result));
     }
 }
 
