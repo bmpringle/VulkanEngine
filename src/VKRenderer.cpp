@@ -760,7 +760,7 @@ void VKRenderer::updateUniformBuffer(uint32_t imageIndex) {
 
     ubo.viewMatrix = glm::lookAt(camera, camera + cameraFront, glm::vec3(0.0f, 1.0f,  0.0f));*/
 
-    ubo.projectionMatrix = glm::perspective(glm::radians(90.0f), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, near, far);
+    ubo.projectionMatrix = glm::perspective(glm::radians(FOV), vkEngine->getSwapchain()->getInternalExtent2D().width / (float) vkEngine->getSwapchain()->getInternalExtent2D().height, near, far);
 
     blockUniformBuffers.at(imageIndex).setVertexData(vkEngine->getDevice(), ubo);
 
@@ -1513,4 +1513,20 @@ bool VKRenderer::hasInstanceInModel(std::string modelID, std::string instanceVec
 
 void VKRenderer::setScreenTint(glm::vec3 tint) {
     screenTint = tint;
+}
+
+void VKRenderer::setFOV(float fov) {
+    FOV = fov;
+}
+
+float VKRenderer::getFOV() {
+    return FOV;
+}
+
+glm::vec4 VKRenderer::getClearColor() {
+    return clearColor;
+}
+
+glm::vec3 VKRenderer::getScreenTint() {
+    return screenTint;
 }

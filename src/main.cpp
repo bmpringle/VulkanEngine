@@ -172,9 +172,11 @@ int main() {
   bool l_key_pressed = false;
   bool z_key_pressed = false;
   bool esc_key_pressed = false;
+  bool m_key_pressed = false;
 
   bool flag = false;
   bool flag1 = false;
+  bool flag2 = false;
 
   //init renderer
   VKRenderer renderer = VKRenderer();
@@ -216,6 +218,8 @@ int main() {
         z_key_pressed = true;
       }else if(key == GLFW_KEY_ESCAPE) {
         esc_key_pressed = true;
+      }else if(key == GLFW_KEY_M) {
+        m_key_pressed = true;
       }
     }else if(action == GLFW_RELEASE) {
       if(key == GLFW_KEY_W) {
@@ -238,6 +242,8 @@ int main() {
         z_key_pressed = false;
       }else if(key == GLFW_KEY_ESCAPE) {
         esc_key_pressed = false;
+      }else if(key == GLFW_KEY_M) {
+        m_key_pressed = false;
       }
     }
   };
@@ -502,6 +508,13 @@ int main() {
       flag1 = true;
     }else if(!z_key_pressed) {
       flag1 = false;
+    }
+
+    if(m_key_pressed && !flag2) {
+      renderer.setFOV(((int)(renderer.getFOV() + 10) % 160));
+      flag2 = true;
+    }else if(!m_key_pressed) {
+      flag2 = false;
     }
 
     if(esc_key_pressed) {

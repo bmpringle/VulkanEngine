@@ -45,6 +45,14 @@ class VKRenderer {
 
         void setScreenTint(glm::vec3 tint);
 
+        void setFOV(float fov);
+
+        float getFOV();
+
+        glm::vec4 getClearColor();
+
+        glm::vec3 getScreenTint();
+
         //for 3d rendering (opaque / transparent)
 
         void setModel(std::string modelID, std::vector<Vertex> modelVerticesOpaque = {}, std::vector<TransparentVertex> modelVerticesTransparent = {});
@@ -200,6 +208,8 @@ class VKRenderer {
         glm::vec3 screenTint = glm::vec3(1, 1, 1);
 
         const static std::vector<CompositeVertex> compositeBufferVertices;
+
+        float FOV = 90.0f;
 };
 
 #endif
