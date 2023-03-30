@@ -8,7 +8,7 @@
 
 #include <chrono>
 
-#include <glm/gtx/string_cast.hpp>
+//#include <glm/gtx/string_cast.hpp>
 
 static std::vector<Vertex> triangle = {
     {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
@@ -253,9 +253,7 @@ int main() {
   //setup rendering
 
   renderer.addTexture("test", "assets/test.jpg");
-  renderer.addTexture("cube-cube", "assets/cube-cube.png");
   renderer.addTexture("dirt", "assets/dirt.png");
-  renderer.addTexture("old-test", "assets/test-OLD.jpg");
   renderer.addTexture("grass-side", "assets/grass_side.png");
   renderer.addTextTexture("text1", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text2", "this is text in my\nvulkan engine!");

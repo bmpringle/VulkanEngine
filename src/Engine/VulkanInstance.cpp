@@ -81,7 +81,7 @@ void VulkanInstance::create() {
     size_t configSize = sizeof(MVKConfiguration);
     vkGetMoltenVKConfigurationMVK(VK_NULL_HANDLE, &config, &configSize); //set beta argument buffers to be used in order to get more descriptors than 16 for frag shader.
     
-    config.useMetalArgumentBuffers = VK_TRUE;
+    config.useMetalArgumentBuffers = MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS_DESCRIPTOR_INDEXING;
 
     configSize = sizeof(MVKConfiguration);
     vkSetMoltenVKConfigurationMVK(VK_NULL_HANDLE, &config, &configSize);
@@ -101,7 +101,7 @@ void VulkanInstance::create() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "A Bad Engine (TM) (Patent Pending)";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_2;
+    appInfo.apiVersion = VK_API_VERSION_1_3;
 
     //Create VkInstanceCreateInfo struct and fill with data
     VkInstanceCreateInfo createInfo{};
