@@ -15,7 +15,7 @@ VALIDATION_LAYERS = int(ARGUMENTS.get('VALIDATION_LAYERS', 0))
 
 env = Environment(RPATH = './')
 
-scons_compiledb.enable(env);
+scons_compiledb.enable(env)
 
 CXX='clang++'
 GLFW_DIR='./glfw/'
@@ -65,7 +65,6 @@ sharedLibBuild = env.SharedLibrary(os.sep.join(['bin', BLD, 'libVulkanEngineLib'
                     CCFLAGS=CCFLAGS,
                     LINK=LINK,
                     LIBS=LIBS)
-
 
 CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, './StringToText/include/', '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
 

@@ -9,13 +9,15 @@
 
 #include <functional>
 
-TextureLoader::TextureLoader() {
+#include "ResourcePathResolver.h"
+
+TextureLoader::TextureLoader() : unitypeConverter(StringToTextConverter(resolve_resource_path("assets/unifont-13.0.06.ttf"))) {
 
 }
 
 std::tuple<int, int, int, stbi_uc*> TextureLoader::getTexturePixels(std::string pathToTexture, int PIXEL_FORMAT_ENUM) {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(pathToTexture.data(), &texWidth, &texHeight, &texChannels, PIXEL_FORMAT_ENUM);
+    stbi_uc* pixels = stbi_load(resolve_resource_path(pathToTexture).data(), &texWidth, &texHeight, &texChannels, PIXEL_FORMAT_ENUM);
 
     if (!pixels) {
         throw std::runtime_error("failed to load texture image " + pathToTexture + "!");
@@ -152,7 +154,7 @@ void TextureLoader::destroyTextureLoader(std::shared_ptr<VulkanDevice> device) {
     deviceMemoryDeleteThread->forceJoin();
 }
 
-void TextureLoader::loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, std::array<bool*, 3> deleteOldTextureBool) {
+void TextureLoader::loadTexture(std::shared_ptr<VulkanDevice> device, std::string textureID, std::string texturePath, std::array<bool*, 3> deleteOldTextureBool) {    
     VkImage oldImage = texturePathToImage[textureID];
     VkImageView oldImageView = texturePathToImageView[textureID];
     VkDeviceMemory oldDeviceMemory = texturePathToDeviceMemory[textureID];

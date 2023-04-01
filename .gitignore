@@ -6,3 +6,4 @@ VulkanSDK*/**
 InstallVulkan.app/**
 traces/**
 .sconsign.dblite
+deploy/**

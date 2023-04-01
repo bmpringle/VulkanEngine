@@ -6,13 +6,6 @@
 #include <MoltenVK/vk_mvk_moltenvk.h>
 #endif
 
-#ifdef RELEASE
-static int DUMMY_VARIABLE = []() {
-    setenv("VK_ICD_FILENAMES", "./MoltenVK_icd.json", 1);
-    return 0;
-}();
-#endif
-
 VulkanInstance::VulkanInstance() {
 
 }
@@ -124,8 +117,9 @@ void VulkanInstance::create() {
         extensionsVector.push_back(glfwExtensions[i]);
     }
 
-    #ifdef __APPLE__
+    #ifdef __APPLE__ 
     extensionsVector.push_back("VK_KHR_get_physical_device_properties2"); //required for MoltenVK
+    extensionsVector.push_back("VK_KHR_portability_enumeration"); //required for MoltenVK
     #endif
 
     createInfo.enabledExtensionCount = extensionsVector.size();
@@ -133,6 +127,7 @@ void VulkanInstance::create() {
 
     createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
     createInfo.ppEnabledLayerNames = validationLayers.data();
+    createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
     //attempt to create VkInstance
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);

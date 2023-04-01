@@ -97,7 +97,7 @@ class TextureLoader {
 
         std::function<void(VkDeviceMemory)> funcFreeDeviceMemory;
 
-        StringToTextConverter unitypeConverter = StringToTextConverter("assets/unifont-13.0.06.ttf");
+        StringToTextConverter unitypeConverter;
 
         //gets properly created in TextureLoader::create(std::shared_ptr<VulkanDevice> device), but since it can take care of its own memory, isn't deleted in TextureLoader::destroyTextureLoader(std::shared_ptr<VulkanDevice> device);
         std::shared_ptr<DeleteThread<VkImage> > imageDeleteThread = std::shared_ptr<DeleteThread<VkImage> >();

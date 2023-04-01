@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import os
 import subprocess
+import sys
 from executeCommand import execCmd
 
 from platform import system
@@ -17,7 +18,7 @@ if system() == "Linux" or system() == "Darwin":
         print("Error, cmake needed to build glfw")
         #cmake needed for glfw
 
-    output, error = execCmd('python3 compileDeps.py PIC=ON', cwdOverride = './StringToText/')
+    output, error = execCmd(f'{sys.executable} compileDeps.py PIC=ON', cwdOverride = './StringToText/')
     output, error = execCmd('scons -j8 -c', cwdOverride = './StringToText/')
     output, error = execCmd('scons -j8 PIC=1', cwdOverride = './StringToText/')
     output, error = execCmd('cp -a ./bin/libStringToText.a ../lib/', cwdOverride = './StringToText/')
@@ -47,6 +48,9 @@ if system() == "Darwin":
     output, error = execCmd("rm {}".format(MACOS_DMGNAME))
 
     output, error = execCmd("source setup-env.sh", "./VulkanSDKMacOS")
+
+    output, error = execCmd("cp ./VulkanSDKMacOS/macos/lib/libvulkan.1.3.243.dylib ./bin/rel/libvulkan.1.dylib")
+    output, error = execCmd("cp ./VulkanSDKMacOS/macos/lib/libMoltenVK.dylib ./bin/rel/libMoltenVK.dylib")
 elif system() == "Linux":
     output, error = execCmd("wget {}".format(LINUX_VULKANSDK))
     output, error = execCmd("mkdir -p ./VulkanSDKLinux")
