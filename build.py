@@ -37,12 +37,12 @@ def build_project(project_dir):
 
 def build_dependencies():
     print("Building Main Project Dependencies ...")
-    execCmd(f'{sys.executable} {os.path.realpath(sys.path[0])}/scripts/compileDeps.py', out = None)
+    execCmd(f'{sys.executable} {os.path.realpath(sys.path[0])}/scripts/compileDeps.py', cwdOverride = os.path.realpath(sys.path[0]), out = None)
     print("Done Building Main Project Dependencies")
 
 def compile_shaders():
     print("Compiling Shaders ...")
-    execCmd(f'sh {os.path.realpath(sys.path[0])}/scripts/compileShaders.sh', out = None)
+    execCmd(f'sh {os.path.realpath(sys.path[0])}/scripts/compileShaders.sh', cwdOverride = os.path.realpath(sys.path[0]), out = None)
     print("Done Compiling Shaders")
 
 def post_compile_scripts():
@@ -55,7 +55,7 @@ def post_compile_scripts():
         export EXECUTABLE_NAME={EXECUTABLE_NAME};
         export DEPLOY_FOLDER={DEPLOY_FOLDER}; 
         sh {os.path.realpath(sys.path[0])}/scripts/postCompileCommands.sh
-        ''', out = None)
+        ''', cwdOverride = os.path.realpath(sys.path[0]), out = None)
     print("Done Running Post-Compile Scripts")
 
 def build_all():
