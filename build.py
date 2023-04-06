@@ -7,32 +7,33 @@ sys.path += [os.path.realpath(sys.path[0]) + "/scripts"]
 from executeCommand import execCmd
 
 APP_NAME = "TEST_APP"
-EXECUTABLE_FILE_PATH="./bin/rel/tstGame"
+EXECUTABLE_FILE_PATH=f'{os.path.realpath(sys.path[0])}/bin/rel/tstGame'
 EXECUTABLE_NAME="tstGame"
-DEPLOY_FOLDER="./deploy"
-PROJECT_BUILD_FOLDER="./"
-PROJECT_BUILD_CMD="scons -j8"
-PROJECT_CLEAN_CMD="scons -j8 -c; rm -rf deploy/*"
+DEPLOY_FOLDER=f'{os.path.realpath(sys.path[0])}/deploy'
+
+ENGINE_BUILD_FOLDER=f"{os.path.realpath(sys.path[0])}"
+ENGINE_BUILD_CMD="scons -j8"
+ENGINE_CLEAN_CMD="scons -j8 -c; rm -rf deploy/*"
+
+OTHER_BUILD_CMD=""
+OTHER_CLEAN_CMD=""
+OTHER_BUILD_FOLDER=""
+
 BUILD_TYPE = "T"
 
-def clean_all_projects():
-    clean_project(os.path.realpath(sys.path[0]))
-    if BUILD_TYPE == "O":
-        clean_project(PROJECT_BUILD_FOLDER)
+def clean_project():
+    print(f'Cleaning Project ...')
+    execCmd(ENGINE_CLEAN_CMD, cwdOverride = os.path.realpath(sys.path[0]), out = None)
 
-def clean_project(project_dir):
-    print(f'Cleaning Project In Directory {project_dir}...')
-    execCmd(PROJECT_CLEAN_CMD, cwdOverride = project_dir, out = None)
+    if BUILD_TYPE == "O":
+        execCmd(OTHER_CLEAN_CMD, cwdOverride = OTHER_BUILD_FOLDER, out = None)
     print("Done Cleaning")
 
-def build_all_projects():
-    build_project(os.path.realpath(sys.path[0]))
-    if BUILD_TYPE == "O":
-        build_project(PROJECT_BUILD_FOLDER)
-
-def build_project(project_dir):
-   print(f'Building Project In Directory {project_dir}...')
-   execCmd(PROJECT_BUILD_CMD, cwdOverride = project_dir, out = None)
+def build_project():
+   print(f'Building Project ...')
+   execCmd(ENGINE_BUILD_CMD, cwdOverride = os.path.realpath(sys.path[0]), out = None)
+   if BUILD_TYPE == "O":
+        execCmd(OTHER_BUILD_CMD, cwdOverride = OTHER_BUILD_FOLDER, out = None)
    print("Done Building Project")
 
 def build_dependencies():
@@ -59,9 +60,9 @@ def post_compile_scripts():
     print("Done Running Post-Compile Scripts")
 
 def build_all():
-    clean_all_projects()
+    clean_project()
     build_dependencies()
-    build_all_projects()
+    build_project()
     compile_shaders()
     post_compile_scripts()
 
@@ -76,6 +77,9 @@ def set_other_project_env():
     EXECUTABLE_NAME = input("Set executable name:")
     DEPLOY_FOLDER = input("Set deploy folder:")
     BUILD_TYPE = "O"
+    
+    EXECUTABLE_FILE_PATH = os.path.abspath(EXECUTABLE_FILE_PATH)
+    DEPLOY_FOLDER = os.path.abspath(DEPLOY_FOLDER)
     print("Done Setting Other Project Environment")
     
 def main():
