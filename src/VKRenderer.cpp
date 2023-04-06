@@ -235,6 +235,7 @@ VKRenderer::VKRenderer() : vkEngine(std::make_shared<VulkanEngine>()), fullFrame
     VulkanVertexBuffer<InstanceData>::createMemoryHandler(device);
     VulkanVertexBuffer<TransparentVertex>::createMemoryHandler(device);
     VulkanVertexBuffer<CompositeVertex>::createMemoryHandler(device);
+    VulkanVertexBuffer<WireframeVertex>::createMemoryHandler(device);
     
     //populate composite buffer
     compositeBuffer.setVertexData(vkEngine->getDevice(), compositeBufferVertices);
