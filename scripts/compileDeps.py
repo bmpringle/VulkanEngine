@@ -23,6 +23,8 @@ if system() == "Linux" or system() == "Darwin":
     output, error = execCmd('scons -j8 PIC=1', cwdOverride = './StringToText/')
     output, error = execCmd('cp -a ./bin/libStringToText.a ../lib/', cwdOverride = './StringToText/')
 
+    output, error = execCmd('cd assimp; cmake -DBUILD_SHARED_LIBS=OFF CMakeLists.txt; cmake --build .; mv assimp/lib/libassimp.a ./lib/*')
+
     output, error = execCmd('pip install scons-compiledb')
 elif system() == "Windows":
     print("unsupported at this time")

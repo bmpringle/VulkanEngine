@@ -1,0 +1,13 @@
+# Blender MTL File: 'None'
+# Material Count: 1
+
+newmtl vertical_face
+Ns 359.999993
+Ka 1.000000 1.000000 1.000000
+Kd 0.741116 0.706135 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd /Users/bmp/Development/C++/VulkanEngineProjectExample/assets/floor_tile_1x1.png

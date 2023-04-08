@@ -13,3 +13,6 @@
 [submodule "DeleteThread"]
 	path = DeleteThread
 	url = https://github.com/bmpringle/DeleteThread
+[submodule "assimp"]
+	path = assimp
+	url = https://github.com/assimp/assimp
