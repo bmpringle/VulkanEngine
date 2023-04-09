@@ -61,6 +61,10 @@ struct Vertex {
 
         return {attrib1, attrib2, attrib3, attrib4};
     }
+
+    void print_vertex() {
+        std::cout << "[[position: " << position.x << ", " << position.y << ", " << position.z << "], [color: " << color.r << ", " << color.g << ", " << color.b << "], [tex_coords: " << texCoord.x << ", " << texCoord.y << ", " << texCoord.z << "]]" << std::endl;
+    }
 };
 
 #endif

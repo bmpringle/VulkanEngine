@@ -8,7 +8,7 @@
 
 #include <chrono>
 
-//#include <glm/gtx/string_cast.hpp>
+#include "ModelLoader.h"
 
 static std::vector<Vertex> triangle = {
     {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
@@ -250,28 +250,26 @@ int main() {
 
   renderer.getEngine()->getDisplay()->setKeyCallback(keyCallback);
 
+  auto [test_model, test_model_texture] = import_model("assets/", "floor_tile.obj");
+
   //setup rendering
 
   renderer.addTexture("test", "assets/test.jpg");
   renderer.addTexture("dirt", "assets/dirt.png");
   renderer.addTexture("grass-side", "assets/grass_side.png");
   renderer.addTextTexture("text1", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text2", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text3", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text4", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text5", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text6", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text7", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text8", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text9", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text10", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text11", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text12", "this is text in my\nvulkan engine!");
-  renderer.addTextTexture("text13", "this is text in my\nvulkan engine!");
   renderer.addTextTexture("text14", "this is text in my\nvulkan engine!\nafter lots of descriptors!");
 
-  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass-new.png", "assets/water.png"});
+  renderer.loadTextureArray("game-textures", {"assets/dirt.png", "assets/grass_side.png", "assets/glass-new.png", "assets/water.png", test_model_texture});
   renderer.setCurrentTextureArray("game-textures");
+
+  for(Vertex& v : test_model) {
+    v.texCoord[2] = renderer.getTextureArrayID("game-textures", test_model_texture);
+  }
+
+  renderer.setModel("test-model", test_model);
+  std::vector<InstanceData> model_instance_data = {InstanceData({{0, -3, -10}})};
+  renderer.addInstancesToModel("test-model", "s1", model_instance_data);
 
   std::vector<Vertex> cube2 = cube;
 

@@ -36,12 +36,14 @@ MVK_INCLUDE='.'
 
 if system() == 'Darwin':
     LIBS = [['pthread', 'vulkan', 'libMoltenVK.dylib']]
-    LINK = '{} {} -framework OpenGL -framework Cocoa -framework IOKit -L {}'.format(CXX, '-fsanitize=address' if SANITIZE_MEM == 1 else '', os.sep.join([VULKAN_HOME, "macOS", "lib"]))
+    LINK = (f'{CXX} {"-fsanitize=address" if SANITIZE_MEM == 1 else ""} -framework OpenGL -framework Cocoa '
+            f'-framework IOKit -L {os.sep.join([VULKAN_HOME, "macOS", "lib"])}')
     VULKAN_INCLUDE=os.sep.join([VULKAN_HOME, 'macOS/include'])
     MVK_INCLUDE=os.sep.join([VULKAN_HOME, 'MoltenVK/include'])
 elif system() == 'Linux':
     LIBS = [['pthread', 'vulkan']]
-    LINK = '{} {} -L {}'.format(CXX, '-fsanitize=address' if SANITIZE_MEM == 1 else '', os.sep.join([VULKAN_HOME, "macOS", "lib"]))
+    LINK = (f'{CXX} {"-fsanitize=address" if SANITIZE_MEM == 1 else ""} '
+           f'-L {os.sep.join([VULKAN_HOME, "macOS", "lib"])}')
     VULKAN_INCLUDE = os.sep.join([VULKAN_HOME, 'x86_64/include'])
 
 GLFW_INCLUDE=os.sep.join([GLFW_DIR,'include'])
@@ -51,7 +53,12 @@ OPT = 0 if DBG == 1 else 3
 
 env.Append(CPPPATH = ['include']) 
 
-CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} {} -fPIC -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} {}'.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, './StringToText/include/', '-Werror' if WARN == 0 else '', "-DRELEASE" if RELEASE == 1 else "", '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '', '-fsanitize=address' if SANITIZE_MEM == 1 else '')
+CCFLAGS = (f"-static -O{OPT} -I ./glm/ -I ./include/Engine/ -I ./ -I ./include/ "
+           f"-I {GLFW_INCLUDE} -I {VULKAN_INCLUDE} -I StringToText/freetype/include/ -I {MVK_INCLUDE} "
+           f"-I ./StringToText/include/ -I ./assimp/include {'-Werror' if WARN == 0 else ''} "
+           f"-fPIC -Wall -Wpedantic {'-DRELEASE' if RELEASE == 1 else ''} -g -std=c++2a -DGLEW_STATIC "
+           f"{'-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else ''} "
+           f"{'-fsanitize=address' if SANITIZE_MEM == 1 else ''}")
 
 LIBSSTATIC = Glob(os.sep.join(['lib', '*.a']))
 
@@ -59,24 +66,29 @@ VariantDir(os.sep.join(['obj', BLD]), "src", duplicate=0)
 
 env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 
-sharedLibBuild = env.SharedLibrary(os.sep.join(['bin', BLD, 'libVulkanEngineLib' + (".dylib" if system() == "Darwin" else ".so" if system() == "Linux" else ".dll")]),
-                    source=[Glob('{}/VKRenderer.cpp'.format(os.sep.join(['obj', BLD]))), Glob('{}/Engine/*.cpp'.format(os.sep.join(['obj', BLD]))), LIBSSTATIC],
-                    CXX=CXX,
-                    CCFLAGS=CCFLAGS,
-                    LINK=LINK,
-                    LIBS=LIBS)
+shared_lib_extension = (".dylib" if system() == "Darwin" else ".so" if system() == "Linux" else ".dll")
+shared_lib_name = os.sep.join(['bin', BLD, 'libVulkanEngineLib' + shared_lib_extension])
 
-CCFLAGS='-static -O{} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -I {} -Wall -Wpedantic {} -g -std=c++2a -DGLEW_STATIC {} '.format(OPT, './glm/', './include/Engine/', './', './include/', GLFW_INCLUDE, VULKAN_INCLUDE, 'StringToText/freetype/include/', MVK_INCLUDE, './StringToText/include/', '-Werror' if WARN == 0 else '', '-DENABLE_VALIDATION_LAYERS' if VALIDATION_LAYERS == 1 else '')
+sharedLibBuild = env.SharedLibrary(shared_lib_name,
+    source = [
+        Glob(f'{os.sep.join(["obj", BLD])}/*.cpp', exclude=[f'{os.sep.join(["obj", BLD])}/main.cpp']), 
+        Glob(f'{os.sep.join(["obj", BLD])}/Engine/*.cpp'), LIBSSTATIC],
+    CXX = CXX,
+    CCFLAGS = CCFLAGS,
+    LINK = LINK,
+    LIBS = LIBS)
+
+CCFLAGS.replace(" -fPIC", "")
 
 LIBS = ['VulkanEngineLib']
 
 if system() == 'Darwin':
-    LINK='{} -framework OpenGL -framework Cocoa -framework IOKit -L {}'.format(CXX, './bin/{}/'.format(BLD))
+    LINK=f'{CXX} -framework OpenGL -framework Cocoa -framework IOKit -L {f"./bin/{BLD}/"}'
 elif system() == 'Linux':
-    LINK='{} -L {} -L {}'.format(CXX, './bin/{}/'.format(BLD), os.sep.join([VULKAN_HOME, 'lib']))
+    LINK=f'{CXX} -L {f"./bin/{BLD}/"} -L {os.sep.join([VULKAN_HOME, "lib"])}'
 
 testExecutableBuild = env.Program(os.sep.join(['bin', BLD, 'tstGame']),
-                    source=[Glob('{}/main.cpp'.format(os.sep.join(['obj', BLD])))],
+                    source=[Glob(f'{os.sep.join(["obj", BLD])}/main.cpp')],
                     CXX=CXX,
                     CCFLAGS=CCFLAGS,
                     LINK=LINK,
